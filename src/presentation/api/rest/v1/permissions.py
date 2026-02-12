@@ -7,7 +7,6 @@ from src.application.errors.auth import UserNotFoundError, InvalidAccessTokenErr
 from src.application.keycloak.auth_managers import OpenIDManager
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.user_reader import UserReader
-from src.entities.employees.enum import EmployeePosition
 from src.entities.users.models import UserUUID, User
 from src.entities.employees.models import EmployeePosition, Employee
 from src.presentation.api.common.dependencies import CredentialsDependency

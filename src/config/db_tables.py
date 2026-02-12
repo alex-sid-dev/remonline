@@ -9,6 +9,7 @@ from src.infra.models import (map_user_table,
                               map_payments_table,
                               map_devices_table
                               )
+from src.infra.models.order_comments import map_order_comments_table
 
 
 def map_tables() -> None:
@@ -22,3 +23,4 @@ def map_tables() -> None:
     map_payments_table()
     map_devices_table()
     map_order_parts_table()
+    map_order_comments_table()

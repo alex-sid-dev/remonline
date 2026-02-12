@@ -1,4 +1,7 @@
 from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID
+from sqlalchemy.orm import relationship
+
+from src.entities.order_comments.models import OrderComment
 from src.infra.models._base import mapper_registry
 from src.entities.orders.models import Order
 
@@ -24,6 +27,7 @@ orders_table = Table(
     Index("ix_orders_order_uuid", "order_uuid", unique=True),
 )
 
+
 def map_orders_table() -> None:
     mapper_registry.map_imperatively(
         Order,
@@ -35,5 +39,12 @@ def map_orders_table() -> None:
             "device_id": orders_table.c.device_id,
             "creator_id": orders_table.c.creator_id,
             "assigned_employee_id": orders_table.c.assigned_employee_id,
+
+            "comments": relationship(
+                OrderComment,
+                back_populates="order",
+                cascade="all, delete-orphan",
+                lazy="selectin"
+            )
         },
     )
