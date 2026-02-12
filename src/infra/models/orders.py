@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index
+from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID
 from src.infra.models._base import mapper_registry
 from src.entities.orders.models import Order
 
@@ -6,6 +6,7 @@ orders_table = Table(
     "orders",
     mapper_registry.metadata,
     Column("order_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("order_uuid", UUID(as_uuid=True), nullable=False, unique=True),
     Column("client_id", BigInteger, ForeignKey("clients.client_id", ondelete="CASCADE"), nullable=False),
     Column("device_id", BigInteger, ForeignKey("devices.device_id", ondelete="CASCADE"), nullable=False),
     Column("creator_id", BigInteger, ForeignKey("employees.employee_id"), nullable=True),
@@ -20,6 +21,7 @@ orders_table = Table(
            onupdate=func.now(), nullable=True),
     Index("ix_orders_client_id", "client_id"),
     Index("ix_orders_device_id", "device_id"),
+    Index("ix_orders_order_uuid", "order_uuid", unique=True),
 )
 
 def map_orders_table() -> None:
@@ -27,10 +29,11 @@ def map_orders_table() -> None:
         Order,
         orders_table,
         properties={
-            "oid": orders_table.c.order_id,
-            "client_oid": orders_table.c.client_id,
-            "device_oid": orders_table.c.device_id,
-            "creator_oid": orders_table.c.creator_id,
-            "assigned_employee_oid": orders_table.c.assigned_employee_id,
+            "id": orders_table.c.order_id,
+            "uuid": orders_table.c.order_uuid,
+            "client_id": orders_table.c.client_id,
+            "device_id": orders_table.c.device_id,
+            "creator_id": orders_table.c.creator_id,
+            "assigned_employee_id": orders_table.c.assigned_employee_id,
         },
     )

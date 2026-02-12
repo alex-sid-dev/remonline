@@ -39,7 +39,7 @@ def map_user_table() -> None:
         User,
         users_table,
         properties={
-            "oid": users_table.c.user_id,
-            "ouuid": users_table.c.user_uuid,
+            "id": users_table.c.user_id,
+            "uuid": users_table.c.user_uuid,
         },
     )

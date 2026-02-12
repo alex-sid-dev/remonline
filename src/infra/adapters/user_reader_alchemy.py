@@ -23,7 +23,7 @@ class UserReaderAlchemy(UserReader):
         if user is None:
             self._logger.warning("User not found by email", email=email)
         else:
-            self._logger.info("User found by email", user_id=user.email)
+            self._logger.info("User found by email", user_id=user.id)
         return user
 
     async def read_by_uuid(self, user_uuid: UserUUID) -> User | None:
@@ -37,16 +37,16 @@ class UserReaderAlchemy(UserReader):
         if user is None:
             self._logger.warning("User not found by UUID", user_uuid=str(user_uuid))
         else:
-            self._logger.info("User found by UUID", user_id=user.oid)
+            self._logger.info("User found by UUID", user_id=user.id)
         return user
 
-    async def read_by_oid(self, user_oid: UserID) -> User | None:
-        self._logger.info("Reading user by OID", user_oid=str(user_oid))
-        stmt = select(User).where(users_table.c.user_id == user_oid)
+    async def read_by_id(self, user_id: UserID) -> User | None:
+        self._logger.info("Reading user by ID", user_id=str(user_id))
+        stmt = select(User).where(users_table.c.user_id == user_id)
         result = await self._session.execute(stmt)
         user = result.scalar_one_or_none()
         if user is None:
-            self._logger.warning("User not found by OID", user_oid=str(user_oid))
+            self._logger.warning("User not found by ID", user_id=str(user_id))
         else:
-            self._logger.info("User found by OID", user_id=user.oid)
+            self._logger.info("User found by ID", user_id=user.id)
         return user

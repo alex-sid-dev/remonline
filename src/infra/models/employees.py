@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, ForeignKey, String, Boolean, func, DateTime
+from sqlalchemy import Table, Column, BigInteger, ForeignKey, String, Boolean, func, DateTime, UUID, Index
 from sqlalchemy.orm import relationship
 
 from src.entities.employees.models import Employee
@@ -8,6 +8,7 @@ employees_table = Table(
     "employees",
     mapper_registry.metadata,
     Column("employee_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("employee_uuid", UUID(as_uuid=True), nullable=False, unique=True),
 
     Column(
         "user_id",
@@ -30,6 +31,9 @@ employees_table = Table(
     Column("is_active", Boolean, nullable=False, server_default="true"),
 
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
+    Column("updated_at", DateTime, default=func.now(), server_default=func.now(),
+           onupdate=func.now(), nullable=True),
+    Index("ix_employees_employee_uuid", "employee_uuid", unique=True),
 )
 
 
@@ -38,7 +42,8 @@ def map_employee_table() -> None:
         Employee,
         employees_table,
         properties={
-            "oid": employees_table.c.employee_id,
+            "id": employees_table.c.employee_id,
+            "uuid": employees_table.c.employee_uuid,
             "user_id": employees_table.c.user_id,
         },
     )

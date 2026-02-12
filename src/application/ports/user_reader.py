@@ -1,15 +1,11 @@
-from abc import ABC, abstractmethod
+from typing import Protocol, Optional
 from src.entities.users.models import User, UserID, UserUUID
 
+class UserReader(Protocol):
+    """Protocol for read-only repository for User entities."""
 
-class UserReader(ABC):
-    """Abstract read-only repository for User entities."""
+    async def read_by_email(self, email: str) -> Optional[User]: ...
 
-    @abstractmethod
-    async def read_by_email(self, email: str) -> User | None: ...
+    async def read_by_uuid(self, user_uuid: UserUUID) -> Optional[User]: ...
 
-    @abstractmethod
-    async def read_by_uuid(self, user_uuid: UserUUID) -> User | None: ...
-
-    @abstractmethod
-    async def read_by_oid(self, user_oid: UserID) -> User | None: ...
+    async def read_by_id(self, user_id: UserID) -> Optional[User]: ...

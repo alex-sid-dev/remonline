@@ -11,10 +11,10 @@ class UserService:
             user_uuid: str,
             email: str,
     ) -> User:
-        """Create a new user aggregate with DB-assigned oid placeholder."""
+        """Create a new user aggregate with DB-assigned id placeholder."""
         return User(
-            oid=cast(UserID, cast(object, None)),
-            ouuid=user_uuid,
+            id=cast(UserID, cast(object, None)),
+            uuid=user_uuid,
             email=email,
             is_active=True,
         )

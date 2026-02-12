@@ -1,0 +1,21 @@
+[app]
+title = "Remonline API"
+version = "1.0.0"
+debug = false
+uvicorn_host = "0.0.0.0"
+uvicorn_port = 8000
+
+[database]
+postgres_host = "127.0.0.1"
+postgres_port = 5432
+postgres_db = "remonline"
+postgres_scheme = "postgresql+psycopg"
+echo = false
+pool_size = 15
+max_overflow = 15
+pool_timeout = 5
+
+[keycloak]
+keycloak_url = "http://keycloak:8080/"
+keycloak_realm = "master"
+keycloak_client_id = "admin-cli"

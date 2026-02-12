@@ -1,0 +1,42 @@
+from dataclasses import dataclass
+from typing import Optional
+import structlog
+
+from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.ports.part_reader import PartReader
+from src.application.ports.transaction import Transaction, EntitySaver
+from src.entities.parts.services import PartService
+from src.entities.employees.models import Employee
+
+logger = structlog.get_logger("create_part").bind(service="part")
+
+@dataclass
+class CreatePartCommand:
+    name: str
+    sku: Optional[str] = None
+    price: Optional[float] = None
+    stock_qty: Optional[int] = None
+
+class CreatePartCommandHandler(BaseCommandHandler):
+    def __init__(
+            self,
+            transaction: Transaction,
+            entity_saver: EntitySaver,
+            part_service: PartService,
+            part_reader: PartReader,
+    ) -> None:
+        self._transaction = transaction
+        self._entity_saver = entity_saver
+        self._part_reader = part_reader
+        self._part_service = part_service
+
+    async def run(self, data: CreatePartCommand, current_employee: Employee) -> None:
+        part = self._part_service.create_part(
+            name=data.name,
+            sku=data.sku,
+            price=data.price,
+            stock_qty=data.stock_qty
+        )
+        self._entity_saver.add_one(part)
+        await self._transaction.commit()
+        logger.info("Part created successfully", part_uuid=str(part.uuid))

@@ -7,13 +7,15 @@ from alembic import context
 
 from src.config.db_tables import map_tables
 from src.infra.models._base import mapper_registry
+from src.config.settings import Settings
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-postgres_url = "postgresql+psycopg://alex:postgres@localhost:5432/remonline"
+settings = Settings()
+postgres_url = settings.database_url
 
 config.set_main_option('sqlalchemy.url', postgres_url)
 

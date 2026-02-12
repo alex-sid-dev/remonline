@@ -1,4 +1,5 @@
 from typing import cast
+from uuid import UUID
 
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee
@@ -14,10 +15,11 @@ class EmployeeService:
             full_name: str,
             is_active: bool,
             position: EmployeePosition,
+            uuid: UUID,
     ) -> Employee:
         return Employee(
-            oid=cast("EmployeeID", None),  # noqa: F821
-            ouuid=cast("EmployeeUUID", None),  # noqa: F821
+            id=cast("EmployeeID", None),  # noqa: F821
+            uuid=uuid,
             user_id=user_id,
             full_name=full_name,
             phone=phone,

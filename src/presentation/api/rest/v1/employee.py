@@ -1,3 +1,4 @@
+from uuid import UUID
 import structlog
 from dishka import FromDishka
 
@@ -6,81 +7,102 @@ from fastapi import APIRouter, Depends
 from starlette import status
 
 from src.application.commands.employee.create_employee import CreateEmployeeCommand, CreateEmployeeCommandHandler
-from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler, ReadAllEmployeeCommand
+from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler, ReadAllEmployeeCommand, ReadEmployeeResponse
+from src.application.commands.employee.read_employee import ReadEmployeeCommandHandler, ReadEmployeeCommand
 from src.application.commands.employee.update_employee import UpdateEmployeeCommand, UpdateEmployeeCommandHandler
-from src.entities.employees.enum import EmployeePosition
-from src.presentation.api.common.dependencies import CredentialsDependency
+from src.application.commands.employee.delete_employee import DeleteEmployeeCommandHandler, DeleteEmployeeCommand
+from typing import List, Annotated
+from src.entities.employees.models import Employee, EmployeePosition
+from src.presentation.api.rest.v1.permissions import RoleChecker
 from src.presentation.api.common.schemas.employee.create_employee import CreateEmployeeSchema
 from src.presentation.api.common.schemas.employee.update_employee import UpdateEmployeeSchema
-from src.presentation.api.rest.v1.permissions import RoleChecker
 
 router = APIRouter(prefix="/employee", tags=["Employee"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.employee").bind(service="employee")
 
-health_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN])
+role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN])
+CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
 
 @router.get(
-    path="/all_employee",
-    dependencies=[Depends(inject(health_checker.__call__))],
+    path="/all",
     status_code=status.HTTP_200_OK,
 )
 async def get_all_employees(
         interactor: FromDishka[ReadAllEmployeeCommandHandler],
-        credentials: CredentialsDependency,
-) -> None:
+        current_employee: CurrentEmployee,
+) -> List[ReadEmployeeResponse]:
     logger.info("ReadAll employees endpoint called")
-    dto = ReadAllEmployeeCommand(
-        access_token=credentials.credentials,
-    )
-    result = await interactor.run(dto)
+    dto = ReadAllEmployeeCommand()
+    result = await interactor.run(dto, current_employee)
     logger.info("ReadAll employees successfully")
     return result
 
 
-
 @router.post(
-    path="/create_employee",
-    dependencies=[Depends(inject(health_checker.__call__))],
+    path="/create",
     status_code=status.HTTP_201_CREATED,
 )
 async def create_employee(
         request_data: CreateEmployeeSchema,
         interactor: FromDishka[CreateEmployeeCommandHandler],
-        credentials: CredentialsDependency,
+        current_employee: CurrentEmployee,
 ) -> None:
-    logger.info("Create employee endpoint called", email=str(request_data.phone))
+    logger.info("Create employee endpoint called", phone=request_data.phone)
     dto = CreateEmployeeCommand(
-        user_id=request_data.user_id,
+        user_uuid=request_data.user_uuid,
         full_name=request_data.full_name,
         phone=request_data.phone,
         position=request_data.position,
-        access_token=credentials.credentials
     )
-    result = await interactor.run(dto)
-    logger.info("Create employee registered successfully", email=str(request_data.phone))
-    return result
+    await interactor.run(dto, current_employee)
+    logger.info("Create employee registered successfully", phone=request_data.phone)
 
 
 @router.patch(
-    path="/update_employee/{employee_id}",
-    dependencies=[Depends(inject(health_checker.__call__))],
+    path="/update/{employee_uuid}",
     status_code=status.HTTP_200_OK,
 )
 async def update_employee(
-        employee_id: int,
+        employee_uuid: UUID,
         request_data: UpdateEmployeeSchema,
         interactor: FromDishka[UpdateEmployeeCommandHandler],
-        credentials: CredentialsDependency,
+        current_employee: CurrentEmployee,
 ) -> None:
-    logger.info("Update employee endpoint called", email=str(request_data.phone))
+    logger.info("Update employee endpoint called", employee_uuid=str(employee_uuid))
     update_data = request_data.model_dump(exclude_unset=True)
     dto = UpdateEmployeeCommand(
-        employee_id=employee_id,
-        access_token=credentials.credentials,
+        uuid=employee_uuid,
         **update_data
-
     )
-    result = await interactor.run(dto)
-    logger.info("Update employee registered successfully", email=str(request_data.phone))
+    await interactor.run(dto, current_employee)
+    logger.info("Update employee registered successfully", employee_uuid=str(employee_uuid))
+
+@router.get(
+    path="/{employee_uuid}",
+    status_code=status.HTTP_200_OK,
+)
+async def get_employee(
+        employee_uuid: UUID,
+        interactor: FromDishka[ReadEmployeeCommandHandler],
+        current_employee: CurrentEmployee,
+) -> ReadEmployeeResponse:
+    logger.info("Read employee endpoint called", employee_uuid=str(employee_uuid))
+    dto = ReadEmployeeCommand(uuid=employee_uuid)
+    result = await interactor.run(dto, current_employee)
+    logger.info("Read employee successfully", employee_uuid=str(employee_uuid))
     return result
+
+@router.delete(
+    path="/{employee_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_employee(
+        employee_uuid: UUID,
+        interactor: FromDishka[DeleteEmployeeCommandHandler],
+        current_employee: CurrentEmployee,
+) -> None:
+    logger.info("Delete employee endpoint called", employee_uuid=str(employee_uuid))
+    dto = DeleteEmployeeCommand(uuid=employee_uuid)
+    await interactor.run(dto, current_employee)
+    logger.info("Employee deleted successfully", employee_uuid=str(employee_uuid))

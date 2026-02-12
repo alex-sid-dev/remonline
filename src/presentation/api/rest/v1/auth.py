@@ -8,6 +8,7 @@ from starlette import status
 from src.application.commands.base.auth import RegisterCommandHandler, RegisterCommand, LoginCommandHandler, \
     LoginResponse, LoginCommand, LogoutCommandHandler, LogoutCommand, UpdateAccessTokenCommandHandler, \
     UpdateAccessTokenResponse, UpdateAccessTokenCommand
+from src.application.commands.base.auth.registration import RegisterCommandResponse
 from src.entities.employees.enum import EmployeePosition
 from src.presentation.api.common.dependencies import CredentialsDependency
 from src.presentation.api.common.schemas.base.auth import RegisterSchema, UpdateAccessTokenSchema, LogoutSchema, \
@@ -21,6 +22,7 @@ logger = structlog.get_logger("api.auth").bind(service="auth")
 
 health_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN])
 
+
 @router.post(
     path="/register",
     dependencies=[Depends(inject(health_checker.__call__))],
@@ -33,11 +35,9 @@ health_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMI
 async def register(
         request_data: RegisterSchema,
         interactor: FromDishka[RegisterCommandHandler],
-        credentials: CredentialsDependency,
-) -> None:
+) -> RegisterCommandResponse:
     logger.info("Register endpoint called", email=str(request_data.email))
     dto = RegisterCommand(
-        access_token=credentials.credentials,
         email=str(request_data.email),
         password=request_data.password,
     )

@@ -1,3 +1,6 @@
+import uuid
+from uuid import UUID
+
 import structlog
 from dataclasses import dataclass
 
@@ -14,9 +17,13 @@ logger = structlog.get_logger("register").bind(service="auth")
 
 
 @dataclass(frozen=True, slots=True)
+class RegisterCommandResponse:
+    uuid: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class RegisterCommand:
     """Command with data required to register a new user."""
-    access_token: str
     email: str
     password: str
 
@@ -42,7 +49,7 @@ class RegisterCommandHandler(BaseCommandHandler):
         self._open_id_manager = open_id_manager
         self._employee_reader = employee_reader
 
-    async def run(self, data: RegisterCommand) -> None:
+    async def run(self, data: RegisterCommand) -> RegisterCommandResponse:
         user = await self._user_reader.read_by_email(data.email)
         await self.validate_user_already_exist(user)
 
@@ -63,6 +70,7 @@ class RegisterCommandHandler(BaseCommandHandler):
 
             await self._transaction.commit()
             logger.info("User persisted in local DB", email=str(data.email), user_uuid=user_uuid)
+            return RegisterCommandResponse(uuid=uuid.UUID(user_uuid))
 
         except Exception as e:
             logger.error("Registration failed, attempting rollback", email=str(data.email), error=str(e))

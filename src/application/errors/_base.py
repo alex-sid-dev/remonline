@@ -1,52 +1,71 @@
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass(eq=False)
 class ApplicationError(Exception):
-    @property
-    def message(self) -> str:
-        return "Application error occurred"
+    status_code: int = 500
+    message: str = "Application error occurred"
+    error_code: Optional[str] = None
 
-class DomainError(Exception):
-    @property
-    def message(self) -> str:
-        return "Domain error occurred"
+    def __post_init__(self):
+        super().__init__(self.message)
 
+@dataclass(eq=False)
+class DomainError(ApplicationError):
+    status_code: int = 400
+    message: str = "Domain error occurred"
 
+@dataclass(eq=False)
 class FieldError(DomainError):
-    pass
+    status_code: int = 422
+    message: str = "Invalid field data"
 
+@dataclass(eq=False)
 class EntityNotFoundError(ApplicationError):
-    pass
+    status_code: int = 404
+    message: str = "Entity not found"
 
-
+@dataclass(eq=False)
 class ConflictError(ApplicationError):
-    pass
+    status_code: int = 409
+    message: str = "Conflict occurred"
 
-
+@dataclass(eq=False)
 class AuthenticationError(ApplicationError):
-    pass
+    status_code: int = 401
+    message: str = "Authentication failed"
 
-
+@dataclass(eq=False)
 class KeycloakError(ApplicationError):
-    pass
+    status_code: int = 503
+    message: str = "External auth service unavailable"
 
-
+@dataclass(eq=False)
 class S3Error(ApplicationError):
-    pass
+    status_code: int = 500
+    message: str = "S3 storage error"
 
-
+@dataclass(eq=False)
 class FileError(ApplicationError):
-    pass
+    status_code: int = 500
+    message: str = "File system error"
 
-
+@dataclass(eq=False)
 class VaultError(ApplicationError):
-    pass
+    status_code: int = 500
+    message: str = "Secret storage error"
 
-
+@dataclass(eq=False)
 class ProductCardError(ApplicationError):
-    pass
+    status_code: int = 422
+    message: str = "Product card validation error"
 
-
+@dataclass(eq=False)
 class PhiError(ApplicationError):
-    pass
+    status_code: int = 500
+    message: str = "AI service error (Phi)"
 
-
+@dataclass(eq=False)
 class QwenError(ApplicationError):
-    pass
+    status_code: int = 500
+    message: str = "AI service error (Qwen)"

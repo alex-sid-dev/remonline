@@ -34,6 +34,7 @@ def upgrade() -> None:
     op.create_table(
         "employees",
         sa.Column("employee_id", BIGINT, primary_key=True, autoincrement=True),
+        sa.Column("employee_uuid", UUID(as_uuid=True), nullable=False, unique=True),
         sa.Column(
             "user_id",
             BIGINT,
@@ -58,6 +59,7 @@ def upgrade() -> None:
     op.create_table(
         "clients",
         sa.Column("client_id", BIGINT, primary_key=True, autoincrement=True),
+        sa.Column("client_uuid", UUID(as_uuid=True), nullable=False, unique=True),
         sa.Column("full_name", sa.String(255), nullable=False),
         sa.Column("phone", sa.String(50), nullable=False),
         sa.Column("email", sa.String(255), nullable=True),
@@ -69,6 +71,8 @@ def upgrade() -> None:
     )
     op.create_index("ix_clients_phone", "clients", ["phone"])
     op.create_index("ix_clients_email", "clients", ["email"])
+    op.create_index("ix_clients_client_uuid", "clients", ["client_uuid"], unique=True)
+    op.create_index("ix_employees_employee_uuid", "employees", ["employee_uuid"], unique=True)
 
     # --- Trigger function to update updated_at ---
     op.execute("""

@@ -1,18 +1,10 @@
 from dataclasses import dataclass
-
 from src.application.errors._base import EntityNotFoundError, ConflictError
 
-
-@dataclass
+@dataclass(eq=False)
 class EmployeeNotFoundError(EntityNotFoundError):
+    message: str = "Employee is not found"
 
-    @property
-    def message(self) -> str:
-        return "Employee is not found"
-
-@dataclass
+@dataclass(eq=False)
 class EmployeeIsAlreadyExist(ConflictError):
-
-    @property
-    def message(self) -> str:
-        return "Employee is already exist"
+    message: str = "Employee is already exist"

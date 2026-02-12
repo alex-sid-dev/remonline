@@ -25,6 +25,9 @@ class LoginCommand:
     password: str
 
 
+from src.application.errors.auth import UserNotFoundError
+
+
 class LoginCommandHandler:
     """Use case: authenticate seller and issue auth tokens via Keycloak."""
 
@@ -40,13 +43,16 @@ class LoginCommandHandler:
         logger.info("Login attempt started", email=data.email)
 
         user = await self._user_reader.read_by_email(email=data.email)
+        if user is None:
+            logger.warning("Login failed: user not found", email=data.email)
+            raise UserNotFoundError()
 
         try:
             refresh_and_access_token = await self._open_id_manager.login(
                 email=user.email,
                 password=data.password,
             )
-            logger.info("User logged in successfully", email=user.email, user_uuid=user.ouuid)
+            logger.info("User logged in successfully", email=user.email, user_uuid=user.uuid)
         except Exception as e:
             logger.error("Login failed", email=data.email, error=str(e))
             raise

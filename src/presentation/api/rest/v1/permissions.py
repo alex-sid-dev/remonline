@@ -9,9 +9,10 @@ from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.user_reader import UserReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.users.models import UserUUID, User
+from src.entities.employees.models import EmployeePosition, Employee
 from src.presentation.api.common.dependencies import CredentialsDependency
 
-logger = structlog.getLogger(__name__)
+logger = structlog.get_logger("api.permissions")
 
 
 class RoleChecker:
@@ -24,17 +25,18 @@ class RoleChecker:
             open_id_manager: FromDishka[OpenIDManager],
             employee_reader: FromDishka[EmployeeReader],
             credentials: CredentialsDependency,
-    ) -> None:
+    ) -> Employee:
         await open_id_manager.verify_token(access_token=credentials.credentials)
 
         user_info = await open_id_manager.get_user_info(access_token=credentials.credentials)
         user = await user_reader.read_by_uuid(UserUUID(user_info.user_uuid))
-        logger.debug(f"User info: {user.oid}")
+        logger.debug(f"User info: {user.id}")
         await self.validate_user(user=user)
-        employee = await employee_reader.read_by_user_oid(user.oid)
+        employee = await employee_reader.read_by_user_id(user.id)
 
         if employee.position not in self.list_role:
             raise InvalidAccessTokenErrorPerm()
+        return employee
 
     @staticmethod
     async def validate_user(user: User) -> None:

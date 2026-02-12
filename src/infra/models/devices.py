@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, func, Index
+from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, func, Index, UUID
 from sqlalchemy.orm import relationship
 
 from src.infra.models._base import mapper_registry
@@ -9,6 +9,7 @@ devices_table = Table(
     "devices",
     mapper_registry.metadata,
     Column("device_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("device_uuid", UUID(as_uuid=True), nullable=False, unique=True),
     Column("client_id", BigInteger, ForeignKey("clients.client_id", ondelete="CASCADE"), nullable=False),
     Column("type_id", BigInteger, ForeignKey("device_types.device_type_id"), nullable=False),
     Column("brand", String(100), nullable=False),
@@ -21,6 +22,7 @@ devices_table = Table(
            onupdate=func.now(), nullable=True),
     Index("ix_devices_client_id", "client_id"),
     Index("ix_devices_serial_number", "serial_number", unique=True),
+    Index("ix_devices_device_uuid", "device_uuid", unique=True),
 )
 
 
@@ -29,9 +31,10 @@ def map_devices_table() -> None:
         Device,
         devices_table,
         properties={
-            "oid": devices_table.c.device_id,
-            "client_oid": devices_table.c.client_id,
-            "type_oid": devices_table.c.type_id,
+            "id": devices_table.c.device_id,
+            "uuid": devices_table.c.device_uuid,
+            "client_id": devices_table.c.client_id,
+            "type_id": devices_table.c.type_id,
 
             "type": relationship(
                 "DeviceType",

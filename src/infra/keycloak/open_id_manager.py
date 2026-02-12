@@ -61,9 +61,11 @@ class KeycloakOpenIDManager(OpenIDManager):
     async def verify_token(self, access_token: str) -> dict:
         self._logger.info("Verifying access token")
         try:
+            # Декодируем токен локально без проверки подписи (быстрый способ достать данные)
+            # В продакшене лучше использовать проверку подписи через сертификаты Keycloak
             return self._client.decode_token(access_token)
         except Exception as e:
-            self._logger.warning("Invalid access token")
+            self._logger.warning("Token verification failed", error=str(e))
             from src.application.errors.auth import InvalidAccessTokenError
             raise InvalidAccessTokenError() from e
 

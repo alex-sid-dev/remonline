@@ -26,7 +26,7 @@ class BaseCommandHandler(ABC):
 
     @staticmethod
     async def validate_user_already_exist(user: User) -> None:
-        if not user:
+        if user:
             raise EmailAlreadyExistsError()
 
     @staticmethod

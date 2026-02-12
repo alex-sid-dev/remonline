@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index
+from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID
 from src.infra.models._base import mapper_registry
 from src.entities.works.models import Work
 
@@ -6,6 +6,7 @@ works_table = Table(
     "works",
     mapper_registry.metadata,
     Column("work_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("work_uuid", UUID(as_uuid=True), nullable=False, unique=True),
     Column("order_id", BigInteger, ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False),
     Column("employee_id", BigInteger, ForeignKey("employees.employee_id"), nullable=True),
     Column("title", String(255), nullable=False),
@@ -16,6 +17,7 @@ works_table = Table(
     Column("updated_at", DateTime, default=func.now(), server_default=func.now(),
            onupdate=func.now(), nullable=True),
     Index("ix_works_order_id", "order_id"),
+    Index("ix_works_work_uuid", "work_uuid", unique=True),
 )
 
 def map_works_table() -> None:
@@ -23,8 +25,9 @@ def map_works_table() -> None:
         Work,
         works_table,
         properties={
-            "oid": works_table.c.work_id,
-            "order_oid": works_table.c.order_id,
-            "employee_oid": works_table.c.employee_id,
+            "id": works_table.c.work_id,
+            "uuid": works_table.c.work_uuid,
+            "order_id": works_table.c.order_id,
+            "employee_id": works_table.c.employee_id,
         },
     )

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-OIDType = TypeVar("OIDType")
-OUUIDType = TypeVar("OUUIDType")
+IDType = TypeVar("IDType")
+UUIDType = TypeVar("UUIDType")
 
 
 @dataclass
-class BaseEntity(Generic[OIDType, OUUIDType]):
-    oid: OIDType
-    ouuid: OUUIDType
+class BaseEntity(Generic[IDType, UUIDType]):
+    id: IDType
+    uuid: UUIDType

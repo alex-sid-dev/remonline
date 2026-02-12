@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, Float, String, DateTime, ForeignKey, func, Index
+from sqlalchemy import Table, Column, BigInteger, Float, String, DateTime, ForeignKey, func, Index, UUID
 from src.infra.models._base import mapper_registry
 from src.entities.payments.models import Payment
 
@@ -6,6 +6,7 @@ payments_table = Table(
     "payments",
     mapper_registry.metadata,
     Column("payment_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("payment_uuid", UUID(as_uuid=True), nullable=False, unique=True),
     Column("order_id", BigInteger, ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False),
     Column("employee_id", BigInteger, ForeignKey("employees.employee_id"), nullable=True),
     Column("amount", Float, nullable=False),
@@ -16,6 +17,7 @@ payments_table = Table(
            onupdate=func.now(), nullable=True),
     # индекс можно добавить на order_id для быстрого поиска платежей по заказу
     Index("ix_payments_order_id", "order_id"),
+    Index("ix_payments_payment_uuid", "payment_uuid", unique=True),
 )
 
 
@@ -24,8 +26,9 @@ def map_payments_table() -> None:
         Payment,
         payments_table,
         properties={
-            "oid": payments_table.c.payment_id,
-            "order_oid": payments_table.c.order_id,
-            "employee_oid": payments_table.c.employee_id,
+            "id": payments_table.c.payment_id,
+            "uuid": payments_table.c.payment_uuid,
+            "order_id": payments_table.c.order_id,
+            "employee_id": payments_table.c.employee_id,
         },
     )

@@ -15,25 +15,21 @@ from src.make_admin import make_admin
 
 
 from src.presentation.api.rest.v1.routers import api_v1_router
+from src.config.settings import Settings
 
 setup_logging()
 logger = structlog.get_logger(__name__)
 
-container: AsyncContainer = make_async_container(*get_providers())
+settings = Settings()
+container: AsyncContainer = make_async_container(*get_providers(settings))
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """
     Asynchronous context manager for managing the lifespan of the FastAPI application.
-
-    Args:
-        _: The FastAPI application instance.
-
-    Yields:
-        None
     """
-    await make_admin()
+    await make_admin(settings)
     logger.info("Starting application...")
     yield
     logger.info("Shutting down application...")
@@ -42,24 +38,20 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     """
     Creates and configures the FastAPI application.
-
-    Returns:
-        FastAPI: The configured FastAPI application instance.
     """
     map_tables()
 
     fast_app = FastAPI(
-        title="Base FastAPI",
-        version="1.0.0",
+        title=settings.app.title,
+        version=settings.app.version,
         description="Базовый фастапи",
         lifespan=lifespan,
         default_response_class=ORJSONResponse,
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
+        debug=settings.app.debug,
     )
-
-    # setup_exc_handlers(fast_app)
 
     fast_app.add_middleware(  # type: ignore[call-arg]
         CORSMiddleware,  # type: ignore[arg-type]

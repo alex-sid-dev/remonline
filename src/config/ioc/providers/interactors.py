@@ -6,7 +6,49 @@ from src.application.commands.base.auth.registration import RegisterCommandHandl
 from src.application.commands.base.auth.update_access_token import UpdateAccessTokenCommandHandler
 from src.application.commands.employee.create_employee import CreateEmployeeCommandHandler
 from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler
+from src.application.commands.employee.read_employee import ReadEmployeeCommandHandler
 from src.application.commands.employee.update_employee import UpdateEmployeeCommandHandler
+from src.application.commands.employee.delete_employee import DeleteEmployeeCommandHandler
+from src.application.commands.client.create_client import CreateClientCommandHandler
+from src.application.commands.client.read_all_client import ReadAllClientCommandHandler
+from src.application.commands.client.read_client import ReadClientCommandHandler
+from src.application.commands.client.update_client import UpdateClientCommandHandler
+from src.application.commands.client.delete_client import DeleteClientCommandHandler
+from src.application.commands.order.create_order import CreateOrderCommandHandler
+from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler
+from src.application.commands.order.read_order import ReadOrderCommandHandler
+from src.application.commands.order.update_order import UpdateOrderCommandHandler
+from src.application.commands.order.delete_order import DeleteOrderCommandHandler
+from src.application.commands.device_type.create_device_type import CreateDeviceTypeCommandHandler
+from src.application.commands.device_type.read_all_device_type import ReadAllDeviceTypeCommandHandler
+from src.application.commands.device_type.read_device_type import ReadDeviceTypeCommandHandler
+from src.application.commands.device_type.update_device_type import UpdateDeviceTypeCommandHandler
+from src.application.commands.device_type.delete_device_type import DeleteDeviceTypeCommandHandler
+from src.application.commands.device.create_device import CreateDeviceCommandHandler
+from src.application.commands.device.read_all_device import ReadAllDeviceCommandHandler
+from src.application.commands.device.read_device import ReadDeviceCommandHandler
+from src.application.commands.device.update_device import UpdateDeviceCommandHandler
+from src.application.commands.device.delete_device import DeleteDeviceCommandHandler
+from src.application.commands.part.create_part import CreatePartCommandHandler
+from src.application.commands.part.read_all_part import ReadAllPartCommandHandler
+from src.application.commands.part.read_part import ReadPartCommandHandler
+from src.application.commands.part.update_part import UpdatePartCommandHandler
+from src.application.commands.part.delete_part import DeletePartCommandHandler
+from src.application.commands.work.create_work import CreateWorkCommandHandler
+from src.application.commands.work.read_all_work import ReadAllWorkCommandHandler
+from src.application.commands.work.read_work import ReadWorkCommandHandler
+from src.application.commands.work.update_work import UpdateWorkCommandHandler
+from src.application.commands.work.delete_work import DeleteWorkCommandHandler
+from src.application.commands.payment.create_payment import CreatePaymentCommandHandler
+from src.application.commands.payment.read_all_payment import ReadAllPaymentCommandHandler
+from src.application.commands.payment.read_payment import ReadPaymentCommandHandler
+from src.application.commands.payment.update_payment import UpdatePaymentCommandHandler
+from src.application.commands.payment.delete_payment import DeletePaymentCommandHandler
+from src.application.commands.order_part.create_order_part import CreateOrderPartCommandHandler
+from src.application.commands.order_part.read_all_order_part import ReadAllOrderPartCommandHandler
+from src.application.commands.order_part.read_order_part import ReadOrderPartCommandHandler
+from src.application.commands.order_part.update_order_part import UpdateOrderPartCommandHandler
+from src.application.commands.order_part.delete_order_part import DeleteOrderPartCommandHandler
 
 
 def interactors_provider() -> Provider:
@@ -18,7 +60,57 @@ def interactors_provider() -> Provider:
         UpdateAccessTokenCommandHandler,
 
         ReadAllEmployeeCommandHandler,
+        ReadEmployeeCommandHandler,
         CreateEmployeeCommandHandler,
         UpdateEmployeeCommandHandler,
+        DeleteEmployeeCommandHandler,
+
+        ReadAllClientCommandHandler,
+        ReadClientCommandHandler,
+        CreateClientCommandHandler,
+        UpdateClientCommandHandler,
+        DeleteClientCommandHandler,
+
+        ReadAllOrderCommandHandler,
+        ReadOrderCommandHandler,
+        CreateOrderCommandHandler,
+        UpdateOrderCommandHandler,
+        DeleteOrderCommandHandler,
+
+        ReadAllDeviceTypeCommandHandler,
+        ReadDeviceTypeCommandHandler,
+        CreateDeviceTypeCommandHandler,
+        UpdateDeviceTypeCommandHandler,
+        DeleteDeviceTypeCommandHandler,
+
+        ReadAllDeviceCommandHandler,
+        ReadDeviceCommandHandler,
+        CreateDeviceCommandHandler,
+        UpdateDeviceCommandHandler,
+        DeleteDeviceCommandHandler,
+
+        ReadAllPartCommandHandler,
+        ReadPartCommandHandler,
+        CreatePartCommandHandler,
+        UpdatePartCommandHandler,
+        DeletePartCommandHandler,
+
+        ReadAllWorkCommandHandler,
+        ReadWorkCommandHandler,
+        CreateWorkCommandHandler,
+        UpdateWorkCommandHandler,
+        DeleteWorkCommandHandler,
+
+        ReadAllPaymentCommandHandler,
+        ReadPaymentCommandHandler,
+        CreatePaymentCommandHandler,
+        UpdatePaymentCommandHandler,
+        DeletePaymentCommandHandler,
+
+        ReadAllOrderPartCommandHandler,
+        ReadOrderPartCommandHandler,
+        CreateOrderPartCommandHandler,
+        UpdateOrderPartCommandHandler,
+        DeleteOrderPartCommandHandler,
     )
     return provider

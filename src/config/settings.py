@@ -1,28 +1,59 @@
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from typing import Tuple, Type
+from pydantic import Field, BaseModel, AliasChoices
+from pydantic_settings import (
+    BaseSettings, 
+    SettingsConfigDict, 
+    PydanticBaseSettingsSource,
+    TomlConfigSettingsSource,
+    EnvSettingsSource,
+    DotEnvSettingsSource
+)
 
 from src.config.database import DatabaseSettings
 from src.config.keycloak import KeyCloakSettings
 
-
+class AppSettings(BaseModel):
+    """General application settings."""
+    title: str = "Remonline API"
+    version: str = "1.0.0"
+    debug: bool = False
+    uvicorn_host: str = Field("0.0.0.0", validation_alias=AliasChoices("uvicorn_host", "UVICORN_HOST"))
+    uvicorn_port: int = Field(8000, validation_alias=AliasChoices("uvicorn_port", "UVICORN_PORT"))
 
 class Settings(BaseSettings):
     """
     Main application settings that combines all configuration objects.
-
-    This class serves as a facade that provides access to all configuration
-    sections of the application. Each configuration section is responsible
-    for a specific domain (database, redis, cors, etc.).
     """
+    model_config = SettingsConfigDict(
+        toml_file="settings.toml",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_nested_delimiter="__",
+        env_prefix=""
+    )
 
+    app: AppSettings = Field(default_factory=AppSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     keycloak: KeyCloakSettings = Field(default_factory=KeyCloakSettings)
 
-    @property
-    def database_url(self):
-        return str(self.database.database_url)
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            env_settings,
+            dotenv_settings,
+            init_settings,
+            TomlConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
+    @property
+    def database_url(self) -> str:
+        return self.database.database_url

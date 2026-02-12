@@ -1,18 +1,15 @@
-from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional, Protocol
 from src.entities.clients.models import Client, ClientID, ClientUUID
 
-class ClientReader(ABC):
-    """Read-only repository for Client entities."""
+class ClientReader(Protocol):
+    async def read_by_id(self, client_id: ClientID) -> Optional[Client]:
+        ...
 
-    @abstractmethod
-    async def read_by_oid(self, client_oid: ClientID) -> Client | None: ...
+    async def read_by_uuid(self, client_uuid: ClientUUID) -> Optional[Client]:
+        ...
 
-    @abstractmethod
-    async def read_by_uuid(self, client_uuid: ClientUUID) -> Client | None: ...
+    async def read_by_phone(self, phone: str) -> Optional[Client]:
+        ...
 
-    @abstractmethod
-    async def read_by_phone(self, phone: str) -> Client | None: ...
-
-    @abstractmethod
-    async def read_all_active(self) -> List[Client]: ...
+    async def read_all_active(self) -> List[Client]:
+        ...

@@ -1,101 +1,53 @@
 from dataclasses import dataclass
-
 from src.application.errors._base import AuthenticationError, EntityNotFoundError, ConflictError
 
-
-@dataclass
+@dataclass(eq=False)
 class InvalidPasswordError(AuthenticationError):
+    message: str = "Invalid password"
 
-    @property
-    def message(self) -> str:
-        return "Invalid password"
-
-
-@dataclass
+@dataclass(eq=False)
 class HashesDoestNotMatchError(AuthenticationError):
+    message: str = "Calculated hash does not match the received hash"
 
-    @property
-    def message(self) -> str:
-        return "Calculated hash does not match the received hash"
-
-
-@dataclass
+@dataclass(eq=False)
 class TokenInvalidError(AuthenticationError):
+    message: str = "Invalid or expired access token"
 
-    @property
-    def message(self) -> str:
-        return "Invalid or expired access token"
-
-
-@dataclass
+@dataclass(eq=False)
 class AuthDateExpiredError(AuthenticationError):
+    message: str = "Auth date expired"
 
-    @property
-    def message(self) -> str:
-        return "Auth date expired"
-
-
-@dataclass
+@dataclass(eq=False)
 class InvalidRefreshTokenError(AuthenticationError):
+    message: str = "Invalid refresh token"
 
-    @property
-    def message(self) -> str:
-        return "Invalid refresh token"
-
-
-@dataclass
+@dataclass(eq=False)
 class EmailNotFoundError(EntityNotFoundError):
+    message: str = "Email is not found"
 
-    @property
-    def message(self) -> str:
-        return "Email is not found"
-
-
-@dataclass
+@dataclass(eq=False)
 class UserNotFoundError(EntityNotFoundError):
+    message: str = "User is not found"
 
-    @property
-    def message(self) -> str:
-        return "User is not found"
-
-
-@dataclass
+@dataclass(eq=False)
 class EmailAlreadyExistsError(ConflictError):
+    message: str = "Email already exists"
 
-    @property
-    def message(self) -> str:
-        return "Email already exists"
-
-
-@dataclass
+@dataclass(eq=False)
 class InvalidAccessTokenError(AuthenticationError):
+    message: str = "Invalid access token"
 
-    @property
-    def message(self) -> str:
-        return "Invalid access token"
-
-@dataclass
+@dataclass(eq=False)
 class InvalidAccessTokenErrorPerm(AuthenticationError):
+    message: str = "You are not allowed to perform this action"
 
-    @property
-    def message(self) -> str:
-        return "You are not allowed to perform this action"
-
-
-@dataclass
+@dataclass(eq=False)
 class NotFoundTokenError(AuthenticationError):
+    message: str = "Token not found"
 
-    @property
-    def message(self) -> str:
-        return "Token not found"
-
-
-@dataclass
+@dataclass(eq=False)
 class LifeTimeLiveTokenError(AuthenticationError):
-
-    @property
-    def message(self) -> str:
-        return "Token expired! Next email in your mailbox"
+    message: str = "Token expired! Next email in your mailbox"
 
 
 @dataclass

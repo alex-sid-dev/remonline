@@ -4,7 +4,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.ports.transaction import Transaction, EntitySaver
-from src.entities.base_entity import BaseEntity, OIDType, OUUIDType
+from src.entities.base_entity import BaseEntity, IDType, UUIDType
 
 
 class TransactionAlchemy(Transaction):
@@ -28,10 +28,10 @@ class EntitySaverAlchemy(EntitySaver):
         self._session: Final[AsyncSession] = session
         self._logger = structlog.get_logger("db").bind(service="db")
 
-    def add_one(self, entity: BaseEntity[OIDType, OUUIDType]) -> None:
+    def add_one(self, entity: BaseEntity[IDType, UUIDType]) -> None:
         self._session.add(entity)
-        self._logger.info("Added entity", entity_id=str(entity.oid))
+        self._logger.info("Added entity", entity_id=str(entity.id))
 
-    async def delete(self, entity: BaseEntity[OIDType, OUUIDType]) -> None:
+    async def delete(self, entity: BaseEntity[IDType, UUIDType]) -> None:
         await self._session.delete(entity)
-        self._logger.info("Deleted entity", entity_id=str(entity.oid))
+        self._logger.info("Deleted entity", entity_id=str(entity.id))
