@@ -18,6 +18,12 @@ from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("create_order").bind(service="order")
 
+
+@dataclass
+class CreateOrderCommandResponse:
+    uuid: UUID
+
+
 @dataclass
 class CreateOrderCommand:
     client_uuid: UUID
@@ -27,6 +33,7 @@ class CreateOrderCommand:
     assigned_employee_uuid: Optional[UUID] = None
     status: str = "new"
     price: Optional[float] = None
+
 
 class CreateOrderCommandHandler(BaseCommandHandler):
     def __init__(
@@ -47,20 +54,20 @@ class CreateOrderCommandHandler(BaseCommandHandler):
         self._device_reader = device_reader
         self._employee_reader = employee_reader
 
-    async def run(self, data: CreateOrderCommand, current_employee: Employee) -> None:
+    async def run(self, data: CreateOrderCommand) -> CreateOrderCommandResponse:
         client = await self._client_reader.read_by_uuid(ClientUUID(data.client_uuid))
         if not client:
-            raise EntityNotFoundError(f"Client with uuid {data.client_uuid} not found")
+            raise EntityNotFoundError(message=f"Client with uuid {data.client_uuid} not found")
 
         device = await self._device_reader.read_by_uuid(DeviceUUID(data.device_uuid))
         if not device:
-            raise EntityNotFoundError(f"Device with uuid {data.device_uuid} not found")
+            raise EntityNotFoundError(message=f"Device with uuid {data.device_uuid} not found")
 
         assigned_employee_id = None
         if data.assigned_employee_uuid:
             assigned_employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.assigned_employee_uuid))
             if not assigned_employee:
-                raise EntityNotFoundError(f"Employee with uuid {data.assigned_employee_uuid} not found")
+                raise EntityNotFoundError(message=f"Employee with uuid {data.assigned_employee_uuid} not found")
             assigned_employee_id = assigned_employee.id
 
         order = self._order_service.create_order(
@@ -76,3 +83,6 @@ class CreateOrderCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(order)
         await self._transaction.commit()
         logger.info("Order created successfully", order_uuid=str(order.uuid))
+        return CreateOrderCommandResponse(
+            uuid=order.uuid,
+        )

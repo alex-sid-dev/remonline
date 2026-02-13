@@ -15,6 +15,12 @@ from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("create_work").bind(service="work")
 
+
+@dataclass
+class CreateWorkCommandResponse:
+    uuid: UUID
+
+
 @dataclass
 class CreateWorkCommand:
     order_uuid: UUID
@@ -22,6 +28,7 @@ class CreateWorkCommand:
     employee_uuid: Optional[UUID] = None
     description: Optional[str] = None
     price: Optional[float] = None
+
 
 class CreateWorkCommandHandler(BaseCommandHandler):
     def __init__(
@@ -40,16 +47,16 @@ class CreateWorkCommandHandler(BaseCommandHandler):
         self._order_reader = order_reader
         self._employee_reader = employee_reader
 
-    async def run(self, data: CreateWorkCommand, current_employee: Employee) -> None:
+    async def run(self, data: CreateWorkCommand) -> CreateWorkCommandResponse:
         order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
         if not order:
-            raise EntityNotFoundError(f"Order with uuid {data.order_uuid} not found")
+            raise EntityNotFoundError(message=f"Order with uuid {data.order_uuid} not found")
 
         employee_id = None
         if data.employee_uuid:
             employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.employee_uuid))
             if not employee:
-                raise EntityNotFoundError(f"Employee with uuid {data.employee_uuid} not found")
+                raise EntityNotFoundError(message=f"Employee with uuid {data.employee_uuid} not found")
             employee_id = employee.id
 
         work = self._work_service.create_work(
@@ -62,3 +69,6 @@ class CreateWorkCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(work)
         await self._transaction.commit()
         logger.info("Work created successfully", work_uuid=str(work.uuid))
+        return CreateWorkCommandResponse(
+            uuid=work.uuid,
+        )

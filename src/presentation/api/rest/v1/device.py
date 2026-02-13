@@ -5,8 +5,10 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
-from src.application.commands.device.create_device import CreateDeviceCommandHandler, CreateDeviceCommand
-from src.application.commands.device.read_all_device import ReadAllDeviceCommandHandler, ReadAllDeviceCommand, ReadDeviceResponse
+from src.application.commands.device.create_device import CreateDeviceCommandHandler, CreateDeviceCommand, \
+    CreateDeviceCommandResponse
+from src.application.commands.device.read_all_device import ReadAllDeviceCommandHandler, ReadAllDeviceCommand, \
+    ReadDeviceResponse
 from src.application.commands.device.read_device import ReadDeviceCommandHandler, ReadDeviceCommand
 from src.application.commands.device.update_device import UpdateDeviceCommandHandler, UpdateDeviceCommand
 from src.application.commands.device.delete_device import DeleteDeviceCommandHandler, DeleteDeviceCommand
@@ -19,8 +21,10 @@ router = APIRouter(prefix="/device", tags=["Device"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.device").bind(service="device")
 
-role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+role_checker = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -36,6 +40,7 @@ async def get_all_devices(
     logger.info("ReadAll devices successfully")
     return result
 
+
 @router.post(
     path="/create",
     status_code=status.HTTP_201_CREATED,
@@ -44,7 +49,7 @@ async def create_device(
         request_data: CreateDeviceSchema,
         interactor: FromDishka[CreateDeviceCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreateDeviceCommandResponse:
     logger.info("Create device endpoint called", brand=request_data.brand, model=request_data.model)
     dto = CreateDeviceCommand(
         client_uuid=request_data.client_uuid,
@@ -54,8 +59,10 @@ async def create_device(
         serial_number=request_data.serial_number,
         description=request_data.description
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Device created successfully")
+    return result
+
 
 @router.patch(
     path="/update/{device_uuid}",
@@ -76,6 +83,7 @@ async def update_device(
     await interactor.run(dto, current_employee)
     logger.info("Device updated successfully", device_uuid=str(device_uuid))
 
+
 @router.get(
     path="/{device_uuid}",
     status_code=status.HTTP_200_OK,
@@ -90,6 +98,7 @@ async def get_device(
     result = await interactor.run(dto, current_employee)
     logger.info("Read device successfully", device_uuid=str(device_uuid))
     return result
+
 
 @router.delete(
     path="/{device_uuid}",

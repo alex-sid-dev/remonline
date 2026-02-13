@@ -5,11 +5,15 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
-from src.application.commands.device_type.create_device_type import CreateDeviceTypeCommandHandler, CreateDeviceTypeCommand
-from src.application.commands.device_type.read_all_device_type import ReadAllDeviceTypeCommandHandler, ReadAllDeviceTypeCommand, ReadDeviceTypeResponse
+from src.application.commands.device_type.create_device_type import CreateDeviceTypeCommandHandler, \
+    CreateDeviceTypeCommand, CreateDeviceTypeCommandResponse
+from src.application.commands.device_type.read_all_device_type import ReadAllDeviceTypeCommandHandler, \
+    ReadAllDeviceTypeCommand, ReadDeviceTypeResponse
 from src.application.commands.device_type.read_device_type import ReadDeviceTypeCommandHandler, ReadDeviceTypeCommand
-from src.application.commands.device_type.update_device_type import UpdateDeviceTypeCommandHandler, UpdateDeviceTypeCommand
-from src.application.commands.device_type.delete_device_type import DeleteDeviceTypeCommandHandler, DeleteDeviceTypeCommand
+from src.application.commands.device_type.update_device_type import UpdateDeviceTypeCommandHandler, \
+    UpdateDeviceTypeCommand
+from src.application.commands.device_type.delete_device_type import DeleteDeviceTypeCommandHandler, \
+    DeleteDeviceTypeCommand
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.device_type.create_device_type import CreateDeviceTypeSchema
 from src.presentation.api.common.schemas.device_type.update_device_type import UpdateDeviceTypeSchema
@@ -19,8 +23,10 @@ router = APIRouter(prefix="/device_type", tags=["Device Type"], route_class=Dish
 
 logger = structlog.get_logger("api.device_type").bind(service="device_type")
 
-role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+role_checker = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -36,6 +42,7 @@ async def get_all_device_types(
     logger.info("ReadAll device types successfully")
     return result
 
+
 @router.post(
     path="/create",
     status_code=status.HTTP_201_CREATED,
@@ -44,14 +51,16 @@ async def create_device_type(
         request_data: CreateDeviceTypeSchema,
         interactor: FromDishka[CreateDeviceTypeCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreateDeviceTypeCommandResponse:
     logger.info("Create device type endpoint called", name=request_data.name)
     dto = CreateDeviceTypeCommand(
         name=request_data.name,
         description=request_data.description
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Device type created successfully")
+    return result
+
 
 @router.patch(
     path="/update/{device_type_uuid}",
@@ -72,6 +81,7 @@ async def update_device_type(
     await interactor.run(dto, current_employee)
     logger.info("Device type updated successfully", device_type_uuid=str(device_type_uuid))
 
+
 @router.get(
     path="/{device_type_uuid}",
     status_code=status.HTTP_200_OK,
@@ -86,6 +96,7 @@ async def get_device_type(
     result = await interactor.run(dto, current_employee)
     logger.info("Read device type successfully", device_type_uuid=str(device_type_uuid))
     return result
+
 
 @router.delete(
     path="/{device_type_uuid}",

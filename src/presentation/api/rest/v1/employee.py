@@ -6,8 +6,10 @@ from dishka.integrations.fastapi import DishkaRoute, inject
 from fastapi import APIRouter, Depends
 from starlette import status
 
-from src.application.commands.employee.create_employee import CreateEmployeeCommand, CreateEmployeeCommandHandler
-from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler, ReadAllEmployeeCommand, ReadEmployeeResponse
+from src.application.commands.employee.create_employee import CreateEmployeeCommand, CreateEmployeeCommandHandler, \
+    CreateEmployeeCommandResponse
+from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler, ReadAllEmployeeCommand, \
+    ReadEmployeeResponse
 from src.application.commands.employee.read_employee import ReadEmployeeCommandHandler, ReadEmployeeCommand
 from src.application.commands.employee.update_employee import UpdateEmployeeCommand, UpdateEmployeeCommandHandler
 from src.application.commands.employee.delete_employee import DeleteEmployeeCommandHandler, DeleteEmployeeCommand
@@ -23,6 +25,7 @@ logger = structlog.get_logger("api.employee").bind(service="employee")
 
 role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -47,7 +50,7 @@ async def create_employee(
         request_data: CreateEmployeeSchema,
         interactor: FromDishka[CreateEmployeeCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreateEmployeeCommandResponse:
     logger.info("Create employee endpoint called", phone=request_data.phone)
     dto = CreateEmployeeCommand(
         user_uuid=request_data.user_uuid,
@@ -55,8 +58,9 @@ async def create_employee(
         phone=request_data.phone,
         position=request_data.position,
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Create employee registered successfully", phone=request_data.phone)
+    return result
 
 
 @router.patch(
@@ -78,6 +82,7 @@ async def update_employee(
     await interactor.run(dto, current_employee)
     logger.info("Update employee registered successfully", employee_uuid=str(employee_uuid))
 
+
 @router.get(
     path="/{employee_uuid}",
     status_code=status.HTTP_200_OK,
@@ -92,6 +97,7 @@ async def get_employee(
     result = await interactor.run(dto, current_employee)
     logger.info("Read employee successfully", employee_uuid=str(employee_uuid))
     return result
+
 
 @router.delete(
     path="/{employee_uuid}",

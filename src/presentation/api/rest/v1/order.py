@@ -5,8 +5,10 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
-from src.application.commands.order.create_order import CreateOrderCommandHandler, CreateOrderCommand
-from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler, ReadAllOrderCommand, ReadOrderResponse
+from src.application.commands.order.create_order import CreateOrderCommandHandler, CreateOrderCommand, \
+    CreateOrderCommandResponse
+from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler, ReadAllOrderCommand, \
+    ReadOrderResponse
 from src.application.commands.order.read_order import ReadOrderCommandHandler, ReadOrderCommand
 from src.application.commands.order.update_order import UpdateOrderCommandHandler, UpdateOrderCommand
 from src.application.commands.order.delete_order import DeleteOrderCommandHandler, DeleteOrderCommand
@@ -19,8 +21,10 @@ router = APIRouter(prefix="/order", tags=["Order"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.order").bind(service="order")
 
-role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+role_checker = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -36,6 +40,7 @@ async def get_all_orders(
     logger.info("ReadAll orders successfully")
     return result
 
+
 @router.post(
     path="/create",
     status_code=status.HTTP_201_CREATED,
@@ -44,7 +49,7 @@ async def create_order(
         request_data: CreateOrderSchema,
         interactor: FromDishka[CreateOrderCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreateOrderCommandResponse:
     logger.info("Create order endpoint called", client_uuid=str(request_data.client_uuid))
     dto = CreateOrderCommand(
         client_uuid=request_data.client_uuid,
@@ -55,8 +60,10 @@ async def create_order(
         status=request_data.status,
         price=request_data.price
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Order created successfully")
+    return result
+
 
 @router.patch(
     path="/update/{order_uuid}",
@@ -77,6 +84,7 @@ async def update_order(
     await interactor.run(dto, current_employee)
     logger.info("Order updated successfully", order_uuid=str(order_uuid))
 
+
 @router.get(
     path="/{order_uuid}",
     status_code=status.HTTP_200_OK,
@@ -91,6 +99,7 @@ async def get_order(
     result = await interactor.run(dto, current_employee)
     logger.info("Read order successfully", order_uuid=str(order_uuid))
     return result
+
 
 @router.delete(
     path="/{order_uuid}",

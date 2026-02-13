@@ -5,8 +5,10 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
-from src.application.commands.order_part.create_order_part import CreateOrderPartCommandHandler, CreateOrderPartCommand
-from src.application.commands.order_part.read_all_order_part import ReadAllOrderPartCommandHandler, ReadAllOrderPartCommand, ReadOrderPartResponse
+from src.application.commands.order_part.create_order_part import CreateOrderPartCommandHandler, CreateOrderPartCommand, \
+    CreateOrderPartCommandResponse
+from src.application.commands.order_part.read_all_order_part import ReadAllOrderPartCommandHandler, \
+    ReadAllOrderPartCommand, ReadOrderPartResponse
 from src.application.commands.order_part.read_order_part import ReadOrderPartCommandHandler, ReadOrderPartCommand
 from src.application.commands.order_part.update_order_part import UpdateOrderPartCommandHandler, UpdateOrderPartCommand
 from src.application.commands.order_part.delete_order_part import DeleteOrderPartCommandHandler, DeleteOrderPartCommand
@@ -19,8 +21,10 @@ router = APIRouter(prefix="/order_part", tags=["Order Part"], route_class=Dishka
 
 logger = structlog.get_logger("api.order_part").bind(service="order_part")
 
-role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+role_checker = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -36,6 +40,7 @@ async def get_all_order_parts(
     logger.info("ReadAll order parts successfully")
     return result
 
+
 @router.post(
     path="/create",
     status_code=status.HTTP_201_CREATED,
@@ -44,7 +49,7 @@ async def create_order_part(
         request_data: CreateOrderPartSchema,
         interactor: FromDishka[CreateOrderPartCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreateOrderPartCommandResponse:
     logger.info("Create order part endpoint called")
     dto = CreateOrderPartCommand(
         order_uuid=request_data.order_uuid,
@@ -52,8 +57,10 @@ async def create_order_part(
         qty=request_data.qty,
         price=request_data.price
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Order part created successfully")
+    return result
+
 
 @router.patch(
     path="/update/{order_part_uuid}",
@@ -74,6 +81,7 @@ async def update_order_part(
     await interactor.run(dto, current_employee)
     logger.info("Order part updated successfully", order_part_uuid=str(order_part_uuid))
 
+
 @router.get(
     path="/{order_part_uuid}",
     status_code=status.HTTP_200_OK,
@@ -88,6 +96,7 @@ async def get_order_part(
     result = await interactor.run(dto, current_employee)
     logger.info("Read order part successfully", order_part_uuid=str(order_part_uuid))
     return result
+
 
 @router.delete(
     path="/{order_part_uuid}",

@@ -5,8 +5,10 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
-from src.application.commands.payment.create_payment import CreatePaymentCommandHandler, CreatePaymentCommand
-from src.application.commands.payment.read_all_payment import ReadAllPaymentCommandHandler, ReadAllPaymentCommand, ReadPaymentResponse
+from src.application.commands.payment.create_payment import CreatePaymentCommandHandler, CreatePaymentCommand, \
+    CreatePaymentCommandResponse
+from src.application.commands.payment.read_all_payment import ReadAllPaymentCommandHandler, ReadAllPaymentCommand, \
+    ReadPaymentResponse
 from src.application.commands.payment.read_payment import ReadPaymentCommandHandler, ReadPaymentCommand
 from src.application.commands.payment.update_payment import UpdatePaymentCommandHandler, UpdatePaymentCommand
 from src.application.commands.payment.delete_payment import DeletePaymentCommandHandler, DeletePaymentCommand
@@ -18,8 +20,10 @@ router = APIRouter(prefix="/payment", tags=["Payment"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.payment").bind(service="payment")
 
-role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+role_checker = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -35,6 +39,7 @@ async def get_all_payments(
     logger.info("ReadAll payments successfully")
     return result
 
+
 @router.post(
     path="/create",
     status_code=status.HTTP_201_CREATED,
@@ -43,7 +48,7 @@ async def create_payment(
         request_data: CreatePaymentSchema,
         interactor: FromDishka[CreatePaymentCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreatePaymentCommandResponse:
     logger.info("Create payment endpoint called", amount=request_data.amount)
     dto = CreatePaymentCommand(
         order_uuid=request_data.order_uuid,
@@ -52,8 +57,10 @@ async def create_payment(
         employee_uuid=request_data.employee_uuid,
         comment=request_data.comment
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Payment created successfully")
+    return result
+
 
 @router.patch(
     path="/update/{payment_uuid}",
@@ -74,6 +81,7 @@ async def update_payment(
     await interactor.run(dto, current_employee)
     logger.info("Payment updated successfully", payment_uuid=str(payment_uuid))
 
+
 @router.get(
     path="/{payment_uuid}",
     status_code=status.HTTP_200_OK,
@@ -88,6 +96,7 @@ async def get_payment(
     result = await interactor.run(dto, current_employee)
     logger.info("Read payment successfully", payment_uuid=str(payment_uuid))
     return result
+
 
 @router.delete(
     path="/{payment_uuid}",

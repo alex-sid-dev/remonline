@@ -5,7 +5,8 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
-from src.application.commands.work.create_work import CreateWorkCommandHandler, CreateWorkCommand
+from src.application.commands.work.create_work import CreateWorkCommandHandler, CreateWorkCommand, \
+    CreateWorkCommandResponse
 from src.application.commands.work.read_all_work import ReadAllWorkCommandHandler, ReadAllWorkCommand, ReadWorkResponse
 from src.application.commands.work.read_work import ReadWorkCommandHandler, ReadWorkCommand
 from src.application.commands.work.update_work import UpdateWorkCommandHandler, UpdateWorkCommand
@@ -18,8 +19,10 @@ router = APIRouter(prefix="/work", tags=["Work"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.work").bind(service="work")
 
-role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+role_checker = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+
 
 @router.get(
     path="/all",
@@ -35,6 +38,7 @@ async def get_all_works(
     logger.info("ReadAll works successfully")
     return result
 
+
 @router.post(
     path="/create",
     status_code=status.HTTP_201_CREATED,
@@ -43,7 +47,7 @@ async def create_work(
         request_data: CreateWorkSchema,
         interactor: FromDishka[CreateWorkCommandHandler],
         current_employee: CurrentEmployee,
-) -> None:
+) -> CreateWorkCommandResponse:
     logger.info("Create work endpoint called", title=request_data.title)
     dto = CreateWorkCommand(
         order_uuid=request_data.order_uuid,
@@ -52,8 +56,10 @@ async def create_work(
         description=request_data.description,
         price=request_data.price
     )
-    await interactor.run(dto, current_employee)
+    result = await interactor.run(dto)
     logger.info("Work created successfully")
+    return result
+
 
 @router.patch(
     path="/update/{work_uuid}",
@@ -74,6 +80,7 @@ async def update_work(
     await interactor.run(dto, current_employee)
     logger.info("Work updated successfully", work_uuid=str(work_uuid))
 
+
 @router.get(
     path="/{work_uuid}",
     status_code=status.HTTP_200_OK,
@@ -88,6 +95,7 @@ async def get_work(
     result = await interactor.run(dto, current_employee)
     logger.info("Read work successfully", work_uuid=str(work_uuid))
     return result
+
 
 @router.delete(
     path="/{work_uuid}",

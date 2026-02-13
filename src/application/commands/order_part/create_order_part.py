@@ -16,12 +16,19 @@ from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("create_order_part").bind(service="order_part")
 
+
+@dataclass
+class CreateOrderPartCommandResponse:
+    uuid: UUID
+
+
 @dataclass
 class CreateOrderPartCommand:
     order_uuid: UUID
     part_uuid: UUID
     qty: int
     price: Optional[float] = None
+
 
 class CreateOrderPartCommandHandler(BaseCommandHandler):
     def __init__(
@@ -40,14 +47,14 @@ class CreateOrderPartCommandHandler(BaseCommandHandler):
         self._order_reader = order_reader
         self._part_reader = part_reader
 
-    async def run(self, data: CreateOrderPartCommand, current_employee: Employee) -> None:
+    async def run(self, data: CreateOrderPartCommand) -> CreateOrderPartCommandResponse:
         order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
         if not order:
-            raise EntityNotFoundError(f"Order with uuid {data.order_uuid} not found")
+            raise EntityNotFoundError(message=f"Order with uuid {data.order_uuid} not found")
 
         part = await self._part_reader.read_by_uuid(PartUUID(data.part_uuid))
         if not part:
-            raise EntityNotFoundError(f"Part with uuid {data.part_uuid} not found")
+            raise EntityNotFoundError(message=f"Part with uuid {data.part_uuid} not found")
 
         order_part = self._order_part_service.create_order_part(
             order_id=order.id,
@@ -58,3 +65,6 @@ class CreateOrderPartCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(order_part)
         await self._transaction.commit()
         logger.info("Order part created successfully", order_part_uuid=str(order_part.uuid))
+        return CreateOrderPartCommandResponse(
+            uuid=order_part.uuid,
+        )

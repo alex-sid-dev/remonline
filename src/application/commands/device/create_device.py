@@ -16,6 +16,12 @@ from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("create_device").bind(service="device")
 
+
+@dataclass
+class CreateDeviceCommandResponse:
+    uuid: UUID
+
+
 @dataclass
 class CreateDeviceCommand:
     client_uuid: UUID
@@ -24,6 +30,7 @@ class CreateDeviceCommand:
     model: str
     serial_number: Optional[str] = None
     description: Optional[str] = None
+
 
 class CreateDeviceCommandHandler(BaseCommandHandler):
     def __init__(
@@ -42,14 +49,14 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
         self._client_reader = client_reader
         self._device_type_reader = device_type_reader
 
-    async def run(self, data: CreateDeviceCommand, current_employee: Employee) -> None:
+    async def run(self, data: CreateDeviceCommand) -> CreateDeviceCommandResponse:
         client = await self._client_reader.read_by_uuid(ClientUUID(data.client_uuid))
         if not client:
-            raise EntityNotFoundError(f"Client with uuid {data.client_uuid} not found")
+            raise EntityNotFoundError(message=f"Client with uuid {data.client_uuid} not found")
 
         device_type = await self._device_type_reader.read_by_uuid(DeviceTypeUUID(data.type_uuid))
         if not device_type:
-            raise EntityNotFoundError(f"Device type with uuid {data.type_uuid} not found")
+            raise EntityNotFoundError(message=f"Device type with uuid {data.type_uuid} not found")
 
         device = self._device_service.create_device(
             client_id=client.id,
@@ -62,3 +69,6 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(device)
         await self._transaction.commit()
         logger.info("Device created successfully", device_uuid=str(device.uuid))
+        return CreateDeviceCommandResponse(
+            uuid=device.uuid,
+        )

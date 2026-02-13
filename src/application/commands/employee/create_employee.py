@@ -17,6 +17,11 @@ logger = structlog.get_logger("create_employee").bind(service="employee")
 
 
 @dataclass
+class CreateEmployeeCommandResponse:
+    uuid: UUID
+
+
+@dataclass
 class CreateEmployeeCommand:
     user_uuid: UUID
     full_name: str
@@ -39,7 +44,7 @@ class CreateEmployeeCommandHandler(BaseCommandHandler):
         self._employee_service = employee_service
         self._user_reader = user_reader
 
-    async def run(self, data: CreateEmployeeCommand, current_employee: Employee) -> None:
+    async def run(self, data: CreateEmployeeCommand) -> CreateEmployeeCommandResponse:
         user = await self._user_reader.read_by_uuid(UserUUID(data.user_uuid))
         if not user:
             raise EntityNotFoundError(message=f"User with uuid {data.user_uuid} not found")
@@ -58,3 +63,6 @@ class CreateEmployeeCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(employee)
         await self._transaction.commit()
         logger.info("Employee created successfully", employee_uuid=str(employee.uuid))
+        return CreateEmployeeCommandResponse(
+            uuid=employee.uuid,
+        )

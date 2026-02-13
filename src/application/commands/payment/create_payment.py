@@ -15,6 +15,12 @@ from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("create_payment").bind(service="payment")
 
+
+@dataclass
+class CreatePaymentCommandResponse:
+    uuid: UUID
+
+
 @dataclass
 class CreatePaymentCommand:
     order_uuid: UUID
@@ -22,6 +28,7 @@ class CreatePaymentCommand:
     payment_method: str
     employee_uuid: Optional[UUID] = None
     comment: Optional[str] = None
+
 
 class CreatePaymentCommandHandler(BaseCommandHandler):
     def __init__(
@@ -40,16 +47,16 @@ class CreatePaymentCommandHandler(BaseCommandHandler):
         self._order_reader = order_reader
         self._employee_reader = employee_reader
 
-    async def run(self, data: CreatePaymentCommand, current_employee: Employee) -> None:
+    async def run(self, data: CreatePaymentCommand) -> CreatePaymentCommandResponse:
         order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
         if not order:
-            raise EntityNotFoundError(f"Order with uuid {data.order_uuid} not found")
+            raise EntityNotFoundError(message="Order with uuid {data.order_uuid} not found")
 
         employee_id = None
         if data.employee_uuid:
             employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.employee_uuid))
             if not employee:
-                raise EntityNotFoundError(f"Employee with uuid {data.employee_uuid} not found")
+                raise EntityNotFoundError(message="Employee with uuid {data.employee_uuid} not found")
             employee_id = employee.id
 
         payment = self._payment_service.create_payment(
@@ -62,3 +69,6 @@ class CreatePaymentCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(payment)
         await self._transaction.commit()
         logger.info("Payment created successfully", payment_uuid=str(payment.uuid))
+        return CreatePaymentCommandResponse(
+            uuid=payment.uuid,
+        )
