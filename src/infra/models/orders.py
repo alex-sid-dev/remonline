@@ -1,7 +1,13 @@
 from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID
 from sqlalchemy.orm import relationship
 
+from src.entities.clients.models import Client
+from src.entities.devices.models import Device
+from src.entities.employees.models import Employee
 from src.entities.order_comments.models import OrderComment
+from src.entities.order_parts.models import OrderPart
+from src.entities.payments.models import Payment
+from src.entities.works.models import Work
 from src.infra.models._base import mapper_registry
 from src.entities.orders.models import Order
 
@@ -40,11 +46,32 @@ def map_orders_table() -> None:
             "creator_id": orders_table.c.creator_id,
             "assigned_employee_id": orders_table.c.assigned_employee_id,
 
+            # Автоподгрузка связанных сущностей
+            "client": relationship(Client, lazy="selectin"),
+            "device": relationship(Device, lazy="selectin"),
+            "creator": relationship(Employee, foreign_keys=[orders_table.c.creator_id], lazy="selectin"),
+            "assigned_employee": relationship(Employee, foreign_keys=[orders_table.c.assigned_employee_id],
+                                              lazy="selectin"),
+
             "comments": relationship(
                 OrderComment,
                 back_populates="order",
                 cascade="all, delete-orphan",
                 lazy="selectin"
-            )
+            ),
+            "payments": relationship(Payment, back_populates="order", lazy="selectin"),
+            # --- НОВОЕ: Запчасти и Работы ---
+            "parts": relationship(
+                OrderPart,
+                back_populates="order",
+                lazy="selectin",
+                cascade="all, delete-orphan"  # Если удалим заказ, удалятся и записи о запчастях
+            ),
+            "works": relationship(
+                Work,
+                back_populates="order",
+                lazy="selectin",
+                cascade="all, delete-orphan"  # Если удалим заказ, удалятся и работы
+            ),
         },
     )

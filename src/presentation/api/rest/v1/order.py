@@ -9,7 +9,7 @@ from src.application.commands.order.create_order import CreateOrderCommandHandle
     CreateOrderCommandResponse
 from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler, ReadAllOrderCommand, \
     ReadOrderResponse
-from src.application.commands.order.read_order import ReadOrderCommandHandler, ReadOrderCommand
+from src.application.commands.order.read_order import ReadOrderCommandHandler, ReadOrderCommand, ReadOrderOneResponse
 from src.application.commands.order.update_order import UpdateOrderCommandHandler, UpdateOrderCommand
 from src.application.commands.order.delete_order import DeleteOrderCommandHandler, DeleteOrderCommand
 from src.entities.employees.models import Employee, EmployeePosition
@@ -60,7 +60,7 @@ async def create_order(
         status=request_data.status,
         price=request_data.price
     )
-    result = await interactor.run(dto)
+    result = await interactor.run(dto, current_employee)
     logger.info("Order created successfully")
     return result
 
@@ -93,7 +93,7 @@ async def get_order(
         order_uuid: UUID,
         interactor: FromDishka[ReadOrderCommandHandler],
         current_employee: CurrentEmployee,
-) -> ReadOrderResponse:
+) -> ReadOrderOneResponse:
     logger.info("Read order endpoint called", order_uuid=str(order_uuid))
     dto = ReadOrderCommand(uuid=order_uuid)
     result = await interactor.run(dto, current_employee)

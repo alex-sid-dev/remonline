@@ -1,4 +1,8 @@
 from sqlalchemy import Table, Column, BigInteger, Float, ForeignKey, DateTime, func, UUID, Index
+from sqlalchemy.orm import relationship
+
+from src.entities.orders.models import Order
+from src.entities.parts.models import Part
 from src.infra.models._base import mapper_registry
 from src.entities.order_parts.models import OrderPart
 
@@ -25,5 +29,11 @@ def map_order_parts_table() -> None:
             "uuid": order_parts_table.c.order_part_uuid,
             "order_id": order_parts_table.c.order_id,
             "part_id": order_parts_table.c.part_id,
+            "qty": order_parts_table.c.qty,
+            "price": order_parts_table.c.price,
+
+            # Автоподгрузка информации о запчасти из справочника
+            "part_info": relationship(Part, lazy="selectin"),
+            "order": relationship(Order, back_populates="parts"),
         },
     )

@@ -54,7 +54,7 @@ class CreateOrderCommandHandler(BaseCommandHandler):
         self._device_reader = device_reader
         self._employee_reader = employee_reader
 
-    async def run(self, data: CreateOrderCommand) -> CreateOrderCommandResponse:
+    async def run(self, data: CreateOrderCommand, current_employee) -> CreateOrderCommandResponse:
         client = await self._client_reader.read_by_uuid(ClientUUID(data.client_uuid))
         if not client:
             raise EntityNotFoundError(message=f"Client with uuid {data.client_uuid} not found")

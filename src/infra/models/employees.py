@@ -2,7 +2,9 @@ from sqlalchemy import Table, Column, BigInteger, ForeignKey, String, Boolean, f
 from sqlalchemy.orm import relationship
 
 from src.entities.employees.models import Employee
+from src.entities.orders.models import Order
 from src.infra.models._base import mapper_registry
+from src.infra.models.orders import orders_table
 
 employees_table = Table(
     "employees",
@@ -45,5 +47,18 @@ def map_employee_table() -> None:
             "id": employees_table.c.employee_id,
             "uuid": employees_table.c.employee_uuid,
             "user_id": employees_table.c.user_id,
+            "created_orders": relationship(
+                Order,
+                primaryjoin=employees_table.c.employee_id == orders_table.c.creator_id,
+                back_populates="creator",
+                viewonly=True  # Чтобы избежать конфликтов при записи
+            ),
+            # Заказы, назначенные на сотрудника
+            "assigned_orders": relationship(
+                Order,
+                primaryjoin=employees_table.c.employee_id == orders_table.c.assigned_employee_id,
+                back_populates="assigned_employee",
+                viewonly=True
+            )
         },
     )

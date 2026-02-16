@@ -1,4 +1,8 @@
 from sqlalchemy import Table, Column, BigInteger, Float, String, DateTime, ForeignKey, func, Index, UUID
+from sqlalchemy.orm import relationship
+
+from src.entities.employees.models import Employee
+from src.entities.orders.models import Order
 from src.infra.models._base import mapper_registry
 from src.entities.payments.models import Payment
 
@@ -30,5 +34,15 @@ def map_payments_table() -> None:
             "uuid": payments_table.c.payment_uuid,
             "order_id": payments_table.c.order_id,
             "employee_id": payments_table.c.employee_id,
+            "order": relationship(
+                Order,
+                back_populates="payments",
+                lazy="selectin"
+            ),
+
+            "employee": relationship(
+                Employee,
+                lazy="selectin"
+            ),
         },
     )

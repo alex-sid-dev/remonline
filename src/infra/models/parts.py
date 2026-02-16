@@ -26,5 +26,10 @@ def map_parts_table() -> None:
         properties={
             "id": parts_table.c.part_id,
             "uuid": parts_table.c.part_uuid,
+            "name": parts_table.c.name,
+            "sku": parts_table.c.sku,
+            "price": parts_table.c.price,
+            "stock_qty": parts_table.c.stock_qty,
+            "is_active": parts_table.c.is_active,
         },
     )

@@ -1,4 +1,7 @@
 from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, func, Index, UUID
+from sqlalchemy.orm import relationship
+
+from src.entities.orders.models import Order
 from src.infra.models._base import mapper_registry
 from src.entities.clients.models import Client
 
@@ -29,5 +32,7 @@ def map_clients_table() -> None:
         properties={
             "id": clients_table.c.client_id,
             "uuid": clients_table.c.client_uuid,
+
+            "orders": relationship(Order, back_populates="client", lazy="selectin")
         },
     )

@@ -11,6 +11,9 @@ from src.entities.employees.models import EmployeeID
 OrderID = NewType("OrderID", int)
 OrderUUID = NewType("OrderUUID", UUID)
 
+from dataclasses import dataclass, field
+from typing import Optional, List
+
 
 @dataclass
 class Order(BaseEntity[OrderID, OrderUUID]):
@@ -25,3 +28,13 @@ class Order(BaseEntity[OrderID, OrderUUID]):
     is_active: bool = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    # Поля для автоподгрузки (SQLAlchemy заполнит их сам)
+    # init=False исключает их из конструктора __init__
+    client: "Client" = field(init=False)
+    device: "Device" = field(init=False)
+    creator: Optional["Employee"] = field(init=False, default=None)
+    assigned_employee: Optional["Employee"] = field(init=False, default=None)
+
+    comments: List["OrderComment"] = field(init=False, default_factory=list)
+    payments: List["Payment"] = field(init=False, default_factory=list)

@@ -1,4 +1,8 @@
 from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID
+from sqlalchemy.orm import relationship
+
+from src.entities.employees.models import Employee
+from src.entities.orders.models import Order
 from src.infra.models._base import mapper_registry
 from src.entities.works.models import Work
 
@@ -29,5 +33,9 @@ def map_works_table() -> None:
             "uuid": works_table.c.work_uuid,
             "order_id": works_table.c.order_id,
             "employee_id": works_table.c.employee_id,
+            # Связь обратно к заказу
+            "order": relationship(Order, back_populates="works"),
+            # Автоподгрузка исполнителя работы
+            "employee": relationship(Employee, lazy="selectin"),
         },
     )

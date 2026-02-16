@@ -37,9 +37,7 @@ def map_order_comments_table() -> None:
                 innerjoin=True
             ),
 
-            "order": relationship(
-                Order,
-                lazy="selectin"
-            ),
+            "order": relationship(Order, back_populates="comments"),
+
         },
     )
