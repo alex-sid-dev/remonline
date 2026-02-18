@@ -11,6 +11,7 @@ from src.entities.order_parts.services import OrderPartService
 from src.entities.order_parts.models import OrderPartUUID
 from src.entities.employees.models import Employee
 from src.application.errors._base import EntityNotFoundError
+from src.application.errors.part import PartStockNotEnoughError
 
 logger = structlog.get_logger("update_order_part").bind(service="order_part")
 
@@ -45,7 +46,17 @@ class UpdateOrderPartCommandHandler(BaseCommandHandler):
             part = await self._part_reader.read_by_id(PartID(order_part.part_id))  # type: ignore[arg-type]
             if part and part.stock_qty is not None:
                 delta = data.qty - order_part.qty
-                part.stock_qty = (part.stock_qty or 0) - delta
+                if data.qty <= 0:
+                    raise PartStockNotEnoughError(message="Количество запчасти в заказе должно быть положительным")
+
+                current_stock = part.stock_qty or 0
+                # delta > 0 означает, что мы хотим ДОБАВИТЬ ещё запчастей в заказ.
+                if delta > 0 and current_stock < delta:
+                    raise PartStockNotEnoughError(
+                        message=f"Недостаточно запчастей на складе. Доступно: {current_stock}, требуется дополнительно: {delta}",
+                    )
+
+                part.stock_qty = current_stock - delta
 
         self._order_part_service.update_order_part(
             order_part=order_part,

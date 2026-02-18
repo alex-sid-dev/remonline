@@ -102,7 +102,7 @@
               </span>
             </div>
           </header>
-          <!-- Заголовок страницы заказа: только «Назад» и крупный номер по центру -->
+          <!-- Заголовок страницы заказа: «Назад», номер и действия справа -->
           <header
             v-else
             class="order-detail-header"
@@ -117,7 +117,17 @@
             <h1 class="order-detail-title">
               Заказ #{{ orderDetails.data.id }}
             </h1>
-            <div />
+            <div>
+              <button
+                v-if="userRole === 'supervisor' || userRole === 'admin'"
+                class="btn btn-primary"
+                type="button"
+                style="background: #b91c1c; border-color: #b91c1c;"
+                @click="removeCurrentOrder"
+              >
+                Удалить заказ
+              </button>
+            </div>
           </header>
 
           <div class="table-wrapper">
@@ -207,13 +217,21 @@
                   </div>
                   <div class="field">
                     <label class="field-label" for="order-device">Устройство</label>
-                    <div class="field-row">
+                    <div class="field-row" style="align-items: center; gap: 8px;">
+                      <div v-if="pendingOrderDevice">
+                        <div class="order-info-value">
+                          {{ pendingOrderDevice.brand || 'Устройство' }} {{ pendingOrderDevice.model || '' }}
+                          <span v-if="pendingOrderDevice.serial_number">
+                            · SN: {{ pendingOrderDevice.serial_number }}
+                          </span>
+                        </div>
+                      </div>
                       <button
                         class="btn btn-ghost"
                         type="button"
                         @click="startCreateDeviceForOrder"
                       >
-                        + Новое
+                        {{ pendingOrderDevice ? 'Изменить' : '+ Новое' }}
                       </button>
                     </div>
                     <div class="hint">
@@ -390,22 +408,7 @@
                       <td>{{ order.price ?? '—' }}</td>
                       <td>{{ formatDate(order.created_at) }}</td>
                       <td>{{ formatDate(order.updated_at) }}</td>
-                      <td>
-                        <button
-                          class="btn btn-ghost"
-                          type="button"
-                          @click="startEditOrder(order)"
-                        >
-                          Изменить
-                        </button>
-                        <button
-                          class="btn btn-ghost"
-                          type="button"
-                          @click="removeOrder(order)"
-                        >
-                          Удалить
-                        </button>
-                      </td>
+                      <td />
                     </tr>
                   </tbody>
                 </table>
@@ -972,6 +975,9 @@
                         <th>SKU</th>
                         <th>Цена</th>
                         <th>Остаток</th>
+                        <th v-if="userRole === 'supervisor' || userRole === 'admin' || userRole === 'master'">
+                          Действия
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -983,6 +989,17 @@
                         <td>{{ p.sku || '—' }}</td>
                         <td>{{ p.price ?? '—' }}</td>
                         <td>{{ p.stock_qty ?? '—' }}</td>
+                        <td
+                          v-if="userRole === 'supervisor' || userRole === 'admin' || userRole === 'master'"
+                        >
+                          <button
+                            class="btn btn-ghost"
+                            type="button"
+                            @click="openEditPartModal(p)"
+                          >
+                            Редактировать
+                          </button>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -1295,6 +1312,73 @@
       </div>
     </div>
 
+    <!-- Модальное окно редактирования запчасти -->
+    <div
+      v-if="editPartModal.open"
+      class="modal-backdrop"
+      @click="closeAllModals"
+    >
+      <div
+        class="modal"
+        @click.stop
+      >
+        <div class="login-card">
+          <div class="field">
+            <div class="field-label">
+              Редактирование запчасти
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="modal-edit-part-name">Название</label>
+            <input
+              id="modal-edit-part-name"
+              v-model="editPartModal.data.name"
+              class="field-input"
+              type="text"
+            >
+          </div>
+          <div class="field">
+            <label class="field-label" for="modal-edit-part-sku">SKU</label>
+            <input
+              id="modal-edit-part-sku"
+              v-model="editPartModal.data.sku"
+              class="field-input"
+              type="text"
+            >
+          </div>
+          <div class="field">
+            <label class="field-label" for="modal-edit-part-price">Цена</label>
+            <input
+              id="modal-edit-part-price"
+              v-model.number="editPartModal.data.price"
+              class="field-input"
+              type="number"
+              step="0.01"
+            >
+          </div>
+          <div class="field">
+            <label class="field-label" for="modal-edit-part-stock">Остаток</label>
+            <input
+              id="modal-edit-part-stock"
+              v-model.number="editPartModal.data.stock_qty"
+              class="field-input"
+              type="number"
+              min="0"
+            >
+          </div>
+          <div class="field">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="submitEditPartModal"
+            >
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Попап: добавить работу к заказу -->
     <div
       v-if="addWorkModal.open"
@@ -1471,6 +1555,7 @@ import {
   updateClient,
   updateEmployee,
   updateOrder,
+  updatePart,
 } from './services/api';
 
 const email = ref('');
@@ -1879,6 +1964,17 @@ const newPartModal = ref({
   },
 });
 
+const editPartModal = ref({
+  open: false,
+  uuid: null,
+  data: {
+    name: '',
+    sku: '',
+    price: null,
+    stock_qty: null,
+  },
+});
+
 async function loadData() {
   if (!isAuthenticated.value) {
     return;
@@ -2002,11 +2098,18 @@ function closeAllModals() {
   newPartModal.value.open = false;
   addWorkModal.value.open = false;
   addPartToOrderModal.value.open = false;
+  editPartModal.value.open = false;
 }
 
 function handleKeydown(event) {
   if (event.key === 'Escape') {
-    if (loginModalOpen.value || orderClientModal.value.open || orderDeviceModal.value.open || newPartModal.value.open || addWorkModal.value.open || addPartToOrderModal.value.open) {
+    if (loginModalOpen.value
+      || orderClientModal.value.open
+      || orderDeviceModal.value.open
+      || newPartModal.value.open
+      || editPartModal.value.open
+      || addWorkModal.value.open
+      || addPartToOrderModal.value.open) {
       event.preventDefault();
       closeAllModals();
     }
@@ -2267,13 +2370,21 @@ async function submitOrderForm() {
       // Создание нового заказа: при необходимости сначала создаём устройство.
       let deviceUuid = orderForm.value.data.device_uuid;
       if (!deviceUuid && pendingOrderDevice.value) {
+        const deviceDraft = pendingOrderDevice.value;
+
+        // Валидация данных устройства перед созданием.
+        if (!deviceDraft.type_uuid || !deviceDraft.brand?.trim() || !deviceDraft.model?.trim()) {
+          loadError.value = 'Заполните тип, бренд и модель устройства перед сохранением заказа.';
+          return;
+        }
+
         const devicePayload = {
           client_uuid: orderForm.value.data.client_uuid,
-          type_uuid: pendingOrderDevice.value.type_uuid,
-          brand: pendingOrderDevice.value.brand,
-          model: pendingOrderDevice.value.model,
-          serial_number: pendingOrderDevice.value.serial_number,
-          description: pendingOrderDevice.value.description,
+          type_uuid: deviceDraft.type_uuid,
+          brand: deviceDraft.brand,
+          model: deviceDraft.model,
+          serial_number: deviceDraft.serial_number,
+          description: deviceDraft.description,
         };
         const createdDevice = await createDevice(devicePayload);
         devices.value = await getDevices();
@@ -2295,6 +2406,7 @@ async function submitOrderForm() {
       await createOrder(payload);
     }
     await loadData();
+    pendingOrderDevice.value = null;
     orderForm.value.open = false;
   } catch (e) {
     const message = e?.response?.data?.detail || e?.message || 'Ошибка сохранения заказа.';
@@ -2306,6 +2418,19 @@ async function removeOrder(order) {
   if (!window.confirm(`Удалить заказ #${order.id}?`)) return;
   try {
     await deleteOrder(order.uuid);
+    await loadData();
+  } catch (e) {
+    const message = e?.response?.data?.detail || e?.message || 'Ошибка удаления заказа.';
+    loadError.value = typeof message === 'string' ? message : 'Ошибка удаления заказа.';
+  }
+}
+
+async function removeCurrentOrder() {
+  if (!orderDetails.value.data) return;
+  if (!window.confirm(`Удалить заказ #${orderDetails.value.data.id}? Это действие невозможно отменить.`)) return;
+  try {
+    await deleteOrder(orderDetails.value.data.uuid);
+    orderDetails.value.data = null;
     await loadData();
   } catch (e) {
     const message = e?.response?.data?.detail || e?.message || 'Ошибка удаления заказа.';
@@ -2384,13 +2509,24 @@ async function startCreateDeviceForOrder() {
   }
 
   orderDeviceModal.value.open = true;
-  orderDeviceModal.value.data = {
-    type_uuid: '',
-    brand: '',
-    model: '',
-    serial_number: '',
-    description: '',
-  };
+  // Если устройство уже введено, позволяем его отредактировать.
+  if (pendingOrderDevice.value) {
+    orderDeviceModal.value.data = {
+      type_uuid: pendingOrderDevice.value.type_uuid || '',
+      brand: pendingOrderDevice.value.brand || '',
+      model: pendingOrderDevice.value.model || '',
+      serial_number: pendingOrderDevice.value.serial_number || '',
+      description: pendingOrderDevice.value.description || '',
+    };
+  } else {
+    orderDeviceModal.value.data = {
+      type_uuid: '',
+      brand: '',
+      model: '',
+      serial_number: '',
+      description: '',
+    };
+  }
 }
 
 async function submitOrderDeviceModal() {
@@ -2436,6 +2572,20 @@ function openNewPartModal() {
     sku: '',
     price: null,
     stock_qty: null,
+  };
+}
+
+function openEditPartModal(part) {
+  // Доступ только для ролей, которые могут управлять запчастями
+  if (!(userRole.value === 'supervisor' || userRole.value === 'admin' || userRole.value === 'master')) return;
+
+  editPartModal.value.open = true;
+  editPartModal.value.uuid = part.uuid;
+  editPartModal.value.data = {
+    name: part.name || '',
+    sku: part.sku || '',
+    price: part.price ?? null,
+    stock_qty: part.stock_qty ?? null,
   };
 }
 
@@ -2722,6 +2872,19 @@ async function submitNewPartModal() {
       newOrderPartForm.value.part_uuid = created.uuid;
     }
     newPartModal.value.open = false;
+  } catch (e) {
+    const message = e?.response?.data?.detail || e?.message || 'Ошибка сохранения запчасти.';
+    loadError.value = typeof message === 'string' ? message : 'Ошибка сохранения запчасти.';
+  }
+}
+
+async function submitEditPartModal() {
+  if (!editPartModal.value.uuid) return;
+  try {
+    await updatePart(editPartModal.value.uuid, editPartModal.value.data);
+    const partsData = await getParts();
+    parts.value = partsData;
+    editPartModal.value.open = false;
   } catch (e) {
     const message = e?.response?.data?.detail || e?.message || 'Ошибка сохранения запчасти.';
     loadError.value = typeof message === 'string' ? message : 'Ошибка сохранения запчасти.';

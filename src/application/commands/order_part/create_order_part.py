@@ -13,6 +13,7 @@ from src.entities.orders.models import OrderUUID
 from src.entities.parts.models import PartUUID
 from src.entities.employees.models import Employee
 from src.application.errors._base import EntityNotFoundError
+from src.application.errors.part import PartStockNotEnoughError
 
 logger = structlog.get_logger("create_order_part").bind(service="order_part")
 
@@ -59,7 +60,16 @@ class CreateOrderPartCommandHandler(BaseCommandHandler):
         # Если для запчасти ведётся учёт остатков, уменьшаем склад на количество,
         # которое добавляем в заказ.
         if part.stock_qty is not None:
-            part.stock_qty = (part.stock_qty or 0) - data.qty
+            if data.qty <= 0:
+                raise PartStockNotEnoughError(message="Количество запчасти в заказе должно быть положительным")
+
+            current_stock = part.stock_qty or 0
+            if current_stock < data.qty:
+                raise PartStockNotEnoughError(
+                    message=f"Недостаточно запчастей на складе. Доступно: {current_stock}, запрошено: {data.qty}",
+                )
+
+            part.stock_qty = current_stock - data.qty
 
         # Пытаемся найти существующую запись по этому же заказу и запчасти —
         # тогда просто увеличиваем qty вместо создания второй строки.

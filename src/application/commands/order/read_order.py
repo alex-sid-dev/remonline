@@ -34,6 +34,7 @@ class DeviceShortResponse(BaseResponse):
 
 class EmployeeShortResponse(BaseResponse):
     id: int
+    uuid: UUID
     full_name: str
 
 
