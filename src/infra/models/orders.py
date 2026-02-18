@@ -22,7 +22,6 @@ orders_table = Table(
     Column("assigned_employee_id", BigInteger, ForeignKey("employees.employee_id"), nullable=True),
     Column("status", String(50), nullable=False, server_default="new"),
     Column("problem_description", String(1024), nullable=True),
-    Column("comment", String(1024), nullable=True),
     Column("price", Float, nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),

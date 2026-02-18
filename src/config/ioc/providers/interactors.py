@@ -49,6 +49,7 @@ from src.application.commands.order_part.read_all_order_part import ReadAllOrder
 from src.application.commands.order_part.read_order_part import ReadOrderPartCommandHandler
 from src.application.commands.order_part.update_order_part import UpdateOrderPartCommandHandler
 from src.application.commands.order_part.delete_order_part import DeleteOrderPartCommandHandler
+from src.application.commands.order_comment.create_order_comment import CreateOrderCommentCommandHandler
 
 
 def interactors_provider() -> Provider:
@@ -112,5 +113,7 @@ def interactors_provider() -> Provider:
         CreateOrderPartCommandHandler,
         UpdateOrderPartCommandHandler,
         DeleteOrderPartCommandHandler,
+
+        CreateOrderCommentCommandHandler,
     )
     return provider

@@ -26,6 +26,22 @@ logger = structlog.get_logger("api.employee").bind(service="employee")
 role_checker = RoleChecker([EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN])
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
 
+# Любой авторизованный сотрудник (для /me — узнать свою роль)
+any_employee_checker = RoleChecker(list(EmployeePosition))
+AnyEmployee = Annotated[Employee, Depends(inject(any_employee_checker.__call__))]
+
+
+@router.get(
+    path="/me",
+    status_code=status.HTTP_200_OK,
+)
+async def get_current_employee(
+        current_employee: AnyEmployee,
+) -> ReadEmployeeResponse:
+    """Текущий авторизованный сотрудник (для определения роли на фронте)."""
+    logger.info("Get current employee (me) called")
+    return ReadEmployeeResponse.from_entity(current_employee)
+
 
 @router.get(
     path="/all",
@@ -58,7 +74,7 @@ async def create_employee(
         phone=request_data.phone,
         position=request_data.position,
     )
-    result = await interactor.run(dto)
+    result = await interactor.run(dto, current_employee)
     logger.info("Create employee registered successfully", phone=request_data.phone)
     return result
 

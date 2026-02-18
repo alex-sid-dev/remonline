@@ -19,6 +19,8 @@ class ReadAllEmployeeCommand:
 
 @dataclass
 class ReadEmployeeResponse:
+    id: int
+    uuid: str
     full_name: str
     phone: Optional[str]
     position: EmployeePosition
@@ -26,6 +28,8 @@ class ReadEmployeeResponse:
     @classmethod
     def from_entity(cls, entity: Employee) -> "ReadEmployeeResponse":
         return cls(
+            id=entity.id,
+            uuid=str(entity.uuid),
             full_name=entity.full_name,
             phone=entity.phone,
             position=entity.position

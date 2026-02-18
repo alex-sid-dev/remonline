@@ -11,7 +11,7 @@ from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee
 from src.entities.employees.services import EmployeeService
 from src.entities.users.models import UserUUID
-from src.application.errors._base import EntityNotFoundError
+from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
 
 logger = structlog.get_logger("create_employee").bind(service="employee")
 
@@ -44,7 +44,10 @@ class CreateEmployeeCommandHandler(BaseCommandHandler):
         self._employee_service = employee_service
         self._user_reader = user_reader
 
-    async def run(self, data: CreateEmployeeCommand) -> CreateEmployeeCommandResponse:
+    async def run(self, data: CreateEmployeeCommand, current_employee: Employee) -> CreateEmployeeCommandResponse:
+        # Только супервизор может создавать сотрудника с ролью supervisor.
+        if current_employee.position != EmployeePosition.SUPERVISOR and data.position == EmployeePosition.SUPERVISOR:
+            raise PermissionDeniedError(message="Только супервизор может назначать роль «супервизор».")
         user = await self._user_reader.read_by_uuid(UserUUID(data.user_uuid))
         if not user:
             raise EntityNotFoundError(message=f"User with uuid {data.user_uuid} not found")

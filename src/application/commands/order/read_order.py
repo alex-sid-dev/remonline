@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 import structlog
-from pydantic import BaseModel, ConfigDict
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.order_reader import OrderReader
@@ -39,8 +39,9 @@ class EmployeeShortResponse(BaseResponse):
 
 class OrderCommentResponse(BaseResponse):
     id: int
-    text: str
+    text: str = Field(validation_alias=AliasChoices("comment", "text"))  # ORM has .comment
     created_at: datetime
+    creator: Optional[EmployeeShortResponse] = None  # кто оставил комментарий
 
 
 class PaymentResponse(BaseResponse):

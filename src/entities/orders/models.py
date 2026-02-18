@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Optional, NewType
+from dataclasses import dataclass, field
+from typing import Optional, NewType, List
 from uuid import UUID
 from datetime import datetime
 
@@ -7,12 +7,10 @@ from src.entities.base_entity import BaseEntity
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
 from src.entities.employees.models import EmployeeID
+from src.entities.orders.enum import OrderStatus
 
 OrderID = NewType("OrderID", int)
 OrderUUID = NewType("OrderUUID", UUID)
-
-from dataclasses import dataclass, field
-from typing import Optional, List
 
 
 @dataclass
@@ -21,9 +19,8 @@ class Order(BaseEntity[OrderID, OrderUUID]):
     device_id: DeviceID
     creator_id: Optional[EmployeeID] = None
     assigned_employee_id: Optional[EmployeeID] = None
-    status: str = "new"
+    status: OrderStatus = OrderStatus.NEW
     problem_description: Optional[str] = None
-    comment: Optional[str] = None
     price: Optional[float] = None
     is_active: bool = True
     created_at: Optional[datetime] = None

@@ -24,7 +24,6 @@ class ReadOrderResponse:
     assigned_employee_id: Optional[int]
     status: str
     problem_description: Optional[str]
-    comment: Optional[str]
     price: Optional[float]
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
@@ -40,7 +39,6 @@ class ReadOrderResponse:
             assigned_employee_id=entity.assigned_employee_id,
             status=entity.status,
             problem_description=entity.problem_description,
-            comment=entity.comment,
             price=entity.price,
             created_at=entity.created_at,
             updated_at=entity.updated_at

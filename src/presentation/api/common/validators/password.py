@@ -1,6 +1,8 @@
-PASSWORD_MIN_LENGTH = 6
-PASSWORD_MAX_LENGTH = 10
-PASSWORD_SPECIAL_CHARACTERS = "!@#$%^&*(),.?\":{}|<>_-+[]=\\/"
+from src.presentation.api.common.validation_rules import (
+    PASSWORD_MAX_LENGTH,
+    PASSWORD_MIN_LENGTH,
+    PASSWORD_SPECIAL_CHARACTERS,
+)
 
 
 def validate_password(password: str) -> str:

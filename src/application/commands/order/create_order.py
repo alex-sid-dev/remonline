@@ -29,7 +29,6 @@ class CreateOrderCommand:
     client_uuid: UUID
     device_uuid: UUID
     problem_description: Optional[str] = None
-    comment: Optional[str] = None
     assigned_employee_uuid: Optional[UUID] = None
     status: str = "new"
     price: Optional[float] = None
@@ -75,7 +74,6 @@ class CreateOrderCommandHandler(BaseCommandHandler):
             device_id=device.id,
             creator_id=current_employee.id,
             problem_description=data.problem_description,
-            comment=data.comment,
             assigned_employee_id=assigned_employee_id,
             status=data.status,
             price=data.price

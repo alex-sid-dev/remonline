@@ -35,6 +35,12 @@ class AuthenticationError(ApplicationError):
     status_code: int = 401
     message: str = "Authentication failed"
 
+
+@dataclass(eq=False)
+class PermissionDeniedError(ApplicationError):
+    status_code: int = 403
+    message: str = "You are not allowed to perform this action"
+
 @dataclass(eq=False)
 class KeycloakError(ApplicationError):
     status_code: int = 503

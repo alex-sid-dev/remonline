@@ -10,6 +10,7 @@ from src.application.ports.transaction import Transaction
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import EmployeeUUID, Employee
 from src.entities.employees.services import EmployeeService
+from src.application.errors._base import PermissionDeniedError
 from src.application.errors.employee import EmployeeNotFoundError
 
 logger = structlog.get_logger("update_employee").bind(service="employee")
@@ -35,6 +36,9 @@ class UpdateEmployeeCommandHandler(BaseCommandHandler):
         self._employee_service = employee_service
 
     async def run(self, data: UpdateEmployeeCommand, current_employee: Employee) -> None:
+        # Только супервизор может назначать роль supervisor.
+        if data.position == EmployeePosition.SUPERVISOR and current_employee.position != EmployeePosition.SUPERVISOR:
+            raise PermissionDeniedError(message="Только супервизор может назначать роль «супервизор».")
         employee_to_update = await self._employee_reader.read_by_uuid(EmployeeUUID(data.uuid))
         if not employee_to_update:
             raise EmployeeNotFoundError()
