@@ -16,6 +16,7 @@ works_table = Table(
     Column("title", String(255), nullable=False),
     Column("description", String(1024), nullable=True),
     Column("price", Float, nullable=True),
+    Column("qty", BigInteger, nullable=False, server_default="1"),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column("updated_at", DateTime, default=func.now(), server_default=func.now(),

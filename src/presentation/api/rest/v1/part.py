@@ -19,9 +19,15 @@ router = APIRouter(prefix="/part", tags=["Part"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.part").bind(service="part")
 
-role_checker = RoleChecker(
+role_checker_all = RoleChecker(
     [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
-CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+CurrentEmployee = Annotated[Employee, Depends(inject(role_checker_all.__call__))]
+
+# Только супервизор/админ/мастер могут создавать/редактировать/удалять запчасти
+# (менеджер — только использовать уже созданные).
+role_checker_manage_parts = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER])
+ManagerEmployee = Annotated[Employee, Depends(inject(role_checker_manage_parts.__call__))]
 
 
 @router.get(
@@ -46,7 +52,7 @@ async def get_all_parts(
 async def create_part(
         request_data: CreatePartSchema,
         interactor: FromDishka[CreatePartCommandHandler],
-        current_employee: CurrentEmployee,
+        current_employee: ManagerEmployee,
 ) -> CreatePartCommandResponse:
     logger.info("Create part endpoint called", name=request_data.name)
     dto = CreatePartCommand(
@@ -68,7 +74,7 @@ async def update_part(
         part_uuid: UUID,
         request_data: UpdatePartSchema,
         interactor: FromDishka[UpdatePartCommandHandler],
-        current_employee: CurrentEmployee,
+        current_employee: ManagerEmployee,
 ) -> None:
     logger.info("Update part endpoint called", part_uuid=str(part_uuid))
     update_data = request_data.model_dump(exclude_unset=True)
@@ -103,7 +109,7 @@ async def get_part(
 async def delete_part(
         part_uuid: UUID,
         interactor: FromDishka[DeletePartCommandHandler],
-        current_employee: CurrentEmployee,
+        current_employee: ManagerEmployee,
 ) -> None:
     logger.info("Delete part endpoint called", part_uuid=str(part_uuid))
     dto = DeletePartCommand(uuid=part_uuid)

@@ -73,6 +73,7 @@ class WorkResponse(BaseResponse):
     title: str
     description: Optional[str] = None
     price: Optional[float] = None
+    qty: int = 1
     employee: Optional[EmployeeShortResponse] = None  # Кто выполнял работу
 
 

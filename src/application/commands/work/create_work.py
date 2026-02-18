@@ -28,6 +28,7 @@ class CreateWorkCommand:
     employee_uuid: Optional[UUID] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    qty: int = 1
 
 
 class CreateWorkCommandHandler(BaseCommandHandler):
@@ -64,7 +65,8 @@ class CreateWorkCommandHandler(BaseCommandHandler):
             title=data.title,
             employee_id=employee_id,
             description=data.description,
-            price=data.price
+            price=data.price,
+            qty=data.qty,
         )
         self._entity_saver.add_one(work)
         await self._transaction.commit()

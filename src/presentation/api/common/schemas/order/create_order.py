@@ -11,5 +11,6 @@ class CreateOrderSchema(BaseModel):
     device_uuid: UUID
     problem_description: Optional[str] = None
     assigned_employee_uuid: Optional[UUID] = None
+    manager_uuid: Optional[UUID] = None
     status: OrderStatus = OrderStatus.NEW
     price: Optional[float] = None

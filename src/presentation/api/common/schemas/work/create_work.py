@@ -8,10 +8,12 @@ class CreateWorkSchema(BaseModel):
     employee_uuid: Optional[UUID] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    qty: int = 1
 
 class UpdateWorkSchema(BaseModel):
     title: Optional[str] = None
     employee_uuid: Optional[UUID] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    qty: Optional[int] = None
     is_active: Optional[bool] = None

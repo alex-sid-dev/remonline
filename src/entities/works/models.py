@@ -17,4 +17,5 @@ class Work(BaseEntity[WorkID, WorkUUID]):
     employee_id: Optional[EmployeeID] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    qty: int = 1
     is_active: bool = True

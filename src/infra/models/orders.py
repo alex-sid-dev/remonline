@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID
+from sqlalchemy import Table, Column, BigInteger, String, Boolean, DateTime, ForeignKey, Float, func, Index, UUID, Enum
 from sqlalchemy.orm import relationship
 
 from src.entities.clients.models import Client
@@ -10,6 +10,7 @@ from src.entities.payments.models import Payment
 from src.entities.works.models import Work
 from src.infra.models._base import mapper_registry
 from src.entities.orders.models import Order
+from src.entities.orders.enum import OrderStatus
 
 orders_table = Table(
     "orders",
@@ -20,7 +21,12 @@ orders_table = Table(
     Column("device_id", BigInteger, ForeignKey("devices.device_id", ondelete="CASCADE"), nullable=False),
     Column("creator_id", BigInteger, ForeignKey("employees.employee_id"), nullable=True),
     Column("assigned_employee_id", BigInteger, ForeignKey("employees.employee_id"), nullable=True),
-    Column("status", String(50), nullable=False, server_default="new"),
+    Column(
+        "status",
+        Enum(OrderStatus, name="order_status", native_enum=False),
+        nullable=False,
+        server_default=OrderStatus.NEW.value,
+    ),
     Column("problem_description", String(1024), nullable=True),
     Column("price", Float, nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),

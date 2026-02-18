@@ -20,6 +20,7 @@ class UpdateWorkCommand:
     employee_id: Optional[int] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    qty: Optional[int] = None
     is_active: Optional[bool] = None
 
 class UpdateWorkCommandHandler(BaseCommandHandler):
@@ -44,6 +45,7 @@ class UpdateWorkCommandHandler(BaseCommandHandler):
             employee_id=EmployeeID(data.employee_id) if data.employee_id is not None else None,
             description=data.description,
             price=data.price,
+            qty=data.qty,
             is_active=data.is_active
         )
         await self._transaction.commit()

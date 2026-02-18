@@ -12,6 +12,7 @@ class WorkService:
         employee_id: Optional[EmployeeID] = None,
         description: Optional[str] = None,
         price: Optional[float] = None,
+        qty: int = 1,
     ) -> Work:
         return Work(
             id=None,  # type: ignore
@@ -21,6 +22,7 @@ class WorkService:
             employee_id=employee_id,
             description=description,
             price=price,
+            qty=qty,
             is_active=True,
         )
 
@@ -31,6 +33,7 @@ class WorkService:
         employee_id: Optional[EmployeeID] = None,
         description: Optional[str] = None,
         price: Optional[float] = None,
+        qty: Optional[int] = None,
         is_active: Optional[bool] = None,
     ) -> Work:
         if title is not None:
@@ -41,6 +44,8 @@ class WorkService:
             work.description = description
         if price is not None:
             work.price = price
+        if qty is not None:
+            work.qty = qty
         if is_active is not None:
             work.is_active = is_active
         return work

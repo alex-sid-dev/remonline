@@ -17,6 +17,7 @@ logger = structlog.get_logger("update_order").bind(service="order")
 class UpdateOrderCommand:
     uuid: UUID
     assigned_employee_id: Optional[int] = None
+    creator_id: Optional[int] = None
     status: Optional[str] = None
     problem_description: Optional[str] = None
     price: Optional[float] = None
@@ -40,12 +41,12 @@ class UpdateOrderCommandHandler(BaseCommandHandler):
 
         self._order_service.update_order(
             order=order,
+            creator_id=EmployeeID(data.creator_id) if data.creator_id is not None else None,
             assigned_employee_id=EmployeeID(data.assigned_employee_id) if data.assigned_employee_id is not None else None,
             status=data.status,
             problem_description=data.problem_description,
-            comment=data.comment,
             price=data.price,
-            is_active=data.is_active
+            is_active=data.is_active,
         )
         await self._transaction.commit()
         logger.info("Order updated successfully", order_uuid=str(data.uuid))

@@ -21,9 +21,15 @@ router = APIRouter(prefix="/order", tags=["Order"], route_class=DishkaRoute)
 
 logger = structlog.get_logger("api.order").bind(service="order")
 
-role_checker = RoleChecker(
+role_checker_all = RoleChecker(
     [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
-CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
+CurrentEmployee = Annotated[Employee, Depends(inject(role_checker_all.__call__))]
+
+# Только супервизор / админ / менеджер могут создавать заказы,
+# мастер может только работать с уже существующими.
+role_checker_create = RoleChecker(
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MANAGER])
+CreatorEmployee = Annotated[Employee, Depends(inject(role_checker_create.__call__))]
 
 
 @router.get(
@@ -48,16 +54,16 @@ async def get_all_orders(
 async def create_order(
         request_data: CreateOrderSchema,
         interactor: FromDishka[CreateOrderCommandHandler],
-        current_employee: CurrentEmployee,
+        current_employee: CreatorEmployee,
 ) -> CreateOrderCommandResponse:
     logger.info("Create order endpoint called", client_uuid=str(request_data.client_uuid))
     dto = CreateOrderCommand(
         client_uuid=request_data.client_uuid,
         device_uuid=request_data.device_uuid,
         problem_description=request_data.problem_description,
-        comment=request_data.comment,
         assigned_employee_uuid=request_data.assigned_employee_uuid,
-        status=request_data.status,
+        manager_uuid=request_data.manager_uuid,
+        status=request_data.status.value,
         price=request_data.price
     )
     result = await interactor.run(dto, current_employee)

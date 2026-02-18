@@ -56,13 +56,34 @@ class CreateOrderPartCommandHandler(BaseCommandHandler):
         if not part:
             raise EntityNotFoundError(message=f"Part with uuid {data.part_uuid} not found")
 
-        order_part = self._order_part_service.create_order_part(
-            order_id=order.id,
-            part_id=part.id,
-            qty=data.qty,
-            price=data.price
+        # Если для запчасти ведётся учёт остатков, уменьшаем склад на количество,
+        # которое добавляем в заказ.
+        if part.stock_qty is not None:
+            part.stock_qty = (part.stock_qty or 0) - data.qty
+
+        # Пытаемся найти существующую запись по этому же заказу и запчасти —
+        # тогда просто увеличиваем qty вместо создания второй строки.
+        existing_parts = await self._order_part_reader.read_all()
+        existing = next(
+            (op for op in existing_parts if op.order_id == order.id and op.part_id == part.id),
+            None,
         )
-        self._entity_saver.add_one(order_part)
+
+        if existing:
+            self._order_part_service.update_order_part(
+                order_part=existing,
+                qty=existing.qty + data.qty,
+                price=data.price if data.price is not None else existing.price,
+            )
+            order_part = existing
+        else:
+            order_part = self._order_part_service.create_order_part(
+                order_id=order.id,
+                part_id=part.id,
+                qty=data.qty,
+                price=data.price,
+            )
+            self._entity_saver.add_one(order_part)
         await self._transaction.commit()
         logger.info("Order part created successfully", order_part_uuid=str(order_part.uuid))
         return CreateOrderPartCommandResponse(

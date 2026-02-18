@@ -13,7 +13,7 @@ from src.entities.orders.services import OrderService
 from src.entities.orders.models import Order
 from src.entities.clients.models import ClientUUID
 from src.entities.devices.models import DeviceUUID
-from src.entities.employees.models import Employee, EmployeeUUID
+from src.entities.employees.models import Employee, EmployeeUUID, EmployeePosition
 from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("create_order").bind(service="order")
@@ -30,6 +30,7 @@ class CreateOrderCommand:
     device_uuid: UUID
     problem_description: Optional[str] = None
     assigned_employee_uuid: Optional[UUID] = None
+    manager_uuid: Optional[UUID] = None
     status: str = "new"
     price: Optional[float] = None
 
@@ -69,14 +70,29 @@ class CreateOrderCommandHandler(BaseCommandHandler):
                 raise EntityNotFoundError(message=f"Employee with uuid {data.assigned_employee_uuid} not found")
             assigned_employee_id = assigned_employee.id
 
+        # Определяем менеджера (creator_id):
+        # - если передан manager_uuid — используем его, проверяя, что это сотрудник с ролью MANAGER;
+        # - если заказ создаёт менеджер — он сам становится менеджером заказа;
+        # - иначе (админ/супервизор/мастер) — creator_id = current_employee.id.
+        creator_id = current_employee.id
+        if data.manager_uuid:
+            manager = await self._employee_reader.read_by_uuid(EmployeeUUID(data.manager_uuid))
+            if not manager:
+                raise EntityNotFoundError(message=f"Employee with uuid {data.manager_uuid} not found")
+            if manager.position != EmployeePosition.MANAGER:
+                raise EntityNotFoundError(message="Назначить менеджером можно только сотрудника с ролью manager.")
+            creator_id = manager.id
+        elif getattr(current_employee, "position", None) == EmployeePosition.MANAGER:
+            creator_id = current_employee.id
+
         order = self._order_service.create_order(
             client_id=client.id,
             device_id=device.id,
-            creator_id=current_employee.id,
+            creator_id=creator_id,
             problem_description=data.problem_description,
             assigned_employee_id=assigned_employee_id,
             status=data.status,
-            price=data.price
+            price=data.price,
         )
         self._entity_saver.add_one(order)
         await self._transaction.commit()

@@ -56,12 +56,21 @@
             Заказы
           </button>
           <button
+            v-if="userRole === 'supervisor' || userRole === 'admin'"
             class="btn side-nav-item"
             :class="{ 'side-nav-item--active': activeTab === 'employees' }"
             type="button"
             @click="() => changeTab('employees')"
           >
             Сотрудники
+          </button>
+          <button
+            class="btn side-nav-item"
+            :class="{ 'side-nav-item--active': activeTab === 'parts' }"
+            type="button"
+            @click="() => changeTab('parts')"
+          >
+            Запчасти
           </button>
         </nav>
       </aside>
@@ -75,7 +84,8 @@
           >
             <div class="table-title">
               <span v-if="activeTab === 'orders'">Заказы</span>
-              <span v-else>Сотрудники</span>
+              <span v-else-if="activeTab === 'employees'">Сотрудники</span>
+              <span v-else>Запчасти</span>
             </div>
             <div class="table-meta">
               <span v-if="!isAuthenticated">
@@ -136,11 +146,206 @@
             <template v-else>
               <!-- Заказы -->
               <div v-if="activeTab === 'orders' && !orderDetails.data">
-                <div class="table-header">
+                <!-- Экран создания нового заказа (отдельно от списка) -->
+                <div
+                  v-if="orderForm.open && !orderForm.editMode"
+                  class="login-card"
+                  style="margin-top: 12px;"
+                >
+                  <div class="field">
+                    <div class="field-label">
+                      Новый заказ
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="order-client">Клиент</label>
+                    <div class="field-row">
+                      <input
+                        v-model="orderClientSearch"
+                        class="field-input"
+                        type="text"
+                        placeholder="Поиск по ФИО или телефону (от 3 символов)"
+                        @input="handleOrderClientSearchInput"
+                        @focus="handleOrderClientSearchInput"
+                      >
+                      <button
+                        class="btn btn-ghost"
+                        type="button"
+                        @click="startCreateClientForOrder"
+                      >
+                        + Новый
+                      </button>
+                    </div>
+                    <div
+                      v-if="orderClientSuggestionsOpen && orderClientSearch.length >= 3"
+                      class="autocomplete-list"
+                    >
+                      <button
+                        v-for="c in clientsForOrder"
+                        :key="c.uuid"
+                        type="button"
+                        class="autocomplete-item"
+                        @click="selectOrderClient(c)"
+                      >
+                        <div class="autocomplete-item-main">
+                          {{ c.full_name }}
+                        </div>
+                        <div class="autocomplete-item-sub">
+                          {{ c.phone || '—' }}
+                        </div>
+                      </button>
+                      <div
+                        v-if="!clientsForOrder.length"
+                        class="autocomplete-empty"
+                      >
+                        Ничего не найдено
+                      </div>
+                    </div>
+                    <div class="hint">
+                      Клиент подставится автоматически. Если клиента нет в списке — создайте его через «+ Новый».
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="order-device">Устройство</label>
+                    <div class="field-row">
+                      <button
+                        class="btn btn-ghost"
+                        type="button"
+                        @click="startCreateDeviceForOrder"
+                      >
+                        + Новое
+                      </button>
+                    </div>
+                    <div class="hint">
+                      Для нового заказа всегда создаётся новое устройство. Нажмите «+ Новое», чтобы заполнить данные устройства для выбранного клиента.
+                    </div>
+                  </div>
+                  <div
+                    v-if="userRole === 'supervisor' || userRole === 'admin'"
+                    class="field"
+                  >
+                    <label class="field-label" for="order-engineer">Инженер</label>
+                    <select
+                      id="order-engineer"
+                      v-model="orderForm.data.assigned_employee_uuid"
+                      class="field-input"
+                    >
+                      <option value="">Не назначен</option>
+                      <option
+                        v-for="e in employees"
+                        :key="e.uuid"
+                        :value="e.uuid"
+                      >
+                        {{ e.full_name }} ({{ e.position }})
+                      </option>
+                    </select>
+                  </div>
+                  <div
+                    v-if="userRole === 'supervisor' || userRole === 'admin'"
+                    class="field"
+                  >
+                    <label class="field-label" for="order-manager">Менеджер</label>
+                    <select
+                      id="order-manager"
+                      v-model="orderForm.data.manager_uuid"
+                      class="field-input"
+                    >
+                      <option value="">Текущий менеджер (по умолчанию)</option>
+                      <option
+                        v-for="e in employees.filter((e) => e.position === 'manager')"
+                        :key="e.uuid"
+                        :value="e.uuid"
+                      >
+                        {{ e.full_name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div
+                    v-else
+                    class="field"
+                  >
+                    <label class="field-label">Менеджер</label>
+                    <div class="order-info-value">
+                      {{ currentEmployeeName || 'Текущий пользователь' }}
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="order-status">Статус</label>
+                    <select
+                      id="order-status"
+                      v-model="orderForm.data.status"
+                      class="field-input"
+                    >
+                      <option
+                        v-for="s in ORDER_STATUS_OPTIONS"
+                        :key="s.value"
+                        :value="s.value"
+                      >
+                        {{ s.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="order-problem">Проблема</label>
+                    <input
+                      id="order-problem"
+                      v-model="orderForm.data.problem_description"
+                      class="field-input"
+                      type="text"
+                    >
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="order-comment">Комментарий</label>
+                    <input
+                      id="order-comment"
+                      v-model="orderForm.data.comment"
+                      class="field-input"
+                      type="text"
+                    >
+                  </div>
+                  <div class="field">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      :disabled="!orderFormValid"
+                      @click="submitOrderForm"
+                    >
+                      Сохранить
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Список заказов + форма редактирования -->
+                <div v-else>
+                  <div class="table-header">
                   <div class="table-meta">
-                  Заказы: выбор клиента и устройства из существующих сущностей, изменение статуса и цены.
+                    Заказы: выбор клиента и устройства из существующих сущностей, изменение статуса и цены.
+                    <div class="table-status-filters">
+                      <button
+                        v-for="s in ORDER_STATUS_OPTIONS"
+                        :key="s.value"
+                        class="btn btn-ghost table-status-filter-pill"
+                        :class="[
+                          tableStatusFilterClass(s.value),
+                          { 'table-status-filter-pill--active': orderStatusFilter.includes(s.value) },
+                        ]"
+                        type="button"
+                        @click.stop="toggleOrderStatusFilter(s.value)"
+                      >
+                        {{ s.label }}
+                      </button>
+                      <button
+                        v-if="orderStatusFilter.length"
+                        class="btn btn-ghost table-status-filter-clear"
+                        type="button"
+                        @click.stop="clearOrderStatusFilter"
+                      >
+                        Сбросить
+                      </button>
+                    </div>
                   </div>
                   <button
+                    v-if="userRole === 'supervisor' || userRole === 'admin' || userRole === 'manager'"
                     class="btn btn-primary"
                     type="button"
                     @click="startCreateOrder"
@@ -154,7 +359,8 @@
                       <th>ID</th>
                       <th>Клиент</th>
                       <th>Устройство</th>
-                      <th>Исполнитель</th>
+                      <th>Менеджер</th>
+                      <th>Инженер</th>
                       <th>Статус</th>
                       <th>Цена</th>
                       <th>Создано</th>
@@ -164,17 +370,21 @@
                   </thead>
                   <tbody>
                     <tr
-                      v-for="order in orders"
+                      v-for="order in filteredOrders"
                       :key="order.uuid"
                       @click="openOrderDetails(order)"
                     >
                       <td>{{ order.id }}</td>
                       <td>{{ clientLabel(order.client_id) }}</td>
                       <td>{{ deviceLabel(order.device_id) }}</td>
+                      <td>{{ employeeLabel(order.creator_id) }}</td>
                       <td>{{ employeeLabel(order.assigned_employee_id) }}</td>
                       <td>
-                        <span class="badge badge--status">
-                          {{ order.status }}
+                        <span
+                          class="badge badge--status"
+                          :class="orderStatusClass(order.status)"
+                        >
+                          {{ orderStatusLabel(order.status) }}
                         </span>
                       </td>
                       <td>{{ order.price ?? '—' }}</td>
@@ -203,84 +413,52 @@
                   Заказов пока нет.
                 </div>
 
-                <div v-if="orderForm.open" class="login-card" style="margin-top: 12px;">
+                <div
+                  v-if="orderForm.open && orderForm.editMode"
+                  class="login-card"
+                  style="margin-top: 12px;"
+                >
                   <div class="field">
                     <div class="field-label">
                       {{ orderForm.editMode ? 'Редактирование заказа' : 'Новый заказ' }}
                     </div>
                   </div>
-                  <template v-if="!orderForm.editMode">
-                    <div class="field">
-                      <label class="field-label" for="order-client">Клиент</label>
-                      <div class="field-row">
-                        <select
-                          id="order-client"
-                          v-model="orderForm.data.client_uuid"
-                          class="field-input"
-                        >
-                          <option disabled value="">
-                            Выберите клиента
-                          </option>
-                          <option
-                            v-for="c in clients"
-                            :key="c.uuid"
-                            :value="c.uuid"
-                          >
-                            {{ c.full_name }} ({{ c.phone }})
-                          </option>
-                        </select>
-                        <button
-                          class="btn btn-ghost"
-                          type="button"
-                          @click="startCreateClientForOrder"
-                        >
-                          + Новый
-                        </button>
-                      </div>
-                      <div class="hint">
-                        Клиент подставится автоматически. Если клиента нет в списке — создайте его через «+ Новый».
-                      </div>
-                    </div>
-                    <div class="field">
-                      <label class="field-label" for="order-device">Устройство</label>
-                      <div class="field-row">
-                        <select
-                          id="order-device"
-                          v-model="orderForm.data.device_uuid"
-                          class="field-input"
-                        >
-                          <option disabled value="">
-                            Выберите устройство
-                          </option>
-                          <option
-                            v-for="d in devicesForSelectedClient"
-                            :key="d.uuid"
-                            :value="d.uuid"
-                          >
-                            {{ d.brand }} {{ d.model }}
-                          </option>
-                        </select>
-                        <button
-                          class="btn btn-ghost"
-                          type="button"
-                          @click="startCreateDeviceForOrder"
-                        >
-                          + Новое
-                        </button>
-                      </div>
-                      <div class="hint">
-                        Список устройств фильтруется по выбранному клиенту. Если устройства нет — создайте его через «+ Новое».
-                      </div>
-                    </div>
-                  </template>
+                  <!-- Для редактирования клиента/устройства сейчас не меняем -->
+                  <div
+                    v-if="userRole === 'supervisor' || userRole === 'admin'"
+                    class="field"
+                  >
+                    <label class="field-label" for="order-engineer">Инженер</label>
+                    <select
+                      id="order-engineer"
+                      v-model="orderForm.data.assigned_employee_uuid"
+                      class="field-input"
+                    >
+                      <option value="">Не назначен</option>
+                      <option
+                        v-for="e in employees"
+                        :key="e.uuid"
+                        :value="e.uuid"
+                      >
+                        {{ e.full_name }} ({{ e.position }})
+                      </option>
+                    </select>
+                  </div>
                   <div class="field">
                     <label class="field-label" for="order-status">Статус</label>
-                    <input
+                    <select
                       id="order-status"
                       v-model="orderForm.data.status"
                       class="field-input"
-                      type="text"
                     >
+                      <option
+                        v-for="s in ORDER_STATUS_OPTIONS"
+                        :key="s.value"
+                        :value="s.value"
+                      >
+                        {{ s.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="field">
                     <label class="field-label" for="order-price">Цена</label>
@@ -314,11 +492,13 @@
                     <button
                       class="btn btn-primary"
                       type="button"
+                      :disabled="!orderFormValid"
                       @click="submitOrderForm"
                     >
                       Сохранить
                     </button>
                   </div>
+                </div>
                 </div>
               </div>
               <!-- Детальная страница заказа: 3 колонки -->
@@ -351,16 +531,75 @@
                         <span class="order-info-label">Серийный номер</span>
                         <span class="order-info-value">{{ orderDetails.data.device.serial_number || '—' }}</span>
                       </div>
+                      <div class="order-info-row">
+                        <span class="order-info-label">Менеджер</span>
+                        <span class="order-info-value">
+                          {{ orderDetails.data.creator?.full_name || '—' }}
+                        </span>
+                      </div>
+                      <div class="order-info-row">
+                        <span class="order-info-label">Инженер</span>
+                        <span class="order-info-value">
+                          {{ orderDetails.data.assigned_employee?.full_name || '—' }}
+                        </span>
+                      </div>
                     </div>
                     <div class="login-card" style="margin-top: 16px;">
+                      <div
+                        v-if="userRole === 'supervisor' || userRole === 'admin'"
+                        class="field"
+                      >
+                        <label class="field-label" for="details-manager">Менеджер</label>
+                        <select
+                          id="details-manager"
+                          v-model.number="detailsManagerId"
+                          class="field-input"
+                        >
+                          <option :value="null">Не назначен</option>
+                          <option
+                            v-for="e in employees.filter((e) => e.position === 'manager')"
+                            :key="e.id"
+                            :value="e.id"
+                          >
+                            {{ e.full_name }}
+                          </option>
+                        </select>
+                      </div>
+                      <div
+                        v-if="userRole === 'supervisor' || userRole === 'admin'"
+                        class="field"
+                      >
+                        <label class="field-label" for="details-engineer">Инженер</label>
+                        <select
+                          id="details-engineer"
+                          v-model.number="detailsEngineerId"
+                          class="field-input"
+                        >
+                          <option :value="null">Не назначен</option>
+                          <option
+                            v-for="e in employees.filter((e) => e.position === 'master')"
+                            :key="e.id"
+                            :value="e.id"
+                          >
+                            {{ e.full_name }}
+                          </option>
+                        </select>
+                      </div>
                       <div class="field">
                         <label class="field-label" for="details-status">Статус</label>
-                        <input
+                        <select
                           id="details-status"
                           v-model="orderDetails.data.status"
                           class="field-input"
-                          type="text"
                         >
+                          <option
+                            v-for="s in ORDER_STATUS_OPTIONS"
+                            :key="s.value"
+                            :value="s.value"
+                          >
+                            {{ s.label }}
+                          </option>
+                        </select>
                       </div>
                       <div class="field">
                         <label class="field-label" for="details-price">Цена (авто)</label>
@@ -411,8 +650,10 @@
                             <tr>
                               <th>Название</th>
                               <th>Исполнитель</th>
-                              <th>Цена</th>
+                              <th>Кол-во</th>
+                              <th>Цена (за всё)</th>
                               <th>Описание</th>
+                              <th />
                             </tr>
                           </thead>
                           <tbody>
@@ -422,8 +663,22 @@
                             >
                               <td>{{ w.title }}</td>
                               <td>{{ w.employee?.full_name || '—' }}</td>
-                              <td>{{ w.price ?? '—' }}</td>
+                              <td>{{ w.qty || 1 }}</td>
+                              <td>
+                                {{
+                                  (w.price || 0) * (w.qty || 1) || '—'
+                                }}
+                              </td>
                               <td>{{ w.description || '—' }}</td>
+                              <td class="text-right">
+                                <button
+                                  class="btn btn-ghost"
+                                  type="button"
+                                  @click.stop="decrementWork(w)"
+                                >
+                                  −
+                                </button>
+                              </td>
                             </tr>
                           </tbody>
                         </table>
@@ -450,7 +705,8 @@
                               <th>Название</th>
                               <th>SKU</th>
                               <th>Кол-во</th>
-                              <th>Цена</th>
+                              <th>Цена (за всё)</th>
+                              <th />
                             </tr>
                           </thead>
                           <tbody>
@@ -461,7 +717,20 @@
                               <td>{{ p.part_info?.name || '—' }}</td>
                               <td>{{ p.part_info?.sku || '—' }}</td>
                               <td>{{ p.qty }}</td>
-                              <td>{{ p.price ?? p.part_info?.price ?? '—' }}</td>
+                              <td>
+                                {{
+                                  (p.price ?? p.part_info?.price ?? 0) * (p.qty || 0) || '—'
+                                }}
+                              </td>
+                              <td class="text-right">
+                                <button
+                                  class="btn btn-ghost"
+                                  type="button"
+                                  @click.stop="decrementOrderPart(p)"
+                                >
+                                  −
+                                </button>
+                              </td>
                             </tr>
                           </tbody>
                         </table>
@@ -513,7 +782,7 @@
                 </div>
               </div>
 
-              <div v-else>
+              <div v-else-if="activeTab === 'employees'">
                 <div class="table-header">
                   <div class="table-meta">
                     Сотрудники
@@ -671,6 +940,55 @@
                       Сохранить
                     </button>
                   </div>
+                </div>
+              </div>
+              <div v-else>
+                <div class="table-header">
+                  <div class="table-meta">
+                    Запчасти: общий список номенклатуры.
+                    <div class="field-row" style="margin-top: 6px;">
+                      <input
+                        v-model="partsSearch"
+                        class="field-input"
+                        type="text"
+                        placeholder="Поиск по названию или SKU"
+                      >
+                    </div>
+                  </div>
+                  <button
+                    v-if="userRole === 'supervisor' || userRole === 'admin' || userRole === 'master'"
+                    class="btn btn-primary"
+                    type="button"
+                    @click="openNewPartModal"
+                  >
+                    Новая запчасть
+                  </button>
+                </div>
+                <div v-if="parts.length">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Название</th>
+                        <th>SKU</th>
+                        <th>Цена</th>
+                        <th>Остаток</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="p in filteredParts"
+                        :key="p.uuid"
+                      >
+                        <td>{{ p.name }}</td>
+                        <td>{{ p.sku || '—' }}</td>
+                        <td>{{ p.price ?? '—' }}</td>
+                        <td>{{ p.stock_qty ?? '—' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div v-else class="empty-state">
+                  Запчастей пока нет.
                 </div>
               </div>
             </template>
@@ -1001,33 +1319,6 @@
             >
           </div>
           <div class="field">
-            <label class="field-label" for="mw-employee">Исполнитель</label>
-            <div class="field-row">
-              <select
-                id="mw-employee"
-                v-model="newWorkForm.employee_uuid"
-                class="field-input"
-              >
-                <option value="">Не назначен</option>
-                <option
-                  v-for="e in employees"
-                  :key="e.uuid"
-                  :value="e.uuid"
-                >
-                  {{ e.full_name }}
-                </option>
-              </select>
-              <button
-                v-if="canCreateEmployees"
-                class="btn btn-ghost"
-                type="button"
-                @click="startCreateEmployee"
-              >
-                + Новый
-              </button>
-            </div>
-          </div>
-          <div class="field">
             <label class="field-label" for="mw-price">Цена</label>
             <input
               id="mw-price"
@@ -1076,27 +1367,39 @@
           <div class="field">
             <label class="field-label" for="mp-part">Запчасть</label>
             <div class="field-row">
-              <select
-                id="mp-part"
-                v-model="newOrderPartForm.part_uuid"
+              <input
+                v-model="orderPartSearch"
                 class="field-input"
+                type="text"
+                placeholder="Поиск по названию или SKU (от 3 символов)"
+                @input="handleOrderPartSearchInput"
+                @focus="handleOrderPartSearchInput"
               >
-                <option disabled value="">Выберите запчасть</option>
-                <option
-                  v-for="p in parts"
-                  :key="p.uuid"
-                  :value="p.uuid"
-                >
-                  {{ p.name }} ({{ p.sku || 'без SKU' }})
-                </option>
-              </select>
+            </div>
+            <div
+              v-if="orderPartSuggestionsOpen && orderPartSearch.length >= 3"
+              class="autocomplete-list"
+            >
               <button
-                class="btn btn-ghost"
+                v-for="p in partsForOrder"
+                :key="p.uuid"
                 type="button"
-                @click="openNewPartModal"
+                class="autocomplete-item"
+                @click="selectOrderPart(p)"
               >
-                + Новая
+                <div class="autocomplete-item-main">
+                  {{ p.name }}
+                </div>
+                <div class="autocomplete-item-sub">
+                  {{ p.sku || 'без SKU' }}
+                </div>
               </button>
+              <div
+                v-if="!partsForOrder.length"
+                class="autocomplete-empty"
+              >
+                Ничего не найдено
+              </div>
             </div>
           </div>
           <div class="field">
@@ -1178,7 +1481,8 @@ const loginSuccess = ref(false);
 const accessToken = ref('');
 const lastLoginEmail = ref('');
 const loginModalOpen = ref(false);
-const userRole = ref('other'); // supervisor | admin | other
+const userRole = ref('other'); // supervisor | admin | manager | master | other
+const currentEmployeeName = ref('');
 
 const activeTab = ref('orders');
 const clients = ref([]);
@@ -1192,6 +1496,16 @@ const orderParts = ref([]);
 const employees = ref([]);
 const isLoading = ref(false);
 const loadError = ref('');
+
+const orderStatusFilter = ref([]);
+const orderClientSearch = ref('');
+const orderClientSuggestionsOpen = ref(false);
+const orderPartSearch = ref('');
+const orderPartSuggestionsOpen = ref(false);
+const partsSearch = ref('');
+const pendingOrderDevice = ref(null);
+const detailsManagerId = ref(null);
+const detailsEngineerId = ref(null);
 
 const isAuthenticated = computed(() => !!accessToken.value);
 
@@ -1275,12 +1589,26 @@ const employeeFormValid = computed(() => {
   );
 });
 
+const orderFormValid = computed(() => {
+  if (!orderForm.value.open) return false;
+  const data = orderForm.value.data;
+
+  if (orderForm.value.editMode) {
+    // Для редактирования достаточно иметь статус (он всегда есть) — дополнительных полей не требуем.
+    return !!data.status;
+  }
+
+  // Для создания заказа обязательно выбрать клиента и либо привязать устройство,
+  // либо заполнить данные нового устройства (через «+ Новое»).
+  return !!data.client_uuid && (!!data.device_uuid || !!pendingOrderDevice.value);
+});
+
 const orderCalculatedPrice = computed(() => {
   const d = orderDetails.value.data;
   if (!d) return 0;
   let total = 0;
   for (const w of d.works || []) {
-    total += w.price || 0;
+    total += (w.price || 0) * (w.qty || 1);
   }
   for (const p of d.parts || []) {
     const unit = p.price ?? p.part_info?.price ?? 0;
@@ -1289,12 +1617,57 @@ const orderCalculatedPrice = computed(() => {
   return total;
 });
 
+const filteredOrders = computed(() => {
+  if (!orderStatusFilter.value.length) {
+    return orders.value;
+  }
+  return orders.value.filter((o) => orderStatusFilter.value.includes(o.status));
+});
+
+const clientsForOrder = computed(() => {
+  const q = orderClientSearch.value.trim().toLowerCase();
+  if (q.length < 3) {
+    return clients.value;
+  }
+  return clients.value.filter((c) => {
+    const name = (c.full_name || '').toLowerCase();
+    const phone = (c.phone || '').toLowerCase();
+    return name.includes(q) || phone.includes(q);
+  });
+});
+
+const partsForOrder = computed(() => {
+  const q = orderPartSearch.value.trim().toLowerCase();
+  if (q.length < 3) {
+    return parts.value;
+  }
+  return parts.value.filter((p) => {
+    const name = (p.name || '').toLowerCase();
+    const sku = (p.sku || '').toLowerCase();
+    return name.includes(q) || sku.includes(q);
+  });
+});
+
+const filteredParts = computed(() => {
+  const q = partsSearch.value.trim().toLowerCase();
+  if (!q) {
+    return parts.value;
+  }
+  return parts.value.filter((p) => {
+    const name = (p.name || '').toLowerCase();
+    const sku = (p.sku || '').toLowerCase();
+    return name.includes(q) || sku.includes(q);
+  });
+});
+
 const currentCount = computed(() => {
   switch (activeTab.value) {
     case 'orders':
-      return orders.value.length;
+      return filteredOrders.value.length;
     case 'employees':
       return employees.value.length;
+    case 'parts':
+      return parts.value.length;
     default:
       return 0;
   }
@@ -1355,6 +1728,8 @@ const orderForm = ref({
   data: {
     client_uuid: '',
     device_uuid: '',
+    manager_uuid: '',
+    assigned_employee_uuid: '',
     status: 'new',
     price: null,
     problem_description: '',
@@ -1459,6 +1834,18 @@ const employeeForm = ref({
   },
 });
 
+const ORDER_STATUS_OPTIONS = [
+  { value: 'new', label: 'Новый' },
+  { value: 'accepted', label: 'Принят в работу' },
+  { value: 'diagnostics', label: 'На диагностике' },
+  { value: 'on_approval', label: 'На согласовании' },
+  { value: 'waiting_parts', label: 'Ждём запчасти' },
+  { value: 'in_repair', label: 'В ремонте' },
+  { value: 'paid', label: 'Оплачен' },
+  { value: 'closed', label: 'Закрыт' },
+  { value: 'rejected', label: 'Отказ' },
+];
+
 const orderDetails = ref({
   loading: false,
   data: null,
@@ -1503,20 +1890,35 @@ async function loadData() {
   try {
     switch (activeTab.value) {
       case 'orders': {
-        const [ordersData, clientsData, devicesData, employeesData] = await Promise.all([
-          getOrders(),
-          getClients(),
-          getDevices(),
-          getEmployees(),
-        ]);
-        orders.value = ordersData;
-        clients.value = clientsData;
-        devices.value = devicesData;
-        employees.value = employeesData;
+        if (userRole.value === 'supervisor' || userRole.value === 'admin') {
+          const [ordersData, clientsData, devicesData, employeesData] = await Promise.all([
+            getOrders(),
+            getClients(),
+            getDevices(),
+            getEmployees(),
+          ]);
+          orders.value = ordersData;
+          clients.value = clientsData;
+          devices.value = devicesData;
+          employees.value = employeesData;
+        } else {
+          const [ordersData, clientsData, devicesData] = await Promise.all([
+            getOrders(),
+            getClients(),
+            getDevices(),
+          ]);
+          orders.value = ordersData;
+          clients.value = clientsData;
+          devices.value = devicesData;
+          employees.value = [];
+        }
         break;
       }
       case 'employees':
         employees.value = await getEmployees();
+        break;
+      case 'parts':
+        parts.value = await getParts();
         break;
       default:
         break;
@@ -1580,8 +1982,11 @@ async function refreshUserRole() {
   try {
     const me = await getCurrentEmployee();
     const pos = (me?.position || '').toLowerCase();
+    currentEmployeeName.value = me?.full_name || '';
     if (pos === 'supervisor') userRole.value = 'supervisor';
     else if (pos === 'admin') userRole.value = 'admin';
+    else if (pos === 'manager') userRole.value = 'manager';
+    else if (pos === 'master') userRole.value = 'master';
     else userRole.value = 'other';
     window.localStorage.setItem('user_role', userRole.value);
   } catch {
@@ -1626,7 +2031,100 @@ function formatDate(value) {
   }
 }
 
+function orderStatusLabel(value) {
+  const found = ORDER_STATUS_OPTIONS.find((s) => s.value === value);
+  return found ? found.label : (value || '—');
+}
+
+function orderStatusClass(value) {
+  switch (value) {
+    case 'new':
+    case 'accepted':
+    case 'diagnostics':
+      return 'badge--status-green';
+    case 'on_approval':
+    case 'waiting_parts':
+    case 'in_repair':
+      return 'badge--status-yellow';
+    case 'paid':
+      return 'badge--status-blue';
+    case 'closed':
+      return 'badge--status-red';
+    case 'rejected':
+      return 'badge--status-black';
+    default:
+      return 'badge--status-muted';
+  }
+}
+
+function tableStatusFilterClass(value) {
+  switch (value) {
+    case 'new':
+    case 'accepted':
+    case 'diagnostics':
+      return 'table-status-filter-pill--green';
+    case 'on_approval':
+    case 'waiting_parts':
+    case 'in_repair':
+      return 'table-status-filter-pill--yellow';
+    case 'paid':
+      return 'table-status-filter-pill--blue';
+    case 'closed':
+      return 'table-status-filter-pill--red';
+    case 'rejected':
+      return 'table-status-filter-pill--black';
+    default:
+      return '';
+  }
+}
+
+function handleOrderClientSearchInput() {
+  const q = orderClientSearch.value.trim();
+  orderClientSuggestionsOpen.value = q.length >= 3;
+  // При изменении строки поиска сбрасываем выбранного клиента,
+  // чтобы пользователь явно подтвердил выбор из подсказок.
+  orderForm.value.data.client_uuid = '';
+}
+
+function selectOrderClient(client) {
+  orderForm.value.data.client_uuid = client.uuid;
+  orderClientSearch.value = `${client.full_name} (${client.phone || '—'})`;
+  orderClientSuggestionsOpen.value = false;
+}
+
+function handleOrderPartSearchInput() {
+  const q = orderPartSearch.value.trim();
+  orderPartSuggestionsOpen.value = q.length >= 3;
+  newOrderPartForm.value.part_uuid = '';
+}
+
+function selectOrderPart(part) {
+  newOrderPartForm.value.part_uuid = part.uuid;
+  orderPartSearch.value = `${part.name} (${part.sku || 'без SKU'})`;
+  orderPartSuggestionsOpen.value = false;
+}
+
+function toggleOrderStatusFilter(value) {
+  const idx = orderStatusFilter.value.indexOf(value);
+  if (idx === -1) {
+    orderStatusFilter.value = [...orderStatusFilter.value, value];
+  } else {
+    orderStatusFilter.value = orderStatusFilter.value.filter((v) => v !== value);
+  }
+}
+
+function clearOrderStatusFilter() {
+  orderStatusFilter.value = [];
+}
+
 function changeTab(tab) {
+  // Если уже на вкладке заказов и открыта деталка — по повторному нажатию «Заказы» вернёмся к списку
+  if (tab === 'orders' && activeTab.value === 'orders' && orderDetails.value.data) {
+    orderDetails.value = { loading: false, data: null };
+    loadData();
+    return;
+  }
+
   activeTab.value = tab;
   loadData();
 }
@@ -1731,9 +2229,12 @@ async function startCreateOrder() {
   orderForm.value.open = true;
   orderForm.value.editMode = false;
   orderForm.value.uuid = null;
+  pendingOrderDevice.value = null;
   orderForm.value.data = {
     client_uuid: '',
     device_uuid: '',
+    manager_uuid: '',
+    assigned_employee_uuid: '',
     status: 'new',
     price: null,
     problem_description: '',
@@ -1763,7 +2264,35 @@ async function submitOrderForm() {
         comment: orderForm.value.data.comment,
       });
     } else {
-      await createOrder(orderForm.value.data);
+      // Создание нового заказа: при необходимости сначала создаём устройство.
+      let deviceUuid = orderForm.value.data.device_uuid;
+      if (!deviceUuid && pendingOrderDevice.value) {
+        const devicePayload = {
+          client_uuid: orderForm.value.data.client_uuid,
+          type_uuid: pendingOrderDevice.value.type_uuid,
+          brand: pendingOrderDevice.value.brand,
+          model: pendingOrderDevice.value.model,
+          serial_number: pendingOrderDevice.value.serial_number,
+          description: pendingOrderDevice.value.description,
+        };
+        const createdDevice = await createDevice(devicePayload);
+        devices.value = await getDevices();
+        deviceUuid = createdDevice?.uuid;
+        orderForm.value.data.device_uuid = deviceUuid || '';
+      }
+
+      const payload = {
+        ...orderForm.value.data,
+        device_uuid: deviceUuid,
+      };
+      // Менеджер указывается только если создаёт не менеджер и явно выбран.
+      if (userRole.value !== 'manager' && payload.manager_uuid) {
+        // оставляем выбранного менеджера
+      } else {
+        delete payload.manager_uuid;
+      }
+
+      await createOrder(payload);
     }
     await loadData();
     orderForm.value.open = false;
@@ -1787,14 +2316,25 @@ async function removeOrder(order) {
 async function openOrderDetails(order) {
   try {
     orderDetails.value.loading = true;
-    const [details, partsData, employeesData] = await Promise.all([
-      getOrderDetails(order.uuid),
-      getParts(),
-      getEmployees(),
-    ]);
-    orderDetails.value.data = details;
-    parts.value = partsData;
-    employees.value = employeesData;
+    if (userRole.value === 'supervisor' || userRole.value === 'admin') {
+      const [details, partsData, employeesData] = await Promise.all([
+        getOrderDetails(order.uuid),
+        getParts(),
+        getEmployees(),
+      ]);
+      orderDetails.value.data = details;
+      parts.value = partsData;
+      employees.value = employeesData;
+      detailsManagerId.value = details.creator?.id ?? null;
+      detailsEngineerId.value = details.assigned_employee?.id ?? null;
+    } else {
+      const [details, partsData] = await Promise.all([
+        getOrderDetails(order.uuid),
+        getParts(),
+      ]);
+      orderDetails.value.data = details;
+      parts.value = partsData;
+    }
   } catch (e) {
     const message = e?.response?.data?.detail || e?.message || 'Не удалось загрузить детали заказа.';
     loadError.value = typeof message === 'string' ? message : 'Не удалось загрузить детали заказа.';
@@ -1855,23 +2395,18 @@ async function startCreateDeviceForOrder() {
 
 async function submitOrderDeviceModal() {
   try {
-    const payload = {
-      client_uuid: orderForm.value.data.client_uuid,
+    // Только сохраняем данные устройства, а сам девайс создаём при сохранении заказа.
+    pendingOrderDevice.value = {
       type_uuid: orderDeviceModal.value.data.type_uuid,
       brand: orderDeviceModal.value.data.brand,
       model: orderDeviceModal.value.data.model,
       serial_number: orderDeviceModal.value.data.serial_number,
       description: orderDeviceModal.value.data.description,
     };
-    const created = await createDevice(payload);
-    devices.value = await getDevices();
-    if (created?.uuid) {
-      orderForm.value.data.device_uuid = created.uuid;
-    }
     orderDeviceModal.value.open = false;
   } catch (e) {
-    const message = e?.response?.data?.detail || e?.message || 'Ошибка создания устройства.';
-    loadError.value = typeof message === 'string' ? message : 'Ошибка создания устройства.';
+    const message = e?.message || 'Ошибка заполнения устройства.';
+    loadError.value = typeof message === 'string' ? message : 'Ошибка заполнения устройства.';
   }
 }
 
@@ -2098,7 +2633,8 @@ async function addWorkToOrder() {
       title: newWorkForm.value.title,
       description: newWorkForm.value.description || undefined,
       price: newWorkForm.value.price || undefined,
-      employee_uuid: newWorkForm.value.employee_uuid || undefined,
+      // Исполнитель работы — инженер, назначенный у заказа.
+      employee_uuid: orderDetails.value.data.assigned_employee?.uuid || undefined,
     };
     await createWork(payload);
     const updated = await getOrderDetails(orderDetails.value.data.uuid);
@@ -2121,13 +2657,59 @@ async function addPartToOrder() {
       price: newOrderPartForm.value.price || undefined,
     };
     await createOrderPart(payload);
-    const updated = await getOrderDetails(orderDetails.value.data.uuid);
-    orderDetails.value.data = updated;
+    const [updatedOrder, partsData] = await Promise.all([
+      getOrderDetails(orderDetails.value.data.uuid),
+      getParts(),
+    ]);
+    orderDetails.value.data = updatedOrder;
+    parts.value = partsData;
     newOrderPartForm.value = { part_uuid: '', qty: 1, price: null };
     addPartToOrderModal.value.open = false;
   } catch (e) {
     const message = e?.response?.data?.detail || e?.message || 'Не удалось добавить запчасть.';
     loadError.value = typeof message === 'string' ? message : 'Не удалось добавить запчасть.';
+  }
+}
+
+async function decrementWork(work) {
+  if (!orderDetails.value.data) return;
+  try {
+    if ((work.qty || 1) > 1) {
+      await updateWork(work.uuid, {
+        qty: (work.qty || 1) - 1,
+      });
+    } else {
+      await deleteWork(work.uuid);
+    }
+
+    const updated = await getOrderDetails(orderDetails.value.data.uuid);
+    orderDetails.value.data = updated;
+  } catch (e) {
+    const message = e?.response?.data?.detail || e?.message || 'Не удалось обновить работу.';
+    loadError.value = typeof message === 'string' ? message : 'Не удалось обновить работу.';
+  }
+}
+
+async function decrementOrderPart(orderPart) {
+  if (!orderDetails.value.data) return;
+  try {
+    if ((orderPart.qty || 0) > 1) {
+      await updateOrderPart(orderPart.uuid, {
+        qty: orderPart.qty - 1,
+      });
+    } else {
+      await deleteOrderPart(orderPart.uuid);
+    }
+
+    const [updatedOrder, partsData] = await Promise.all([
+      getOrderDetails(orderDetails.value.data.uuid),
+      getParts(),
+    ]);
+    orderDetails.value.data = updatedOrder;
+    parts.value = partsData;
+  } catch (e) {
+    const message = e?.response?.data?.detail || e?.message || 'Не удалось обновить запчасть в заказе.';
+    loadError.value = typeof message === 'string' ? message : 'Не удалось обновить запчасть в заказе.';
   }
 }
 
