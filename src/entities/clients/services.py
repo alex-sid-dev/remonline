@@ -10,6 +10,7 @@ class ClientService:
         email: Optional[str] = None,
         telegram_nick: Optional[str] = None,
         comment: Optional[str] = None,
+        address: Optional[str] = None,
     ) -> Client:
         return Client(
             id=None,  # type: ignore
@@ -19,6 +20,7 @@ class ClientService:
             email=email,
             telegram_nick=telegram_nick,
             comment=comment,
+            address=address,
             is_active=True,
         )
 
@@ -30,6 +32,7 @@ class ClientService:
         email: Optional[str] = None,
         telegram_nick: Optional[str] = None,
         comment: Optional[str] = None,
+        address: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> Client:
         if full_name is not None:
@@ -42,6 +45,8 @@ class ClientService:
             client.telegram_nick = telegram_nick
         if comment is not None:
             client.comment = comment
+        if address is not None:
+            client.address = address
         if is_active is not None:
             client.is_active = is_active
         return client

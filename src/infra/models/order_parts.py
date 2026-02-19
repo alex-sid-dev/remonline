@@ -17,6 +17,7 @@ order_parts_table = Table(
     Column("price", Float, nullable=True),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Index("ix_order_parts_order_part_uuid", "order_part_uuid", unique=True),
+    Index("ix_order_parts_order_id", "order_id"),
 )
 
 

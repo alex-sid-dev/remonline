@@ -36,6 +36,9 @@ orders_table = Table(
     Index("ix_orders_client_id", "client_id"),
     Index("ix_orders_device_id", "device_id"),
     Index("ix_orders_order_uuid", "order_uuid", unique=True),
+    Index("ix_orders_status", "status"),
+    Index("ix_orders_is_active", "is_active"),
+    Index("ix_orders_is_active_created_at", "is_active", "created_at"),
 )
 
 

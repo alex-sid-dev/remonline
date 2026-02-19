@@ -5,6 +5,7 @@ import structlog
 from dataclasses import dataclass
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors.auth import EmailAlreadyExistsError
 from src.application.keycloak.auth_managers import AdminManager, OpenIDManager
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.transaction import Transaction, EntitySaver
@@ -51,7 +52,8 @@ class RegisterCommandHandler(BaseCommandHandler):
 
     async def run(self, data: RegisterCommand) -> RegisterCommandResponse:
         user = await self._user_reader.read_by_email(data.email)
-        await self.validate_user_already_exist(user)
+        if user:
+            raise EmailAlreadyExistsError()
 
         user_uuid: str | None = None
 
@@ -74,13 +76,17 @@ class RegisterCommandHandler(BaseCommandHandler):
 
         except Exception as e:
             logger.error("Registration failed, attempting rollback", email=str(data.email), error=str(e))
-            try:
-                await self._admin_manager.delete_user(user_uuid=user_uuid)
-                logger.info("Rolled back Keycloak user after DB failure", user_uuid=user_uuid)
-            except Exception as rollback_error:
-                logger.exception(
-                    "Failed to delete Keycloak user after registration transaction error",
-                    user_uuid=user_uuid,
-                    error=str(rollback_error),
-                )
+            if user_uuid:
+                try:
+                    await self._admin_manager.delete_user(user_uuid=user_uuid)
+                    logger.info("Rolled back Keycloak user after DB failure", user_uuid=user_uuid)
+                except Exception as rollback_error:
+                    logger.critical(
+                        "ORPHANED KEYCLOAK USER: failed to delete after registration rollback. "
+                        "Manual cleanup required!",
+                        user_uuid=user_uuid,
+                        original_error=str(e),
+                        rollback_error=str(rollback_error),
+                        exc_info=True,
+                    )
             raise

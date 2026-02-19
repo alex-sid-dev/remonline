@@ -21,7 +21,7 @@ devices_table = Table(
     Column("updated_at", DateTime, default=func.now(), server_default=func.now(),
            onupdate=func.now(), nullable=True),
     Index("ix_devices_client_id", "client_id"),
-    Index("ix_devices_serial_number", "serial_number", unique=True),
+    Index("ix_devices_serial_number", "serial_number"),
     Index("ix_devices_device_uuid", "device_uuid", unique=True),
 )
 

@@ -3,17 +3,19 @@ import structlog
 from dishka import FromDishka
 
 from dishka.integrations.fastapi import DishkaRoute, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from src.application.commands.employee.create_employee import CreateEmployeeCommand, CreateEmployeeCommandHandler, \
     CreateEmployeeCommandResponse
 from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler, ReadAllEmployeeCommand, \
-    ReadEmployeeResponse
+    ReadEmployeeResponse, PaginatedEmployeeResponse
 from src.application.commands.employee.read_employee import ReadEmployeeCommandHandler, ReadEmployeeCommand
 from src.application.commands.employee.update_employee import UpdateEmployeeCommand, UpdateEmployeeCommandHandler
 from src.application.commands.employee.delete_employee import DeleteEmployeeCommandHandler, DeleteEmployeeCommand
+from src.application.commands.employee.change_password import ChangePasswordCommandHandler, ChangePasswordCommand
 from typing import List, Annotated
+from pydantic import BaseModel, Field
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.rest.v1.permissions import RoleChecker
 from src.presentation.api.common.schemas.employee.create_employee import CreateEmployeeSchema
@@ -50,11 +52,13 @@ async def get_current_employee(
 async def get_all_employees(
         interactor: FromDishka[ReadAllEmployeeCommandHandler],
         current_employee: CurrentEmployee,
-) -> List[ReadEmployeeResponse]:
-    logger.info("ReadAll employees endpoint called")
-    dto = ReadAllEmployeeCommand()
+        limit: int = Query(200, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+) -> PaginatedEmployeeResponse:
+    logger.info("ReadAll employees endpoint called", limit=limit, offset=offset)
+    dto = ReadAllEmployeeCommand(limit=limit, offset=offset)
     result = await interactor.run(dto, current_employee)
-    logger.info("ReadAll employees successfully")
+    logger.info("ReadAll employees successfully", total=result.total)
     return result
 
 
@@ -73,6 +77,8 @@ async def create_employee(
         full_name=request_data.full_name,
         phone=request_data.phone,
         position=request_data.position,
+        salary=request_data.salary,
+        profit_percent=request_data.profit_percent,
     )
     result = await interactor.run(dto, current_employee)
     logger.info("Create employee registered successfully", phone=request_data.phone)
@@ -113,6 +119,29 @@ async def get_employee(
     result = await interactor.run(dto, current_employee)
     logger.info("Read employee successfully", employee_uuid=str(employee_uuid))
     return result
+
+
+class ChangePasswordSchema(BaseModel):
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
+@router.post(
+    path="/{employee_uuid}/change-password",
+    status_code=status.HTTP_200_OK,
+)
+async def change_employee_password(
+        employee_uuid: UUID,
+        request_data: ChangePasswordSchema,
+        interactor: FromDishka[ChangePasswordCommandHandler],
+        current_employee: CurrentEmployee,
+) -> None:
+    logger.info("Change password endpoint called", employee_uuid=str(employee_uuid))
+    dto = ChangePasswordCommand(
+        employee_uuid=employee_uuid,
+        new_password=request_data.new_password,
+    )
+    await interactor.run(dto, current_employee)
+    logger.info("Password changed successfully", employee_uuid=str(employee_uuid))
 
 
 @router.delete(

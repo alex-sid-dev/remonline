@@ -9,6 +9,7 @@ from src.application.commands.employee.read_all_employee import ReadAllEmployeeC
 from src.application.commands.employee.read_employee import ReadEmployeeCommandHandler
 from src.application.commands.employee.update_employee import UpdateEmployeeCommandHandler
 from src.application.commands.employee.delete_employee import DeleteEmployeeCommandHandler
+from src.application.commands.employee.change_password import ChangePasswordCommandHandler
 from src.application.commands.client.create_client import CreateClientCommandHandler
 from src.application.commands.client.read_all_client import ReadAllClientCommandHandler
 from src.application.commands.client.read_client import ReadClientCommandHandler
@@ -19,6 +20,7 @@ from src.application.commands.order.read_all_order import ReadAllOrderCommandHan
 from src.application.commands.order.read_order import ReadOrderCommandHandler
 from src.application.commands.order.update_order import UpdateOrderCommandHandler
 from src.application.commands.order.delete_order import DeleteOrderCommandHandler
+from src.application.commands.order.generate_act_pdf import GenerateActPdfCommandHandler
 from src.application.commands.device_type.create_device_type import CreateDeviceTypeCommandHandler
 from src.application.commands.device_type.read_all_device_type import ReadAllDeviceTypeCommandHandler
 from src.application.commands.device_type.read_device_type import ReadDeviceTypeCommandHandler
@@ -50,6 +52,7 @@ from src.application.commands.order_part.read_order_part import ReadOrderPartCom
 from src.application.commands.order_part.update_order_part import UpdateOrderPartCommandHandler
 from src.application.commands.order_part.delete_order_part import DeleteOrderPartCommandHandler
 from src.application.commands.order_comment.create_order_comment import CreateOrderCommentCommandHandler
+from src.application.commands.statistics.get_statistics import GetStatisticsCommandHandler
 
 
 def interactors_provider() -> Provider:
@@ -65,6 +68,7 @@ def interactors_provider() -> Provider:
         CreateEmployeeCommandHandler,
         UpdateEmployeeCommandHandler,
         DeleteEmployeeCommandHandler,
+        ChangePasswordCommandHandler,
 
         ReadAllClientCommandHandler,
         ReadClientCommandHandler,
@@ -77,6 +81,7 @@ def interactors_provider() -> Provider:
         CreateOrderCommandHandler,
         UpdateOrderCommandHandler,
         DeleteOrderCommandHandler,
+        GenerateActPdfCommandHandler,
 
         ReadAllDeviceTypeCommandHandler,
         ReadDeviceTypeCommandHandler,
@@ -115,5 +120,7 @@ def interactors_provider() -> Provider:
         DeleteOrderPartCommandHandler,
 
         CreateOrderCommentCommandHandler,
+
+        GetStatisticsCommandHandler,
     )
     return provider

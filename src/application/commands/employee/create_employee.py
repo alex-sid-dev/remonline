@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass
+from typing import Optional
 from uuid import UUID
 import structlog
 
@@ -11,7 +12,7 @@ from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee
 from src.entities.employees.services import EmployeeService
 from src.entities.users.models import UserUUID
-from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
+from src.application.errors._base import EntityNotFoundError, PermissionDeniedError, ConflictError
 
 logger = structlog.get_logger("create_employee").bind(service="employee")
 
@@ -27,6 +28,8 @@ class CreateEmployeeCommand:
     full_name: str
     phone: str
     position: EmployeePosition
+    salary: Optional[float] = None
+    profit_percent: Optional[float] = None
 
 
 class CreateEmployeeCommandHandler(BaseCommandHandler):
@@ -52,8 +55,9 @@ class CreateEmployeeCommandHandler(BaseCommandHandler):
         if not user:
             raise EntityNotFoundError(message=f"User with uuid {data.user_uuid} not found")
 
-        new_employee = await self._employee_reader.read_by_user_id(user.id)
-        await self.validate_employee_already_exist(employee=new_employee)
+        existing_employee = await self._employee_reader.read_by_user_id(user.id)
+        if existing_employee:
+            raise ConflictError(message="Employee already exists for this user")
 
         employee = self._employee_service.create_employee(
             user_id=user.id,
@@ -61,7 +65,9 @@ class CreateEmployeeCommandHandler(BaseCommandHandler):
             full_name=data.full_name,
             phone=data.phone,
             is_active=True,
-            position=data.position
+            position=data.position,
+            salary=data.salary,
+            profit_percent=data.profit_percent,
         )
         self._entity_saver.add_one(employee)
         await self._transaction.commit()

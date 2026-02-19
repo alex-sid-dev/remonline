@@ -7,7 +7,10 @@ from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from src.config.db_tables import map_tables
+from src.config.rate_limit import limiter
 from src.config.exc_handlers import setup_exc_handlers
 from src.config.ioc.di import get_providers
 from src.config.logging import setup_logging
@@ -29,7 +32,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """
     Asynchronous context manager for managing the lifespan of the FastAPI application.
     """
-    await make_admin(settings)
+    await make_admin(container)
     logger.info("Starting application...")
     yield
     logger.info("Shutting down application...")
@@ -55,17 +58,17 @@ def create_app() -> FastAPI:
 
     fast_app.add_middleware(  # type: ignore[call-arg]
         CORSMiddleware,  # type: ignore[arg-type]
-        allow_origins=[
-            "http://localhost",
-            "http://localhost:8000",
-        ],
+        allow_origins=settings.app.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
+    fast_app.state.limiter = limiter
+    fast_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     setup_dishka(container, fast_app)
-    setup_exc_handlers(fast_app)
+    setup_exc_handlers(fast_app, container)
     fast_app.include_router(api_v1_router, prefix="/api")
 
     return fast_app

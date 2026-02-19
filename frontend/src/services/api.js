@@ -267,10 +267,21 @@ export async function deleteEmployee(uuid) {
   await api.delete(`/employee/${uuid}`);
 }
 
+export async function changeEmployeePassword(uuid, newPassword) {
+  await api.post(`/employee/${uuid}/change-password`, { new_password: newPassword });
+}
+
 export async function registerUser(email, password) {
   const response = await api.post('/auth/register', {
     email,
     password,
+  });
+  return response.data;
+}
+
+export async function getOrderActHtml(uuid) {
+  const response = await api.get(`/order/${uuid}/act`, {
+    responseType: 'blob',
   });
   return response.data;
 }
@@ -283,6 +294,11 @@ export async function createOrderComment(payload) {
 /** Правила валидации с бэкенда (из Pydantic-схем) — для форм сотрудника, логина и т.д. */
 export async function getValidationRules() {
   const response = await api.get('/validation-rules');
+  return response.data;
+}
+
+export async function getStatistics() {
+  const response = await api.get('/statistics');
   return response.data;
 }
 

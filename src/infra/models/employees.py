@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, ForeignKey, String, Boolean, func, DateTime, UUID, Index
+from sqlalchemy import Table, Column, BigInteger, Float, ForeignKey, String, Boolean, func, DateTime, UUID, Index
 from sqlalchemy.orm import relationship
 
 from src.entities.employees.models import Employee
@@ -31,11 +31,14 @@ employees_table = Table(
     ),
 
     Column("is_active", Boolean, nullable=False, server_default="true"),
+    Column("salary", Float, nullable=True),
+    Column("profit_percent", Float, nullable=True),
 
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column("updated_at", DateTime, default=func.now(), server_default=func.now(),
            onupdate=func.now(), nullable=True),
     Index("ix_employees_employee_uuid", "employee_uuid", unique=True),
+    Index("ix_employees_is_active", "is_active"),
 )
 
 

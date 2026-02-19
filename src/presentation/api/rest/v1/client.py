@@ -1,14 +1,14 @@
 from typing import List, Annotated
 from uuid import UUID
 import structlog
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 
 from src.application.commands.client.create_client import CreateClientCommandHandler, CreateClientCommand, \
     CreateClientCommandResponse
 from src.application.commands.client.read_all_client import ReadAllClientCommandHandler, ReadAllClientCommand, \
-    ReadClientResponse
+    ReadClientResponse, PaginatedClientResponse
 from src.application.commands.client.read_client import ReadClientCommandHandler, ReadClientCommand
 from src.application.commands.client.update_client import UpdateClientCommandHandler, UpdateClientCommand
 from src.application.commands.client.delete_client import DeleteClientCommandHandler, DeleteClientCommand
@@ -33,11 +33,13 @@ CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
 async def get_all_clients(
         interactor: FromDishka[ReadAllClientCommandHandler],
         current_employee: CurrentEmployee,
-) -> List[ReadClientResponse]:
-    logger.info("ReadAll clients endpoint called")
-    dto = ReadAllClientCommand()
+        limit: int = Query(200, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+) -> PaginatedClientResponse:
+    logger.info("ReadAll clients endpoint called", limit=limit, offset=offset)
+    dto = ReadAllClientCommand(limit=limit, offset=offset)
     result = await interactor.run(dto, current_employee)
-    logger.info("ReadAll clients successfully")
+    logger.info("ReadAll clients successfully", total=result.total)
     return result
 
 
@@ -56,7 +58,8 @@ async def create_client(
         phone=request_data.phone,
         email=request_data.email,
         telegram_nick=request_data.telegram_nick,
-        comment=request_data.comment
+        comment=request_data.comment,
+        address=request_data.address,
     )
     result = await interactor.run(dto)
     logger.info("Client created successfully")

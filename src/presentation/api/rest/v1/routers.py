@@ -14,6 +14,7 @@ from . import (
     order_part,
     order_comment,
     validation_rules,
+    statistics,
 )
 
 api_v1_router = APIRouter()
@@ -30,4 +31,5 @@ api_v1_router.include_router(payment.router)
 api_v1_router.include_router(order_part.router)
 api_v1_router.include_router(order_comment.router)
 api_v1_router.include_router(validation_rules.router)
+api_v1_router.include_router(statistics.router)
 

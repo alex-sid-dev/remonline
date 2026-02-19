@@ -28,7 +28,6 @@ class ReadOrderPartCommandHandler(BaseCommandHandler):
             raise EntityNotFoundError(f"OrderPart with uuid {data.uuid} not found")
             
         return ReadOrderPartResponse(
-            id=order_part.id,
             uuid=order_part.uuid,
             order_id=order_part.order_id,
             part_id=order_part.part_id,

@@ -16,7 +16,6 @@ class ReadAllPaymentCommand:
 
 @dataclass
 class ReadPaymentResponse:
-    id: int
     uuid: str
     order_id: int
     amount: float
@@ -28,7 +27,6 @@ class ReadPaymentResponse:
     @classmethod
     def from_entity(cls, entity: Payment) -> "ReadPaymentResponse":
         return cls(
-            id=entity.id,
             uuid=str(entity.uuid),
             order_id=entity.order_id,
             amount=entity.amount,

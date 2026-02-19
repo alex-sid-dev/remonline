@@ -1,4 +1,6 @@
+import traceback
 from typing import TYPE_CHECKING
+
 import structlog
 from starlette.responses import JSONResponse
 
@@ -6,41 +8,47 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from src.application.errors._base import ApplicationError
 
+from src.application.errors._base import (
+    AuthenticationError,
+    ConflictError,
+    DomainError,
+    EntityNotFoundError,
+    FieldError,
+    KeycloakError,
+    PermissionDeniedError,
+    ProductCardError,
+    S3Error,
+    FileError,
+    VaultError,
+    PhiError,
+    QwenError,
+)
+
 logger = structlog.get_logger(__name__)
 
-async def application_error_handler(_: "Request", exc: "ApplicationError") -> JSONResponse:
-    """Глобальный обработчик для всех ошибок приложения (наследников ApplicationError)"""
-    
-    error_data = {
-        "detail": exc.message,
-    }
-    
-    if exc.error_code:
-        error_data["error_code"] = exc.error_code
-        
-    # Логируем ошибки 500 как ошибки, остальные как ворнинги
-    if exc.status_code >= 500:
-        logger.error(
-            "Application error occurred",
-            status_code=exc.status_code,
-            message=exc.message,
-            error_code=exc.error_code,
-            exc_info=True
-        )
-    else:
-        logger.warning(
-            "Application exception",
-            status_code=exc.status_code,
-            message=exc.message,
-            error_code=exc.error_code
-        )
+ERROR_STATUS_MAP: dict[type, int] = {
+    EntityNotFoundError: 404,
+    AuthenticationError: 401,
+    PermissionDeniedError: 403,
+    ConflictError: 409,
+    FieldError: 422,
+    ProductCardError: 422,
+    DomainError: 400,
+    KeycloakError: 503,
+    S3Error: 500,
+    FileError: 500,
+    VaultError: 500,
+    PhiError: 500,
+    QwenError: 500,
+}
 
-    return JSONResponse(
-        content=error_data,
-        status_code=exc.status_code
-    )
 
-async def validate(_: "Request", exc: Exception, status: int) -> JSONResponse:
-    """Старый обработчик для обратной совместимости, если где-то еще используется"""
-    message = getattr(exc, "message", str(exc))
-    return JSONResponse(content={"detail": message}, status_code=status)
+def resolve_status_code(exc: "ApplicationError") -> int:
+    for error_type, code in ERROR_STATUS_MAP.items():
+        if isinstance(exc, error_type):
+            return code
+    return 500
+
+
+def format_traceback(exc: Exception) -> str:
+    return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))

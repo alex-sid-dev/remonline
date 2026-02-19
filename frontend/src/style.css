@@ -608,21 +608,22 @@ tbody tr:hover {
 
 /* --- Страница заказа: заголовок и 3 колонки --- */
 .order-detail-header {
-  padding: 12px 16px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  padding: 10px 16px;
+  display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   border-bottom: 1px solid rgba(31, 41, 55, 0.9);
 }
 
 .order-detail-title {
   margin: 0;
-  font-size: 1.75rem;
+  flex: 1;
+  font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #e5e7eb;
   text-align: center;
+  white-space: nowrap;
 }
 
 .order-detail-page {
@@ -799,5 +800,70 @@ tbody tr:hover {
 
 .order-comments-input-row .btn {
   flex-shrink: 0;
+}
+
+.employee-form-page {
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.employee-form-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.employee-form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.border-top-subtle {
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  padding-top: 16px;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.btn-danger {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-danger:not(:disabled):hover {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
+.form-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.inline-form-cell {
+  padding: 8px;
+}
+
+.inline-form-wrapper {
+  margin: 0;
+}
+
+.gap-8 {
+  gap: 8px;
 }
 

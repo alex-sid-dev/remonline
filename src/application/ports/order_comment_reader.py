@@ -1,17 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import List, Optional
-from uuid import UUID
+from typing import List, Optional, Protocol
 
-from src.entities.order_comments.models import OrderComment, OrderCommentID, OrderCommentUUID
-from src.entities.orders.models import OrderID, OrderUUID
+from src.entities.order_comments.models import OrderComment, OrderCommentUUID
+from src.entities.orders.models import OrderID
 
 
-class OrderCommentReader(ABC):
-    @abstractmethod
-    async def read_by_uuid(self, uuid: OrderCommentUUID) -> Optional[OrderComment]:
-        raise NotImplementedError
+class OrderCommentReader(Protocol):
+    async def read_by_uuid(self, uuid: OrderCommentUUID) -> Optional[OrderComment]: ...
 
-    @abstractmethod
-    async def read_for_order(self, order_id: OrderID) -> List[OrderComment]:
-        raise NotImplementedError
-
+    async def read_for_order(self, order_id: OrderID) -> List[OrderComment]: ...

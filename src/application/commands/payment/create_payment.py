@@ -50,13 +50,13 @@ class CreatePaymentCommandHandler(BaseCommandHandler):
     async def run(self, data: CreatePaymentCommand) -> CreatePaymentCommandResponse:
         order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
         if not order:
-            raise EntityNotFoundError(message="Order with uuid {data.order_uuid} not found")
+            raise EntityNotFoundError(message=f"Order with uuid {data.order_uuid} not found")
 
         employee_id = None
         if data.employee_uuid:
             employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.employee_uuid))
             if not employee:
-                raise EntityNotFoundError(message="Employee with uuid {data.employee_uuid} not found")
+                raise EntityNotFoundError(message=f"Employee with uuid {data.employee_uuid} not found")
             employee_id = employee.id
 
         payment = self._payment_service.create_payment(

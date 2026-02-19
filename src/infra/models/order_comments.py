@@ -16,6 +16,7 @@ order_comments_table = Table(
     Column("comment", TEXT, nullable=False),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Index("ix_order_comments_order_comment_uuid", "order_comment_uuid", unique=True),
+    Index("ix_order_comments_order_id", "order_id"),
 )
 
 

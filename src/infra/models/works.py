@@ -23,6 +23,7 @@ works_table = Table(
            onupdate=func.now(), nullable=True),
     Index("ix_works_order_id", "order_id"),
     Index("ix_works_work_uuid", "work_uuid", unique=True),
+    Index("ix_works_employee_id", "employee_id"),
 )
 
 def map_works_table() -> None:

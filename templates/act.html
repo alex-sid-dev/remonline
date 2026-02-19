@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Акт выполненных работ</title>
+<style>
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body {
+    font-family: sans-serif;
+    font-size: 12px;
+    color: #1a1a1a;
+    line-height: 1.5;
+    margin: 20mm 15mm;
+  }
+  h1 {
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: bold;
+    margin-top: 18px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 3px;
+  }
+  .info-grid {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  .info-grid td {
+    padding: 3px 8px;
+    vertical-align: top;
+  }
+  .info-grid .label {
+    font-weight: bold;
+    width: 180px;
+    color: #444;
+  }
+  table.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.items th, table.items td {
+    border: 1px solid #999;
+    padding: 5px 8px;
+    text-align: left;
+  }
+  table.items th {
+    background: #eee;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  table.items td.num {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .total-row {
+    font-weight: bold;
+    font-size: 14px;
+    text-align: right;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 2px solid #333;
+  }
+  .signatures {
+    margin-top: 40px;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .signatures td {
+    width: 50%;
+    padding-top: 30px;
+    vertical-align: bottom;
+  }
+  .sign-line {
+    border-top: 1px solid #333;
+    margin-top: 40px;
+    padding-top: 4px;
+    font-size: 11px;
+    color: #555;
+  }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .signatures { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Акт выполненных работ</h1>
+<div class="subtitle">Заказ № {{ order.id }} от {{ order.created_at }}</div>
+
+<div class="section-title">Клиент</div>
+<table class="info-grid">
+  <tr>
+    <td class="label">ФИО</td>
+    <td>{{ client.full_name }}</td>
+  </tr>
+  <tr>
+    <td class="label">Телефон</td>
+    <td>{{ client.phone or '—' }}</td>
+  </tr>
+  {% if client.address %}
+  <tr>
+    <td class="label">Адрес</td>
+    <td>{{ client.address }}</td>
+  </tr>
+  {% endif %}
+</table>
+
+<div class="section-title">Устройство</div>
+<table class="info-grid">
+  <tr>
+    <td class="label">Бренд / Модель</td>
+    <td>{{ device.brand }} {{ device.model }}</td>
+  </tr>
+  {% if device.serial_number %}
+  <tr>
+    <td class="label">Серийный номер</td>
+    <td>{{ device.serial_number }}</td>
+  </tr>
+  {% endif %}
+</table>
+
+<div class="section-title">Ответственные</div>
+<table class="info-grid">
+  <tr>
+    <td class="label">Менеджер</td>
+    <td>{{ manager_name }}</td>
+  </tr>
+  <tr>
+    <td class="label">Инженер</td>
+    <td>{{ engineer_name }}</td>
+  </tr>
+</table>
+
+{% if works %}
+<div class="section-title">Выполненные работы</div>
+<table class="items">
+  <thead>
+    <tr>
+      <th>№</th>
+      <th>Название</th>
+      <th>Исполнитель</th>
+      <th>Кол-во</th>
+      <th>Цена за ед.</th>
+      <th>Сумма</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w in works %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ w.title }}</td>
+      <td>{{ w.employee_name }}</td>
+      <td class="num">{{ w.qty }}</td>
+      <td class="num">{{ "%.2f"|format(w.price) }}</td>
+      <td class="num">{{ "%.2f"|format(w.total) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if parts %}
+<div class="section-title">Использованные запчасти</div>
+<table class="items">
+  <thead>
+    <tr>
+      <th>№</th>
+      <th>Название</th>
+      <th>SKU</th>
+      <th>Кол-во</th>
+      <th>Цена за ед.</th>
+      <th>Сумма</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in parts %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.sku or '—' }}</td>
+      <td class="num">{{ p.qty }}</td>
+      <td class="num">{{ "%.2f"|format(p.price) }}</td>
+      <td class="num">{{ "%.2f"|format(p.total) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if problem_description %}
+<div class="section-title">Описание проблемы</div>
+<p>{{ problem_description }}</p>
+{% endif %}
+
+<div class="total-row">
+  Работы: {{ "%.2f"|format(works_total) }} ·
+  Запчасти: {{ "%.2f"|format(parts_total) }} ·
+  ИТОГО: {{ "%.2f"|format(grand_total) }}
+</div>
+
+<table class="signatures">
+  <tr>
+    <td>
+      <div class="sign-line">Исполнитель / подпись</div>
+    </td>
+    <td>
+      <div class="sign-line">Заказчик / подпись</div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

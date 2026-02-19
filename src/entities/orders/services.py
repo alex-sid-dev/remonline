@@ -2,6 +2,7 @@ from typing import Optional
 from datetime import datetime
 from uuid import uuid4
 
+from src.application.errors._base import FieldError
 from src.entities.orders.models import Order, OrderID, OrderUUID
 from src.entities.orders.enum import OrderStatus
 from src.entities.clients.models import ClientID
@@ -25,7 +26,8 @@ class OrderService:
             for s in OrderStatus:
                 if s.name == upper:
                     return s
-            raise
+            valid = ", ".join(s.value for s in OrderStatus)
+            raise FieldError(message=f"Недопустимый статус заказа: '{status}'. Допустимые: {valid}")
 
     def create_order(
         self,
@@ -80,3 +82,13 @@ class OrderService:
         
         order.updated_at = datetime.now()
         return order
+
+    @staticmethod
+    def assign_engineer_to_unassigned_works(works: list, employee_id: EmployeeID) -> list:
+        """Assign engineer to works that don't have one."""
+        updated = []
+        for work in works:
+            if work.employee_id is None:
+                work.employee_id = employee_id
+                updated.append(work)
+        return updated

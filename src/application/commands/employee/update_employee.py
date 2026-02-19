@@ -22,6 +22,8 @@ class UpdateEmployeeCommand:
     full_name: Optional[str] = None
     phone: Optional[str] = None
     position: Optional[EmployeePosition] = None
+    salary: Optional[float] = None
+    profit_percent: Optional[float] = None
 
 
 class UpdateEmployeeCommandHandler(BaseCommandHandler):
@@ -36,18 +38,28 @@ class UpdateEmployeeCommandHandler(BaseCommandHandler):
         self._employee_service = employee_service
 
     async def run(self, data: UpdateEmployeeCommand, current_employee: Employee) -> None:
-        # Только супервизор может назначать роль supervisor.
         if data.position == EmployeePosition.SUPERVISOR and current_employee.position != EmployeePosition.SUPERVISOR:
             raise PermissionDeniedError(message="Только супервизор может назначать роль «супервизор».")
+
+        if (data.salary is not None or data.profit_percent is not None) \
+                and current_employee.position != EmployeePosition.SUPERVISOR:
+            raise PermissionDeniedError(message="Только супервизор может менять зарплату и процент от прибыли.")
+
         employee_to_update = await self._employee_reader.read_by_uuid(EmployeeUUID(data.uuid))
         if not employee_to_update:
             raise EmployeeNotFoundError()
+
+        if current_employee.position == EmployeePosition.ADMIN \
+                and employee_to_update.position not in (EmployeePosition.MASTER, EmployeePosition.MANAGER):
+            raise PermissionDeniedError(message="Админ может редактировать только мастеров и менеджеров.")
 
         self._employee_service.update_employee(
             employee=employee_to_update,
             full_name=data.full_name,
             phone=data.phone,
             position=data.position,
+            salary=data.salary,
+            profit_percent=data.profit_percent,
         )
         await self._transaction.commit()
         logger.info("Employee updated successfully", employee_uuid=str(data.uuid))

@@ -12,6 +12,9 @@ class Transaction(ABC):
     @abstractmethod
     async def flush(self) -> None: ...
 
+    @abstractmethod
+    async def rollback(self) -> None: ...
+
 
 class EntitySaver(ABC):
     """Abstraction for persisting and deleting domain entities."""

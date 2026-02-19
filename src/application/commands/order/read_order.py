@@ -20,47 +20,41 @@ class BaseResponse(BaseModel):
 
 
 class ClientShortResponse(BaseResponse):
-    id: int
     full_name: str
     phone: Optional[str] = None
+    address: Optional[str] = None
 
 
 class DeviceShortResponse(BaseResponse):
-    id: int
     model: str
     brand: Optional[str] = None
     serial_number: Optional[str] = None
 
 
 class EmployeeShortResponse(BaseResponse):
-    id: int
     uuid: UUID
     full_name: str
 
 
 class OrderCommentResponse(BaseResponse):
-    id: int
     text: str = Field(validation_alias=AliasChoices("comment", "text"))  # ORM has .comment
     created_at: datetime
     creator: Optional[EmployeeShortResponse] = None  # кто оставил комментарий
 
 
 class PaymentResponse(BaseResponse):
-    id: int
     uuid: UUID
     amount: float
     payment_method: str
     created_at: datetime
 
 class PartShortResponse(BaseResponse):
-    id: int
     uuid: UUID
     name: str
     sku: Optional[str] = None
     price: Optional[float] = None
 
 class OrderPartResponse(BaseResponse):
-    id: int
     uuid: UUID
     part_id: int
     qty: int
@@ -69,7 +63,6 @@ class OrderPartResponse(BaseResponse):
 
 
 class WorkResponse(BaseResponse):
-    id: int
     uuid: UUID
     title: str
     description: Optional[str] = None

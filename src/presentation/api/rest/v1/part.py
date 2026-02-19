@@ -1,13 +1,14 @@
 from typing import List, Annotated
 import structlog
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
 
 from src.application.commands.part.create_part import CreatePartCommandHandler, CreatePartCommand, \
     CreatePartCommandResponse
-from src.application.commands.part.read_all_part import ReadAllPartCommandHandler, ReadAllPartCommand, ReadPartResponse
+from src.application.commands.part.read_all_part import ReadAllPartCommandHandler, ReadAllPartCommand, ReadPartResponse, \
+    PaginatedPartResponse
 from src.application.commands.part.read_part import ReadPartCommandHandler, ReadPartCommand
 from src.application.commands.part.update_part import UpdatePartCommandHandler, UpdatePartCommand
 from src.application.commands.part.delete_part import DeletePartCommandHandler, DeletePartCommand
@@ -37,11 +38,13 @@ ManagerEmployee = Annotated[Employee, Depends(inject(role_checker_manage_parts._
 async def get_all_parts(
         interactor: FromDishka[ReadAllPartCommandHandler],
         current_employee: CurrentEmployee,
-) -> List[ReadPartResponse]:
-    logger.info("ReadAll parts endpoint called")
-    dto = ReadAllPartCommand()
+        limit: int = Query(200, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+) -> PaginatedPartResponse:
+    logger.info("ReadAll parts endpoint called", limit=limit, offset=offset)
+    dto = ReadAllPartCommand(limit=limit, offset=offset)
     result = await interactor.run(dto, current_employee)
-    logger.info("ReadAll parts successfully")
+    logger.info("ReadAll parts successfully", total=result.total)
     return result
 
 

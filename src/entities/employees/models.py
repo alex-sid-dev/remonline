@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import Optional, NewType
 from uuid import UUID
 
-from sqlalchemy.orm import Mapped
-
 from src.entities.base_entity import BaseEntity
 from src.entities.employees.enum import EmployeePosition
 from src.entities.users.models import UserID
@@ -19,3 +17,5 @@ class Employee(BaseEntity[EmployeeID, EmployeeUUID]):
     phone: Optional[str]
     position: EmployeePosition
     is_active: bool
+    salary: Optional[float] = None
+    profit_percent: Optional[float] = None

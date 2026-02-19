@@ -1,4 +1,4 @@
-from typing import Tuple, Type
+from typing import List, Tuple, Type
 from pydantic import Field, BaseModel, AliasChoices
 from pydantic_settings import (
     BaseSettings, 
@@ -19,6 +19,7 @@ class AppSettings(BaseModel):
     debug: bool = False
     uvicorn_host: str = Field("0.0.0.0", validation_alias=AliasChoices("uvicorn_host", "UVICORN_HOST"))
     uvicorn_port: int = Field(8000, validation_alias=AliasChoices("uvicorn_port", "UVICORN_PORT"))
+    cors_origins: List[str] = ["http://localhost", "http://localhost:8000", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 class Settings(BaseSettings):
     """

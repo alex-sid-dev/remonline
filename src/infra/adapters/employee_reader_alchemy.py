@@ -1,6 +1,6 @@
 import structlog
-from typing import Final, List, Optional
-from sqlalchemy import select
+from typing import Final, List, Optional, Tuple
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.entities.employees.models import Employee, EmployeeID, EmployeeUUID
@@ -9,7 +9,7 @@ from src.infra.models.employees import employees_table
 from src.application.ports.employee_reader import EmployeeReader
 
 
-class EmployeeReaderAlchemy(EmployeeReader):
+class EmployeeReaderAdapter(EmployeeReader):
     def __init__(self, session: AsyncSession) -> None:
         self._session: Final = session
         self._logger = structlog.get_logger("db").bind(service="db", entity="employee")
@@ -47,10 +47,18 @@ class EmployeeReaderAlchemy(EmployeeReader):
             self._logger.info("Employee found", employee_id=str(employee.id))
         return employee
 
-    async def read_all_active(self) -> List[Employee]:
+    async def read_all_active(self, limit: int = 200, offset: int = 0) -> Tuple[List[Employee], int]:
         self._logger.info("Reading all active employees")
-        stmt = select(Employee).where(employees_table.c.is_active == True)
+        count_stmt = select(func.count()).select_from(employees_table).where(employees_table.c.is_active.is_(True))
+        total = (await self._session.execute(count_stmt)).scalar() or 0
+
+        stmt = (
+            select(Employee)
+            .where(employees_table.c.is_active.is_(True))
+            .limit(limit)
+            .offset(offset)
+        )
         result = await self._session.execute(stmt)
         employees = list(result.scalars().all())
-        self._logger.info("Number of active employees found", count=len(employees))
-        return employees
+        self._logger.info("Active employees found", count=len(employees), total=total)
+        return employees, total

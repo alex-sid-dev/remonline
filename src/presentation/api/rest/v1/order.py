@@ -1,6 +1,7 @@
 from typing import List, Annotated
 import structlog
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject, DishkaRoute
 from uuid import UUID
@@ -8,10 +9,11 @@ from uuid import UUID
 from src.application.commands.order.create_order import CreateOrderCommandHandler, CreateOrderCommand, \
     CreateOrderCommandResponse
 from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler, ReadAllOrderCommand, \
-    ReadOrderResponse
+    ReadOrderResponse, PaginatedOrderResponse
 from src.application.commands.order.read_order import ReadOrderCommandHandler, ReadOrderCommand, ReadOrderOneResponse
 from src.application.commands.order.update_order import UpdateOrderCommandHandler, UpdateOrderCommand
 from src.application.commands.order.delete_order import DeleteOrderCommandHandler, DeleteOrderCommand
+from src.application.commands.order.generate_act_pdf import GenerateActPdfCommandHandler, GenerateActPdfCommand
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.order.create_order import CreateOrderSchema
 from src.presentation.api.common.schemas.order.update_order import UpdateOrderSchema
@@ -39,11 +41,13 @@ CreatorEmployee = Annotated[Employee, Depends(inject(role_checker_create.__call_
 async def get_all_orders(
         interactor: FromDishka[ReadAllOrderCommandHandler],
         current_employee: CurrentEmployee,
-) -> List[ReadOrderResponse]:
-    logger.info("ReadAll orders endpoint called")
-    dto = ReadAllOrderCommand()
+        limit: int = Query(200, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+) -> PaginatedOrderResponse:
+    logger.info("ReadAll orders endpoint called", limit=limit, offset=offset)
+    dto = ReadAllOrderCommand(limit=limit, offset=offset)
     result = await interactor.run(dto, current_employee)
-    logger.info("ReadAll orders successfully")
+    logger.info("ReadAll orders successfully", total=result.total)
     return result
 
 
@@ -89,6 +93,22 @@ async def update_order(
     )
     await interactor.run(dto, current_employee)
     logger.info("Order updated successfully", order_uuid=str(order_uuid))
+
+
+@router.get(
+    path="/{order_uuid}/act",
+    status_code=status.HTTP_200_OK,
+    responses={200: {"content": {"text/html": {}}}},
+)
+async def get_order_act(
+        order_uuid: UUID,
+        interactor: FromDishka[GenerateActPdfCommandHandler],
+        current_employee: CurrentEmployee,
+) -> Response:
+    logger.info("Generate act endpoint called", order_uuid=str(order_uuid))
+    dto = GenerateActPdfCommand(uuid=order_uuid)
+    html = await interactor.run(dto, current_employee)
+    return Response(content=html, media_type="text/html; charset=utf-8")
 
 
 @router.get(

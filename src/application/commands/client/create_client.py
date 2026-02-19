@@ -27,6 +27,7 @@ class CreateClientCommand:
     email: Optional[str] = None
     telegram_nick: Optional[str] = None
     comment: Optional[str] = None
+    address: Optional[str] = None
 
 
 class CreateClientCommandHandler(BaseCommandHandler):
@@ -52,7 +53,8 @@ class CreateClientCommandHandler(BaseCommandHandler):
             phone=data.phone,
             email=data.email,
             telegram_nick=data.telegram_nick,
-            comment=data.comment
+            comment=data.comment,
+            address=data.address,
         )
         self._entity_saver.add_one(client)
         await self._transaction.commit()

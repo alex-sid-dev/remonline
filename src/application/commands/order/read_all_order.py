@@ -10,18 +10,22 @@ from src.entities.employees.models import Employee
 
 logger = structlog.get_logger("read_all_order").bind(service="order")
 
+
 @dataclass
 class ReadAllOrderCommand:
-    pass
+    limit: int = 200
+    offset: int = 0
+
 
 @dataclass
 class ReadOrderResponse:
     id: int
     uuid: str
-    client_id: int
-    device_id: int
-    creator_id: Optional[int]
-    assigned_employee_id: Optional[int]
+    client_name: str
+    client_phone: str
+    device_label: str
+    creator_name: str
+    assigned_employee_name: str
     status: str
     problem_description: Optional[str]
     price: Optional[float]
@@ -30,27 +34,50 @@ class ReadOrderResponse:
 
     @classmethod
     def from_entity(cls, entity: Order) -> "ReadOrderResponse":
+        client = getattr(entity, "client", None)
+        device = getattr(entity, "device", None)
+        creator = getattr(entity, "creator", None)
+        assigned = getattr(entity, "assigned_employee", None)
+
+        device_label = "—"
+        if device:
+            device_label = f"{device.brand} {device.model}".strip()
+            if device.serial_number:
+                device_label += f" · SN: {device.serial_number}"
+
         return cls(
             id=entity.id,
             uuid=str(entity.uuid),
-            client_id=entity.client_id,
-            device_id=entity.device_id,
-            creator_id=entity.creator_id,
-            assigned_employee_id=entity.assigned_employee_id,
+            client_name=client.full_name if client else "—",
+            client_phone=client.phone if client else "—",
+            device_label=device_label,
+            creator_name=creator.full_name if creator else "—",
+            assigned_employee_name=assigned.full_name if assigned else "—",
             status=entity.status,
             problem_description=entity.problem_description,
             price=entity.price,
             created_at=entity.created_at,
-            updated_at=entity.updated_at
+            updated_at=entity.updated_at,
         )
 
+
+@dataclass
+class PaginatedOrderResponse:
+    items: List[ReadOrderResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class ReadAllOrderCommandHandler(BaseCommandHandler):
-    def __init__(
-            self,
-            order_reader: OrderReader,
-    ) -> None:
+    def __init__(self, order_reader: OrderReader) -> None:
         self._order_reader = order_reader
 
-    async def run(self, data: ReadAllOrderCommand, current_employee: Employee) -> List[ReadOrderResponse]:
-        orders = await self._order_reader.read_all_active()
-        return [ReadOrderResponse.from_entity(o) for o in orders]
+    async def run(self, data: ReadAllOrderCommand, current_employee: Employee) -> PaginatedOrderResponse:
+        orders, total = await self._order_reader.read_all_active(data.limit, data.offset)
+        return PaginatedOrderResponse(
+            items=[ReadOrderResponse.from_entity(o) for o in orders],
+            total=total,
+            limit=data.limit,
+            offset=data.offset,
+        )

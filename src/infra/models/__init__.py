@@ -8,3 +8,4 @@ from .works import map_works_table
 from .device_types import map_device_types_table
 from .payments import map_payments_table
 from .devices import map_devices_table
+from .error_logs import map_error_logs_table

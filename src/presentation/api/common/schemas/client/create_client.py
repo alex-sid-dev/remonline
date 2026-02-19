@@ -10,6 +10,7 @@ class CreateClientSchema(BaseModel):
     email: Optional[str] = None
     telegram_nick: Optional[str] = None
     comment: Optional[str] = None
+    address: Optional[str] = Field(None, max_length=1024)
 
     @field_validator("phone")
     @classmethod

@@ -1,8 +1,9 @@
-from typing import List, Optional
-from sqlalchemy import select
+from typing import List, Optional, Tuple
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.ports.client_reader import ClientReader
 from src.entities.clients.models import Client, ClientID, ClientUUID
+
 
 class ClientReaderAdapter(ClientReader):
     def __init__(self, session: AsyncSession) -> None:
@@ -23,7 +24,15 @@ class ClientReaderAdapter(ClientReader):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_all_active(self) -> List[Client]:
-        stmt = select(Client).where(Client.is_active == True)
+    async def read_all_active(self, limit: int = 200, offset: int = 0) -> Tuple[List[Client], int]:
+        count_stmt = select(func.count()).select_from(Client).where(Client.is_active.is_(True))
+        total = (await self._session.execute(count_stmt)).scalar() or 0
+
+        stmt = (
+            select(Client)
+            .where(Client.is_active.is_(True))
+            .limit(limit)
+            .offset(offset)
+        )
         result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.scalars().all()), total

@@ -22,6 +22,11 @@ class TransactionAlchemy(Transaction):
         await self._session.flush()
         self._logger.info("Transaction flushed")
 
+    async def rollback(self) -> None:
+        self._logger.info("Rolling back transaction")
+        await self._session.rollback()
+        self._logger.info("Transaction rolled back")
+
 
 class EntitySaverAlchemy(EntitySaver):
     def __init__(self, session: AsyncSession) -> None:

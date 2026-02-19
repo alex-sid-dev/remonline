@@ -8,6 +8,8 @@ class EmployeeBaseSchema(BaseModel):
     full_name: Optional[str] = Field(None, description="ФИО сотрудника", examples=["Иванов Иван Иванович"])
     phone: Optional[str] = Field(None, description="Номер телефона", examples=["+79001234567"])
     position: Optional[EmployeePosition] = Field(None, description="Роль сотрудника")
+    salary: Optional[float] = Field(None, ge=0, description="Зарплата в месяц")
+    profit_percent: Optional[float] = Field(None, ge=0, le=100, description="Процент от прибыли")
 
     @field_validator('phone')
     @classmethod

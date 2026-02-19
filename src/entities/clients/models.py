@@ -15,4 +15,5 @@ class Client(BaseEntity[ClientID, ClientUUID]):
     email: Optional[str] = None
     telegram_nick: Optional[str] = None
     comment: Optional[str] = None
+    address: Optional[str] = None
     is_active: bool = True

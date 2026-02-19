@@ -1,126 +1,83 @@
-import uuid
-from keycloak import KeycloakAdmin
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from uuid import uuid4
 
-from src.config.settings import Settings
+import structlog
+from dishka import AsyncContainer
+
+from src.application.keycloak.auth_managers import AdminManager
+from src.application.ports.employee_reader import EmployeeReader
+from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.user_reader import UserReader
+from src.entities.employees.enum import EmployeePosition
+from src.entities.employees.services import EmployeeService
+from src.entities.users.services import UserService
+
+logger = structlog.get_logger("make_admin").bind(service="bootstrap")
+
+ADMIN_EMAIL = "admin@admin.ru"
+ADMIN_PASSWORD = "1!String"
+ADMIN_FULL_NAME = "Yahve"
+ADMIN_PHONE = "+1 000 000 000"
 
 
-async def make_admin(settings: Settings):
-    engine = create_async_engine(
-        settings.database_url,
-        echo=settings.database.echo,
-        pool_size=settings.database.pool_size,
-        max_overflow=settings.database.max_overflow,
-        pool_timeout=settings.database.pool_timeout,
-    )
-    session_maker = async_sessionmaker(
-        bind=engine,
-        autoflush=False,
-        expire_on_commit=False,
-    )
-    client = KeycloakAdmin(
-        server_url=settings.keycloak.keycloak_url,
-        username=settings.keycloak.keycloak_username,
-        password=settings.keycloak.keycloak_password,
-        realm_name=settings.keycloak.keycloak_realm,
-        client_id=settings.keycloak.keycloak_client_id,
-        verify=True,
-    )
-    user_old = await client.a_get_users({"email": "admin@admin.ru"})
-    if user_old:
-        # Проверяем, есть ли пользователь в нашей базе данных
-        async with session_maker() as session:
-            result = await session.execute(text(
-                "SELECT user_id FROM users WHERE email = :email"
-            ), {"email": "admin@admin.ru"})
-            user_in_db = result.scalar()
-            
-            if user_in_db:
-                # Проверяем, есть ли сотрудник для этого пользователя
-                result = await session.execute(text(
-                    "SELECT employee_id FROM employees WHERE user_id = :user_id"
-                ), {"user_id": user_in_db})
-                employee_in_db = result.scalar()
-                
-                if employee_in_db:
-                    return None
-                
-                # Если пользователя в Keycloak есть, а сотрудника в нашей БД нет - создаем
-                await session.execute(text("""
-                                           INSERT INTO employees (employee_uuid, user_id, full_name, phone, position, is_active)
-                                           VALUES (:employee_uuid, :user_id, :full_name, :phone, :position, :is_active)
-                                           """),
-                                      {
-                                          "employee_uuid": uuid.uuid4(),
-                                          "user_id": int(user_in_db),
-                                          "full_name": "Yahve",
-                                          "phone": "+1 000 000 000",
-                                          "position": "supervisor",
-                                          "is_active": True
-                                      })
-                await session.commit()
-                return None
-            else:
-                # Если в Keycloak есть, а в users нет - берем UUID из Keycloak и создаем в обеих таблицах
-                user_uuid = user_old[0]['id']
-                result = await session.execute(text(
-                    """
-                    INSERT INTO users (user_uuid, email)
-                    VALUES (:user_uuid, :email) RETURNING user_id
-                    """),
-                    {"user_uuid": str(user_uuid), "email": "admin@admin.ru"},
-                )
-                user_id = result.scalar()
-                await session.flush()
-                await session.execute(text("""
-                                           INSERT INTO employees (employee_uuid, user_id, full_name, phone, position, is_active)
-                                           VALUES (:employee_uuid, :user_id, :full_name, :phone, :position, :is_active)
-                                           """),
-                                      {
-                                          "employee_uuid": uuid.uuid4(),
-                                          "user_id": int(user_id),
-                                          "full_name": "Yahve",
-                                          "phone": "+1 000 000 000",
-                                          "position": "supervisor",
-                                          "is_active": True
-                                      })
-                await session.commit()
-                return None
+async def make_admin(container: AsyncContainer) -> None:
+    """Ensure a default supervisor account exists in Keycloak and the local DB."""
+    async with container() as request_scope:
+        admin_manager = await request_scope.get(AdminManager)
+        user_reader = await request_scope.get(UserReader)
+        employee_reader = await request_scope.get(EmployeeReader)
+        entity_saver = await request_scope.get(EntitySaver)
+        transaction = await request_scope.get(Transaction)
+        user_service = await request_scope.get(UserService)
+        employee_service = await request_scope.get(EmployeeService)
 
-    new_user = {
-        "email": "admin@admin.ru",
-        "username": "admin@admin.ru",
-        "enabled": True,
-        "emailVerified": False,
-        "credentials": [{"value": "1!String", "type": "password"}],
-    }
+        user = await user_reader.read_by_email(ADMIN_EMAIL)
+        if user:
+            employee = await employee_reader.read_by_user_id(user.id)
+            if employee:
+                logger.info("Admin account already exists, skipping")
+                return
 
-    user_uuid = await client.a_create_user(payload=new_user)
-    async with session_maker() as session:
-        result = await session.execute(text(
-            """
-            INSERT INTO users (user_uuid, email)
-            VALUES (:user_uuid, :email) RETURNING user_id
-            """),
-            {"user_uuid": str(user_uuid), "email": "admin@admin.ru"},
+            new_employee = employee_service.create_employee(
+                user_id=user.id,
+                full_name=ADMIN_FULL_NAME,
+                phone=ADMIN_PHONE,
+                position=EmployeePosition.SUPERVISOR,
+                is_active=True,
+                uuid=uuid4(),
+            )
+            entity_saver.add_one(new_employee)
+            await transaction.commit()
+            logger.info("Created employee record for existing admin user")
+            return
+
+        try:
+            kc_user_uuid = await admin_manager.register_user(
+                email=ADMIN_EMAIL,
+                password=ADMIN_PASSWORD,
+            )
+        except Exception:
+            logger.warning("Keycloak registration failed, checking if user already exists there")
+            kc_user_uuid = None
+
+        if kc_user_uuid is None:
+            logger.warning("Could not create or find admin in Keycloak, skipping")
+            return
+
+        new_user = user_service.create_user(
+            user_uuid=kc_user_uuid,
+            email=ADMIN_EMAIL,
         )
-        user_id = result.scalar()  # Получаем ID
-        await session.flush()
-        await session.execute(text("""
-                                   INSERT INTO employees (employee_uuid, user_id, full_name, phone, position, is_active)
-                                   VALUES (:employee_uuid, :user_id, :full_name, :phone, :position, :is_active)
-                                   """),
-                              {
-                                  "employee_uuid": uuid.uuid4(),
-                                  "user_id": int(user_id),
-                                  "full_name": "Yahve",
-                                  "phone": "+1 000 000 000",
-                                  "position": "supervisor",
-                                  "is_active": True
-                              },
-                              )
-        await session.commit()
-    return None
+        entity_saver.add_one(new_user)
+        await transaction.flush()
 
-
+        new_employee = employee_service.create_employee(
+            user_id=new_user.id,
+            full_name=ADMIN_FULL_NAME,
+            phone=ADMIN_PHONE,
+            position=EmployeePosition.SUPERVISOR,
+            is_active=True,
+            uuid=uuid4(),
+        )
+        entity_saver.add_one(new_employee)
+        await transaction.commit()
+        logger.info("Admin account created successfully", user_uuid=kc_user_uuid)

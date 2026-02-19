@@ -13,14 +13,18 @@ from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("update_client").bind(service="client")
 
+
 @dataclass
 class UpdateClientCommand:
     uuid: UUID
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    full_name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    telegram_nick: Optional[str] = None
+    comment: Optional[str] = None
+    address: Optional[str] = None
     is_active: Optional[bool] = None
+
 
 class UpdateClientCommandHandler(BaseCommandHandler):
     def __init__(
@@ -40,11 +44,13 @@ class UpdateClientCommandHandler(BaseCommandHandler):
 
         self._client_service.update_client(
             client=client,
-            first_name=data.first_name,
-            last_name=data.last_name,
+            full_name=data.full_name,
             phone=data.phone,
             email=data.email,
-            is_active=data.is_active
+            telegram_nick=data.telegram_nick,
+            comment=data.comment,
+            address=data.address,
+            is_active=data.is_active,
         )
         await self._transaction.commit()
         logger.info("Client updated successfully", client_uuid=str(data.uuid))

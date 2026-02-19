@@ -15,6 +15,7 @@ clients_table = Table(
     Column("email", String(255), nullable=True),
     Column("telegram_nick", String(255), nullable=True),
     Column("comment", String(1024), nullable=True),
+    Column("address", String(1024), nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column("updated_at", DateTime, default=func.now(), server_default=func.now(),
@@ -22,6 +23,7 @@ clients_table = Table(
     Index("ix_clients_phone", "phone"),
     Index("ix_clients_email", "email"),
     Index("ix_clients_client_uuid", "client_uuid", unique=True),
+    Index("ix_clients_is_active", "is_active"),
 )
 
 

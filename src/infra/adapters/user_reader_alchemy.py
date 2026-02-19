@@ -10,7 +10,7 @@ from src.infra.models.users import users_table
 from src.application.ports.user_reader import UserReader
 
 
-class UserReaderAlchemy(UserReader):
+class UserReaderAdapter(UserReader):
     def __init__(self, session: AsyncSession) -> None:
         self._session: Final = session
         self._logger = structlog.get_logger("db").bind(service="db", entity="user")

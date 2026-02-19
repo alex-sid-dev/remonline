@@ -11,7 +11,6 @@ logger = structlog.get_logger("read_all_order_part").bind(service="order_part")
 
 @dataclass
 class ReadOrderPartResponse:
-    id: int
     uuid: UUID
     order_id: int
     part_id: int
@@ -30,7 +29,6 @@ class ReadAllOrderPartCommandHandler(BaseCommandHandler):
         order_parts = await self._order_part_reader.read_all()
         return [
             ReadOrderPartResponse(
-                id=op.id,
                 uuid=op.uuid,
                 order_id=op.order_id,
                 part_id=op.part_id,

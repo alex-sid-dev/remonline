@@ -15,7 +15,6 @@ class ReadAllWorkCommand:
 
 @dataclass
 class ReadWorkResponse:
-    id: int
     uuid: str
     order_id: int
     title: str
@@ -26,7 +25,6 @@ class ReadWorkResponse:
     @classmethod
     def from_entity(cls, entity: Work) -> "ReadWorkResponse":
         return cls(
-            id=entity.id,
             uuid=str(entity.uuid),
             order_id=entity.order_id,
             title=entity.title,

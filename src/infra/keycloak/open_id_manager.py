@@ -1,6 +1,8 @@
 import structlog
 from keycloak import (
     KeycloakAuthenticationError,
+    KeycloakConnectionError,
+    KeycloakGetError,
     KeycloakOpenID,
     KeycloakPostError,
 )
@@ -61,12 +63,17 @@ class KeycloakOpenIDManager(OpenIDManager):
     async def verify_token(self, access_token: str) -> dict:
         self._logger.info("Verifying access token")
         try:
-            # Декодируем токен локально без проверки подписи (быстрый способ достать данные)
-            # В продакшене лучше использовать проверку подписи через сертификаты Keycloak
             return self._client.decode_token(access_token)
-        except Exception as e:
-            self._logger.warning("Token verification failed", error=str(e))
-            from src.application.errors.auth import InvalidAccessTokenError
+        except (
+            KeycloakAuthenticationError,
+            KeycloakConnectionError,
+            KeycloakGetError,
+            KeycloakPostError,
+        ) as e:
+            self._logger.warning("Token verification failed (keycloak)", error=str(e))
+            raise InvalidAccessTokenError() from e
+        except ValueError as e:
+            self._logger.warning("Token verification failed (decode)", error=str(e))
             raise InvalidAccessTokenError() from e
 
     async def get_user_info(self, access_token: str) -> UserInfo:

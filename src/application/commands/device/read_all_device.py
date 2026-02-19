@@ -15,7 +15,6 @@ class ReadAllDeviceCommand:
 
 @dataclass
 class ReadDeviceResponse:
-    id: int
     uuid: str
     client_id: int
     type_id: int
@@ -27,7 +26,6 @@ class ReadDeviceResponse:
     @classmethod
     def from_entity(cls, entity: Device) -> "ReadDeviceResponse":
         return cls(
-            id=entity.id,
             uuid=str(entity.uuid),
             client_id=entity.client_id,
             type_id=entity.type_id,
