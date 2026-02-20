@@ -8,6 +8,8 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.order_reader import OrderReader
 from src.entities.orders.models import OrderUUID
+from src.entities.orders.services import OrderService
+from src.entities.orders.enum import OrderStatus
 from src.entities.employees.models import Employee
 from src.application.commands.order.read_all_order import ReadOrderResponse
 from src.application.errors._base import EntityNotFoundError
@@ -96,6 +98,10 @@ class ReadOrderOneResponse(BaseResponse):
     parts: List[OrderPartResponse] = []
     works: List[WorkResponse] = []
 
+    # Дополнительные вычисляемые поля
+    calculated_price: float = 0
+    allowed_statuses: List[str] = []
+
 
 @dataclass
 class ReadOrderCommand:
@@ -106,12 +112,25 @@ class ReadOrderCommandHandler(BaseCommandHandler):
     def __init__(
             self,
             order_reader: OrderReader,
+            order_service: OrderService,
     ) -> None:
         self._order_reader = order_reader
+        self._order_service = order_service
 
     async def run(self, data: ReadOrderCommand, current_employee: Employee) -> ReadOrderOneResponse:
         order = await self._order_reader.read_by_uuid(OrderUUID(data.uuid))
         if not order:
             raise EntityNotFoundError(message=f"Order with uuid {data.uuid} not found")
 
-        return ReadOrderOneResponse.model_validate(order)
+        response = ReadOrderOneResponse.model_validate(order)
+
+        # 1) Итоговая цена заказа
+        response.calculated_price = self._order_service.calculate_total_price(order)
+
+        # 2) Доступные статусы для текущего пользователя
+        allowed_statuses: List[OrderStatus] = self._order_service.allowed_statuses_for_position(
+            current_employee.position,
+        )
+        response.allowed_statuses = [s.value for s in allowed_statuses]
+
+        return response

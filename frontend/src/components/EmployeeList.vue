@@ -27,8 +27,8 @@
         <tr
           v-for="e in employees"
           :key="e.uuid"
-          :style="canManageEmployees ? 'cursor: pointer' : ''"
-          @click="canManageEmployees && $emit('edit-employee', e)"
+          :style="rowClickable(e) ? 'cursor: pointer' : ''"
+          @click="onRowClick(e)"
         >
           <td>{{ e.full_name }}</td>
           <td>{{ e.phone || '—' }}</td>
@@ -46,14 +46,14 @@
 
 <script setup>
 import { computed } from 'vue';
-import { canManageEmployees as canManageEmployeesFn } from '../constants/roles';
+import { canManageEmployees as canManageEmployeesFn, ROLES } from '../constants/roles';
 
 const props = defineProps({
   employees: { type: Array, required: true },
   userRole: { type: String, required: true },
 });
 
-defineEmits(['create-employee', 'edit-employee']);
+const emit = defineEmits(['create-employee', 'edit-employee']);
 
 const canManageEmployees = computed(
   () => canManageEmployeesFn(props.userRole),
@@ -61,4 +61,16 @@ const canManageEmployees = computed(
 const canCreateEmployees = computed(
   () => canManageEmployeesFn(props.userRole),
 );
+
+/** Админ не может открывать супервизора на редактирование */
+function rowClickable(e) {
+  if (!canManageEmployees.value) return false;
+  if (props.userRole === ROLES.ADMIN && e.position === ROLES.SUPERVISOR) return false;
+  return true;
+}
+
+function onRowClick(e) {
+  if (!rowClickable(e)) return;
+  emit('edit-employee', e);
+}
 </script>

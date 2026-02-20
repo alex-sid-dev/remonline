@@ -114,7 +114,7 @@
             >
           </div>
           <div class="field">
-            <label class="field-label" for="details-problem">Проблема</label>
+            <label class="field-label" for="details-problem">Неисправность</label>
             <input
               id="details-problem"
               v-model="orderDetails.data.problem_description"
@@ -370,6 +370,7 @@ import {
   deleteOrderPart,
   getParts,
   getOrderActHtml,
+  getOrderReceiptHtml,
 } from '../services/api';
 
 const props = defineProps({
@@ -511,20 +512,37 @@ async function saveEditWork() {
 
 const actLoading = ref(false);
 
+function openPrintWindow(blob) {
+  const url = URL.createObjectURL(new Blob([blob], { type: 'text/html' }));
+  const win = window.open(url, '_blank');
+  if (win) {
+    win.addEventListener('afterprint', () => URL.revokeObjectURL(url));
+    win.onload = () => win.print();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 120000);
+}
+
 async function printAct() {
   if (!props.orderDetails.data || actLoading.value) return;
   actLoading.value = true;
   try {
     const blob = await getOrderActHtml(props.orderDetails.data.uuid);
-    const url = URL.createObjectURL(new Blob([blob], { type: 'text/html' }));
-    const win = window.open(url, '_blank');
-    if (win) {
-      win.addEventListener('afterprint', () => URL.revokeObjectURL(url));
-      win.onload = () => win.print();
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 120000);
+    openPrintWindow(blob);
   } catch (e) {
     emit('error', extractErrorMessage(e, 'Не удалось сгенерировать акт.'));
+  } finally {
+    actLoading.value = false;
+  }
+}
+
+async function printReceipt() {
+  if (!props.orderDetails.data || actLoading.value) return;
+  actLoading.value = true;
+  try {
+    const blob = await getOrderReceiptHtml(props.orderDetails.data.uuid);
+    openPrintWindow(blob);
+  } catch (e) {
+    emit('error', extractErrorMessage(e, 'Не удалось сгенерировать квитанцию.'));
   } finally {
     actLoading.value = false;
   }
@@ -564,5 +582,5 @@ async function decrementOrderPart(orderPart) {
   }
 }
 
-defineExpose({ printAct });
+defineExpose({ printAct, printReceipt });
 </script>

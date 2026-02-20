@@ -11,6 +11,7 @@ from src.entities.works.services import WorkService
 from src.entities.payments.services import PaymentService
 from src.entities.order_parts.services import OrderPartService
 from src.entities.order_comments.services import OrderCommentService
+from src.entities.organizations.services import OrganizationService
 
 
 def services_provider() -> Provider:
@@ -27,5 +28,6 @@ def services_provider() -> Provider:
         PaymentService,
         OrderPartService,
         OrderCommentService,
+        OrganizationService,
     )
     return provider

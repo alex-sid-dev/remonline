@@ -13,6 +13,7 @@ from src.application.ports.work_reader import WorkReader
 from src.application.ports.payment_reader import PaymentReader
 from src.application.ports.order_part_reader import OrderPartReader
 from src.application.ports.order_comment_reader import OrderCommentReader
+from src.application.ports.organization_reader import OrganizationReader
 from src.application.ports.statistics_reader import StatisticsReader
 from src.infra.adapters.employee_reader_alchemy import EmployeeReaderAdapter
 from src.infra.adapters.error_log_writer import ErrorLogWriterAdapter
@@ -27,6 +28,7 @@ from src.infra.adapters.work_reader import WorkReaderAdapter
 from src.infra.adapters.payment_reader import PaymentReaderAdapter
 from src.infra.adapters.order_part_reader import OrderPartReaderAdapter
 from src.infra.adapters.order_comment_reader import OrderCommentReaderAdapter
+from src.infra.adapters.organization_reader import OrganizationReaderAdapter
 from src.infra.adapters.statistics_reader import StatisticsReaderAdapter
 
 
@@ -45,6 +47,7 @@ def gateways_provider() -> Provider:
     _ = provider.provide(PaymentReaderAdapter, provides=PaymentReader)
     _ = provider.provide(OrderPartReaderAdapter, provides=OrderPartReader)
     _ = provider.provide(OrderCommentReaderAdapter, provides=OrderCommentReader)
+    _ = provider.provide(OrganizationReaderAdapter, provides=OrganizationReader)
     _ = provider.provide(StatisticsReaderAdapter, provides=StatisticsReader)
     _ = provider.provide(ErrorLogWriterAdapter, provides=ErrorLogWriter, scope=Scope.APP)
     return provider

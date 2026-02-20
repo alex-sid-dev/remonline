@@ -14,11 +14,9 @@ from src.config.rate_limit import limiter
 from src.config.exc_handlers import setup_exc_handlers
 from src.config.ioc.di import get_providers
 from src.config.logging import setup_logging
-from src.make_admin import make_admin
-
-
-from src.presentation.api.rest.v1.routers import api_v1_router
 from src.config.settings import Settings
+from src.make_supervisor import make_supervisor
+from src.presentation.api.rest.v1.routers import api_v1_router
 
 setup_logging()
 logger = structlog.get_logger(__name__)
@@ -32,7 +30,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """
     Asynchronous context manager for managing the lifespan of the FastAPI application.
     """
-    await make_admin(container)
+    await make_supervisor(container)
     logger.info("Starting application...")
     yield
     logger.info("Shutting down application...")
@@ -41,13 +39,16 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     """
     Creates and configures the FastAPI application.
+
+    Registers middleware (CORS, rate limit), exception handlers, Dishka DI
+    and the v1 REST router under /api.
     """
     map_tables()
 
     fast_app = FastAPI(
         title=settings.app.title,
         version=settings.app.version,
-        description="Базовый фастапи",
+        description="RemOnline: REST API сервисного центра (заказы, сотрудники, запчасти, статистика)",
         lifespan=lifespan,
         default_response_class=ORJSONResponse,
         docs_url="/api/docs",

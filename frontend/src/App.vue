@@ -50,13 +50,19 @@
             type="button"
             @click="() => changeTab('statistics')"
           >Статистика</button>
+          <button
+            class="btn side-nav-item"
+            :class="{ 'side-nav-item--active': activeTab === 'info' }"
+            type="button"
+            @click="() => changeTab('info')"
+          >Справка</button>
         </nav>
       </aside>
 
       <main class="main-panel">
         <section class="table-shell">
           <header
-            v-if="!(activeTab === 'orders' && orderDetails.data) && !(activeTab === 'employees' && editingEmployee) && activeTab !== 'statistics'"
+            v-if="!(activeTab === 'orders' && orderDetails.data) && !(activeTab === 'employees' && editingEmployee) && activeTab !== 'statistics' && activeTab !== 'info'"
             class="table-header"
           >
             <div class="table-title">
@@ -77,6 +83,7 @@
           >
             <button class="btn btn-ghost" type="button" @click="closeOrderDetails">← Назад</button>
             <button class="btn btn-ghost" type="button" @click="$refs.orderDetailRef?.printAct()">🖨 Печать акта</button>
+            <button class="btn btn-ghost" type="button" @click="$refs.orderDetailRef?.printReceipt()">🖨 Квитанция о сдаче</button>
             <h1 class="order-detail-title">Заказ {{ orderDetails.data.id }}</h1>
             <button
               v-if="canManageEmployees(userRole)"
@@ -90,12 +97,20 @@
             class="order-detail-header"
           >
             <button class="btn btn-ghost" type="button" @click="closeEmployeeForm">← Назад</button>
+            <button
+              v-if="userRole === ROLES.SUPERVISOR"
+              class="btn btn-secondary"
+              type="button"
+              @click="organizationModalOpen = true"
+            >
+              Ввести данные организации
+            </button>
             <h1 class="order-detail-title">
               {{ editingEmployee.uuid ? editingEmployee.full_name : 'Новый сотрудник' }}
             </h1>
           </header>
 
-          <div class="table-wrapper">
+      <div class="table-wrapper">
             <div v-if="!isAuthenticated" class="empty-state">Войдите, чтобы получить доступ к REST API.</div>
             <div v-else-if="isLoading" class="empty-state">
               <span class="loader">
@@ -111,15 +126,15 @@
                 :orders="orders"
                 :employees="employees"
                 :clients="clients"
+                :devices="devices"
+                :device-types="deviceTypes"
                 :user-role="userRole"
                 :current-employee-name="currentEmployeeName"
                 :order-form="orderForm"
-                :pending-order-device="pendingOrderDevice"
                 @open-details="openOrderDetails"
                 @submit-order-form="submitOrderForm"
                 @start-create-order="startCreateOrder"
-                @create-client-for-order="clientModalOpen = true"
-                @create-device-for-order="startCreateDeviceForOrder"
+                @cancel-order-form="orderForm.open = false"
               />
               <OrderDetail
                 v-else-if="activeTab === 'orders' && orderDetails.data"
@@ -161,6 +176,9 @@
                 v-else-if="activeTab === 'statistics' && statisticsData"
                 :data="statisticsData"
               />
+              <InfoView
+                v-else-if="activeTab === 'info'"
+              />
             </template>
           </div>
         </section>
@@ -168,20 +186,6 @@
     </section>
 
     <LoginModal v-model="loginModalOpen" @login-success="loadData" />
-
-    <ClientModal
-      :open="clientModalOpen"
-      @close="clientModalOpen = false"
-      @submit="submitOrderClientModal"
-    />
-
-    <DeviceModal
-      :open="deviceModalOpen"
-      :device-types="deviceTypes"
-      :initial-data="pendingOrderDevice"
-      @close="deviceModalOpen = false"
-      @submit="submitOrderDeviceModal"
-    />
 
     <PartModal
       :open="partModalOpen"
@@ -203,6 +207,12 @@
       @close="orderPartModalOpen = false"
       @submit="addPartToOrder"
     />
+
+    <OrganizationModal
+      :open="organizationModalOpen"
+      @close="organizationModalOpen = false"
+      @saved="organizationModalOpen = false"
+    />
   </div>
 </template>
 
@@ -210,23 +220,24 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { extractErrorMessage } from './utils/errorHelpers';
-import { canManageEmployees, canManageParts } from './constants/roles';
+import { canManageEmployees, canManageParts, ROLES } from './constants/roles';
 import LoginModal from './components/LoginModal.vue';
+import OrganizationModal from './components/OrganizationModal.vue';
 import OrderList from './components/OrderList.vue';
 import OrderDetail from './components/OrderDetail.vue';
 import EmployeeList from './components/EmployeeList.vue';
 import EmployeeForm from './components/EmployeeForm.vue';
 import PartsList from './components/PartsList.vue';
 import StatisticsView from './components/StatisticsView.vue';
+import InfoView from './components/InfoView.vue';
 import ClientModal from './components/ClientModal.vue';
-import DeviceModal from './components/DeviceModal.vue';
 import PartModal from './components/PartModal.vue';
 import WorkModal from './components/WorkModal.vue';
 import OrderPartModal from './components/OrderPartModal.vue';
 import {
   createClient,
   createDevice,
-  createOrder,
+  createOrderWithClientAndDevice,
   createOrderPart,
   createPart,
   createWork,
@@ -275,6 +286,21 @@ const orderForm = ref({
   open: false,
   editMode: false,
   uuid: null,
+  newClient: {
+    uuid: null,
+    full_name: '',
+    phone: '',
+    email: '',
+    telegram_nick: '',
+    address: '',
+  },
+  newDevice: {
+    type_uuid: '',
+    brand: '',
+    model: '',
+    serial_number: '',
+    description: '',
+  },
   data: {
     client_uuid: '',
     device_uuid: '',
@@ -286,12 +312,10 @@ const orderForm = ref({
     comment: '',
   },
 });
-const pendingOrderDevice = ref(null);
 
-const clientModalOpen = ref(false);
-const deviceModalOpen = ref(false);
 const workModalOpen = ref(false);
 const orderPartModalOpen = ref(false);
+const organizationModalOpen = ref(false);
 const partModalOpen = ref(false);
 const editPartUuid = ref(null);
 const partModalData = ref(null);
@@ -339,6 +363,8 @@ async function loadData() {
         break;
       case 'statistics':
         statisticsData.value = await getStatistics();
+        break;
+      case 'info':
         break;
       default:
         break;
@@ -414,8 +440,6 @@ function handleOrderUpdate(updated) {
 
 function closeAllModals() {
   loginModalOpen.value = false;
-  clientModalOpen.value = false;
-  deviceModalOpen.value = false;
   partModalOpen.value = false;
   workModalOpen.value = false;
   orderPartModalOpen.value = false;
@@ -423,8 +447,7 @@ function closeAllModals() {
 
 function handleKeydown(event) {
   if (event.key === 'Escape') {
-    if (loginModalOpen.value || clientModalOpen.value || deviceModalOpen.value
-      || partModalOpen.value || workModalOpen.value || orderPartModalOpen.value) {
+    if (loginModalOpen.value || partModalOpen.value || workModalOpen.value || orderPartModalOpen.value || organizationModalOpen.value) {
       event.preventDefault();
       closeAllModals();
     }
@@ -441,12 +464,37 @@ async function ensureOrderReferences() {
   }
 }
 
+async function ensureDeviceTypes() {
+  try {
+    if (!deviceTypes.value.length) {
+      deviceTypes.value = await getDeviceTypes();
+    }
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Не удалось загрузить типы устройств.');
+  }
+}
+
 async function startCreateOrder() {
   await ensureOrderReferences();
+  await ensureDeviceTypes();
   orderForm.value.open = true;
   orderForm.value.editMode = false;
   orderForm.value.uuid = null;
-  pendingOrderDevice.value = null;
+  orderForm.value.newClient = {
+    uuid: null,
+    full_name: '',
+    phone: '',
+    email: '',
+    telegram_nick: '',
+    address: '',
+  };
+  orderForm.value.newDevice = {
+    type_uuid: '',
+    brand: '',
+    model: '',
+    serial_number: '',
+    description: '',
+  };
   orderForm.value.data = {
     client_uuid: '',
     device_uuid: '',
@@ -469,30 +517,43 @@ async function submitOrderForm() {
         comment: orderForm.value.data.comment,
       });
     } else {
-      let deviceUuid = orderForm.value.data.device_uuid;
-      if (!deviceUuid && pendingOrderDevice.value) {
-        const devicePayload = {
-          client_uuid: orderForm.value.data.client_uuid,
-          type_uuid: pendingOrderDevice.value.type_uuid,
-          brand: pendingOrderDevice.value.brand,
-          model: pendingOrderDevice.value.model,
-          serial_number: pendingOrderDevice.value.serial_number,
-          description: pendingOrderDevice.value.description,
-        };
-        const createdDevice = await createDevice(devicePayload);
-        devices.value = await getDevices();
-        deviceUuid = createdDevice?.uuid;
-        orderForm.value.data.device_uuid = deviceUuid || '';
+      // Новый заказ: агрегированный вызов — клиент + устройство + заказ за один запрос
+      const nc = orderForm.value.newClient;
+      const nd = orderForm.value.newDevice;
+      const data = orderForm.value.data;
+
+      const payload = {
+        existing_client_uuid: nc.uuid || null,
+        client_full_name: nc.full_name || null,
+        client_phone: nc.phone || null,
+        client_email: nc.email || null,
+        client_telegram_nick: nc.telegram_nick || null,
+        client_comment: data.comment || null,
+        client_address: nc.address || null,
+
+        device_type_uuid: nd.type_uuid,
+        device_brand: nd.brand,
+        device_model: nd.model,
+        device_serial_number: nd.serial_number || null,
+        device_description: nd.description || null,
+
+        assigned_employee_uuid: data.assigned_employee_uuid || null,
+        manager_uuid: data.manager_uuid || null,
+        status: data.status,
+        problem_description: data.problem_description || null,
+        price: data.price,
+      };
+
+      if (userRole.value === 'manager') {
+        payload.manager_uuid = null;
       }
-      const payload = { ...orderForm.value.data, device_uuid: deviceUuid };
-      if (!payload.assigned_employee_uuid) delete payload.assigned_employee_uuid;
-      if (!payload.manager_uuid) delete payload.manager_uuid;
-      if (userRole.value === 'manager') delete payload.manager_uuid;
-      delete payload.comment;
-      await createOrder(payload);
+
+      await createOrderWithClientAndDevice(payload);
+      // После успешного создания перезагружаем справочники, чтобы подтянуть нового клиента/устройство
+      clients.value = (await getClients()).items;
+      devices.value = await getDevices();
     }
     await loadData();
-    pendingOrderDevice.value = null;
     orderForm.value.open = false;
   } catch (e) {
     loadError.value = extractErrorMessage(e, 'Ошибка сохранения заказа.');
@@ -544,39 +605,7 @@ function closeOrderDetails() {
   sessionStorage.removeItem('openOrderUuid');
 }
 
-async function submitOrderClientModal(formData) {
-  try {
-    const created = await createClient(formData);
-    clients.value = (await getClients()).items;
-    if (created?.uuid) {
-      orderForm.value.data.client_uuid = created.uuid;
-    }
-    clientModalOpen.value = false;
-  } catch (e) {
-    loadError.value = extractErrorMessage(e, 'Ошибка создания клиента.');
-  }
-}
-
-async function startCreateDeviceForOrder() {
-  if (!orderForm.value.data.client_uuid) {
-    loadError.value = 'Сначала выберите клиента для заказа.';
-    return;
-  }
-  try {
-    if (!deviceTypes.value.length) {
-      deviceTypes.value = await getDeviceTypes();
-    }
-  } catch (e) {
-    loadError.value = extractErrorMessage(e, 'Не удалось загрузить типы устройств.');
-    return;
-  }
-  deviceModalOpen.value = true;
-}
-
-function submitOrderDeviceModal(formData) {
-  pendingOrderDevice.value = { ...formData };
-  deviceModalOpen.value = false;
-}
+// submitOrderClientModal больше не используется после переноса формы клиента в OrderList
 
 function openNewPartModal() {
   editPartUuid.value = null;

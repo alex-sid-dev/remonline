@@ -120,6 +120,11 @@ export async function createOrder(payload) {
   return response.data;
 }
 
+export async function createOrderWithClientAndDevice(payload) {
+  const response = await api.post('/order/create-aggregate', payload);
+  return response.data;
+}
+
 export async function updateOrder(uuid, payload) {
   await api.patch(`/order/update/${uuid}`, payload);
 }
@@ -286,9 +291,35 @@ export async function getOrderActHtml(uuid) {
   return response.data;
 }
 
+export async function getOrderReceiptHtml(uuid) {
+  const response = await api.get(`/order/${uuid}/receipt`, {
+    responseType: 'blob',
+  });
+  return response.data;
+}
+
 export async function createOrderComment(payload) {
   const response = await api.post('/order_comment/create', payload);
   return response.data;
+}
+
+// Organization (singleton)
+export async function getOrganization() {
+  const response = await api.get('/organization');
+  return response.data;
+}
+
+export async function createOrganization(payload) {
+  const response = await api.post('/organization', payload);
+  return response.data;
+}
+
+export async function updateOrganization(payload) {
+  await api.put('/organization', payload);
+}
+
+export async function deleteOrganization() {
+  await api.delete('/organization');
 }
 
 /** Правила валидации с бэкенда (из Pydantic-схем) — для форм сотрудника, логина и т.д. */

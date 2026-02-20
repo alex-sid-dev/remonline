@@ -72,6 +72,8 @@ async function refreshUserRole() {
 function initAuth() {
   accessToken.value = window.localStorage.getItem('access_token') || '';
   lastLoginEmail.value = window.localStorage.getItem('last_login_email') || '';
+  const savedRole = window.localStorage.getItem('user_role');
+  if (savedRole && accessToken.value) userRole.value = savedRole;
 }
 
 export function useAuth() {

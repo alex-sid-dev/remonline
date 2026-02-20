@@ -31,7 +31,7 @@
           <input id="modal-device-serial" v-model="form.serial_number" class="field-input" type="text">
         </div>
         <div class="field">
-          <label class="field-label" for="modal-device-description">Описание</label>
+          <label class="field-label" for="modal-device-description">Внешнее состояние</label>
           <input id="modal-device-description" v-model="form.description" class="field-input" type="text">
         </div>
         <div class="field">

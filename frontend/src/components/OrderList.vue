@@ -10,94 +10,164 @@
           Новый заказ
         </div>
       </div>
+      <!-- Блок данных клиента прямо в форме заказа -->
       <div class="field">
-        <label class="field-label" for="order-client">Клиент</label>
-        <div
-          v-if="selectedClient"
-          class="field-row gap-8"
+        <label class="field-label" for="order-client-phone">Телефон клиента *</label>
+        <input
+          id="order-client-phone"
+          v-model="orderForm.newClient.phone"
+          class="field-input"
+          type="text"
+          placeholder="+78008008000"
         >
-          <div class="order-info-value">
-            {{ selectedClient.full_name }} · {{ selectedClient.phone || '—' }}
+        <div class="hint">
+          Формат: +7 и 10 цифр, например +78008008000
+        </div>
+
+        <div
+          v-if="phoneMatches.length"
+          class="autocomplete-list mt-8"
+        >
+          <div class="autocomplete-empty">
+            Найдены клиенты с таким телефоном:
           </div>
           <button
-            class="btn btn-ghost"
+            v-for="c in phoneMatches"
+            :key="c.uuid"
             type="button"
-            @click="clearSelectedClient"
+            class="autocomplete-item"
+            @click="pickClientFromPhone(c)"
           >
-            Изменить
+            <div class="autocomplete-item-main">
+              {{ c.full_name || 'Без имени' }}
+            </div>
+            <div class="autocomplete-item-sub">
+              {{ c.phone || '—' }}
+              <span v-if="c.address"> · {{ c.address }}</span>
+            </div>
           </button>
         </div>
-        <template v-else>
-          <div class="field-row">
-            <input
-              v-model="orderClientSearch"
-              class="field-input"
-              type="text"
-              placeholder="Поиск по ФИО или телефону (от 3 символов)"
-              @input="handleOrderClientSearchInput"
-              @focus="handleOrderClientSearchInput"
-            >
-            <button
-              class="btn btn-ghost"
-              type="button"
-              @click="$emit('create-client-for-order')"
-            >
-              + Новый
-            </button>
-          </div>
-          <div
-            v-if="orderClientSuggestionsOpen && orderClientSearch.length >= 3"
-            class="autocomplete-list"
-          >
-            <button
-              v-for="c in clientsForOrder"
-              :key="c.uuid"
-              type="button"
-              class="autocomplete-item"
-              @click="selectOrderClient(c)"
-            >
-              <div class="autocomplete-item-main">
-                {{ c.full_name }}
-              </div>
-              <div class="autocomplete-item-sub">
-                {{ c.phone || '—' }}
-              </div>
-            </button>
-            <div
-              v-if="!clientsForOrder.length"
-              class="autocomplete-empty"
-            >
-              Ничего не найдено
-            </div>
-          </div>
-          <div class="hint">
-            Клиент подставится автоматически. Если клиента нет в списке — создайте его через «+ Новый».
-          </div>
-        </template>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-client-name">ФИО клиента *</label>
+        <input
+          id="order-client-name"
+          v-model="orderForm.newClient.full_name"
+          class="field-input"
+          type="text"
+          placeholder="ФИО клиента"
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-client-address">Адрес</label>
+        <input
+          id="order-client-address"
+          v-model="orderForm.newClient.address"
+          class="field-input"
+          type="text"
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-client-email">Email</label>
+        <input
+          id="order-client-email"
+          v-model="orderForm.newClient.email"
+          class="field-input"
+          type="email"
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-client-telegram">Telegram</label>
+        <input
+          id="order-client-telegram"
+          v-model="orderForm.newClient.telegram_nick"
+          class="field-input"
+          type="text"
+        >
       </div>
       <div class="field">
-        <label class="field-label" for="order-device">Устройство</label>
-        <div class="field-row gap-8">
-          <div v-if="pendingOrderDevice">
-            <div class="order-info-value">
-              {{ pendingOrderDevice.brand || 'Устройство' }} {{ pendingOrderDevice.model || '' }}
-              <span v-if="pendingOrderDevice.serial_number">
-                · SN: {{ pendingOrderDevice.serial_number }}
-              </span>
-            </div>
+        <label class="field-label" for="order-device-type">Тип устройства *</label>
+        <select
+          id="order-device-type"
+          v-model="orderForm.newDevice.type_uuid"
+          class="field-input"
+        >
+          <option disabled value="">Выберите тип</option>
+          <option
+            v-for="dt in deviceTypes"
+            :key="dt.uuid"
+            :value="dt.uuid"
+          >
+            {{ dt.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-device-brand">Бренд *</label>
+        <input
+          id="order-device-brand"
+          v-model="orderForm.newDevice.brand"
+          class="field-input"
+          type="text"
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-device-model">Модель *</label>
+        <input
+          id="order-device-model"
+          v-model="orderForm.newDevice.model"
+          class="field-input"
+          type="text"
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-device-serial">Серийный номер</label>
+        <input
+          id="order-device-serial"
+          v-model="orderForm.newDevice.serial_number"
+          class="field-input"
+          type="text"
+        >
+
+        <div
+          v-if="deviceMatches.length"
+          class="autocomplete-list mt-8"
+        >
+          <div class="autocomplete-empty">
+            Найдены устройства с таким серийным номером:
           </div>
           <button
-            class="btn btn-ghost"
+            v-for="d in deviceMatches"
+            :key="d.uuid"
             type="button"
-            :disabled="!orderForm.data.client_uuid"
-            @click="$emit('create-device-for-order')"
+            class="autocomplete-item"
+            @click="pickDeviceFromSearch(d)"
           >
-            {{ pendingOrderDevice ? 'Изменить' : '+ Новое' }}
+            <div class="autocomplete-item-main">
+              {{ d.brand || 'Устройство' }} {{ d.model || '' }}
+            </div>
+            <div class="autocomplete-item-sub">
+              SN: {{ d.serial_number || '—' }}
+            </div>
           </button>
         </div>
-        <div class="hint">
-          Для нового заказа всегда создаётся новое устройство. Нажмите «+ Новое», чтобы заполнить данные устройства для выбранного клиента.
-        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="order-device-description">Внешнее состояние</label>
+        <input
+          id="order-device-description"
+          v-model="orderForm.newDevice.description"
+          class="field-input"
+          type="text"
+        >
       </div>
       <div
         v-if="canManageEmployees(props.userRole)"
@@ -165,7 +235,7 @@
         </select>
       </div>
       <div class="field">
-        <label class="field-label" for="order-problem">Проблема</label>
+        <label class="field-label" for="order-problem">Неисправность</label>
         <input
           id="order-problem"
           v-model="orderForm.data.problem_description"
@@ -182,7 +252,14 @@
           type="text"
         >
       </div>
-      <div class="field">
+      <div class="field field-row gap-8">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          @click="$emit('cancel-order-form')"
+        >
+          ← Назад к списку
+        </button>
         <button
           class="btn btn-primary"
           type="button"
@@ -334,7 +411,7 @@
           >
         </div>
         <div class="field">
-          <label class="field-label" for="order-problem">Проблема</label>
+          <label class="field-label" for="order-problem">Неисправность</label>
           <input
             id="order-problem"
             v-model="orderForm.data.problem_description"
@@ -376,30 +453,27 @@ import {
   formatDate,
 } from '../utils/orderHelpers';
 import { blockNonNumeric } from '../utils/inputHelpers';
-import { debounce } from '../utils/debounce';
 import { canManageEmployees, canCreateOrders } from '../constants/roles';
 
 const props = defineProps({
   orders: { type: Array, required: true },
   employees: { type: Array, required: true },
   clients: { type: Array, required: true },
+  devices: { type: Array, required: true },
+  deviceTypes: { type: Array, required: true },
   userRole: { type: String, required: true },
   currentEmployeeName: { type: String, default: '' },
   orderForm: { type: Object, required: true },
-  pendingOrderDevice: { type: Object, default: null },
 });
 
 defineEmits([
   'open-details',
   'submit-order-form',
   'start-create-order',
-  'create-client-for-order',
-  'create-device-for-order',
+  'cancel-order-form',
 ]);
 
 const orderStatusFilter = ref([]);
-const orderClientSearch = ref('');
-const orderClientSuggestionsOpen = ref(false);
 
 const filteredOrders = computed(() => {
   if (!orderStatusFilter.value.length) return props.orders;
@@ -415,19 +489,21 @@ const masters = computed(() => {
   return props.employees.filter((e) => e.position === 'master');
 });
 
-const selectedClient = computed(() => {
-  const uuid = props.orderForm.data.client_uuid;
-  if (!uuid) return null;
-  return props.clients.find((c) => c.uuid === uuid) || null;
+const phoneMatches = computed(() => {
+  const raw = (props.orderForm.newClient?.phone || '').replace(/\D/g, '');
+  if (raw.length < 5) return [];
+  return props.clients.filter((c) => {
+    const phone = (c.phone || '').replace(/\D/g, '');
+    return phone.includes(raw);
+  });
 });
 
-const clientsForOrder = computed(() => {
-  const q = orderClientSearch.value.trim().toLowerCase();
-  if (q.length < 3) return props.clients;
-  return props.clients.filter((c) => {
-    const name = (c.full_name || '').toLowerCase();
-    const phone = (c.phone || '').toLowerCase();
-    return name.includes(q) || phone.includes(q);
+const deviceMatches = computed(() => {
+  const q = (props.orderForm.newDevice?.serial_number || '').trim().toLowerCase();
+  if (q.length < 3) return [];
+  return props.devices.filter((d) => {
+    const sn = (d.serial_number || '').toLowerCase();
+    return sn.includes(q);
   });
 });
 
@@ -435,25 +511,31 @@ const orderFormValid = computed(() => {
   if (!props.orderForm.open) return false;
   const data = props.orderForm.data;
   if (props.orderForm.editMode) return !!data.status;
-  return !!data.client_uuid && (!!data.device_uuid || !!props.pendingOrderDevice);
+  // Для нового заказа требуем телефон и ФИО клиента + обязательные поля устройства
+  const nc = props.orderForm.newClient || {};
+  const nd = props.orderForm.newDevice || {};
+  const hasClient = !!nc.phone && !!nc.full_name;
+  const hasDevice = !!nd.type_uuid && !!nd.brand && !!nd.model;
+  return hasClient && hasDevice;
 });
 
-const handleOrderClientSearchInput = debounce(() => {
-  const q = orderClientSearch.value.trim();
-  orderClientSuggestionsOpen.value = q.length >= 3;
-  props.orderForm.data.client_uuid = '';
-}, 300);
-
-function selectOrderClient(client) {
-  props.orderForm.data.client_uuid = client.uuid;
-  orderClientSearch.value = '';
-  orderClientSuggestionsOpen.value = false;
+function pickClientFromPhone(client) {
+  if (!props.orderForm.newClient) return;
+  props.orderForm.newClient.uuid = client.uuid || null;
+  props.orderForm.newClient.full_name = client.full_name || '';
+  props.orderForm.newClient.phone = client.phone || '';
+  props.orderForm.newClient.email = client.email || '';
+  props.orderForm.newClient.telegram_nick = client.telegram_nick || '';
+  props.orderForm.newClient.address = client.address || '';
 }
 
-function clearSelectedClient() {
-  props.orderForm.data.client_uuid = '';
-  orderClientSearch.value = '';
-  orderClientSuggestionsOpen.value = false;
+function pickDeviceFromSearch(device) {
+  if (!props.orderForm.newDevice) return;
+  props.orderForm.newDevice.type_uuid = device.type_uuid || '';
+  props.orderForm.newDevice.brand = device.brand || '';
+  props.orderForm.newDevice.model = device.model || '';
+  props.orderForm.newDevice.serial_number = device.serial_number || '';
+  props.orderForm.newDevice.description = device.description || '';
 }
 
 function toggleOrderStatusFilter(value) {

@@ -11,11 +11,23 @@ from src.application.commands.order.create_order import CreateOrderCommandHandle
 from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler, ReadAllOrderCommand, \
     ReadOrderResponse, PaginatedOrderResponse
 from src.application.commands.order.read_order import ReadOrderCommandHandler, ReadOrderCommand, ReadOrderOneResponse
+from src.application.commands.order.create_order_with_client_and_device import (
+    CreateOrderWithClientAndDeviceCommandHandler,
+    CreateOrderWithClientAndDeviceCommand,
+    CreateOrderWithClientAndDeviceCommandResponse,
+)
 from src.application.commands.order.update_order import UpdateOrderCommandHandler, UpdateOrderCommand
 from src.application.commands.order.delete_order import DeleteOrderCommandHandler, DeleteOrderCommand
 from src.application.commands.order.generate_act_pdf import GenerateActPdfCommandHandler, GenerateActPdfCommand
+from src.application.commands.order.generate_receipt_html import (
+    GenerateReceiptHtmlCommandHandler,
+    GenerateReceiptHtmlCommand,
+)
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.order.create_order import CreateOrderSchema
+from src.presentation.api.common.schemas.order.create_order_with_client_and_device import (
+    CreateOrderWithClientAndDeviceSchema,
+)
 from src.presentation.api.common.schemas.order.update_order import UpdateOrderSchema
 from src.presentation.api.rest.v1.permissions import RoleChecker
 
@@ -75,6 +87,45 @@ async def create_order(
     return result
 
 
+@router.post(
+    path="/create-aggregate",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_order_with_client_and_device(
+        request_data: CreateOrderWithClientAndDeviceSchema,
+        interactor: FromDishka[CreateOrderWithClientAndDeviceCommandHandler],
+        current_employee: CreatorEmployee,
+) -> CreateOrderWithClientAndDeviceCommandResponse:
+    logger.info("Create aggregate order endpoint called")
+    dto = CreateOrderWithClientAndDeviceCommand(
+        existing_client_uuid=request_data.existing_client_uuid,
+        client_full_name=request_data.client_full_name,
+        client_phone=request_data.client_phone,
+        client_email=request_data.client_email,
+        client_telegram_nick=request_data.client_telegram_nick,
+        client_comment=request_data.client_comment,
+        client_address=request_data.client_address,
+        device_type_uuid=request_data.device_type_uuid,
+        device_brand=request_data.device_brand,
+        device_model=request_data.device_model,
+        device_serial_number=request_data.device_serial_number,
+        device_description=request_data.device_description,
+        assigned_employee_uuid=request_data.assigned_employee_uuid,
+        manager_uuid=request_data.manager_uuid,
+        status=request_data.status.value,
+        problem_description=request_data.problem_description,
+        price=request_data.price,
+    )
+    result = await interactor.run(dto, current_employee)
+    logger.info(
+        "Aggregate order created successfully",
+        order_uuid=str(result.order_uuid),
+        client_uuid=str(result.client_uuid),
+        device_uuid=str(result.device_uuid),
+    )
+    return result
+
+
 @router.patch(
     path="/update/{order_uuid}",
     status_code=status.HTTP_200_OK,
@@ -107,6 +158,22 @@ async def get_order_act(
 ) -> Response:
     logger.info("Generate act endpoint called", order_uuid=str(order_uuid))
     dto = GenerateActPdfCommand(uuid=order_uuid)
+    html = await interactor.run(dto, current_employee)
+    return Response(content=html, media_type="text/html; charset=utf-8")
+
+
+@router.get(
+    path="/{order_uuid}/receipt",
+    status_code=status.HTTP_200_OK,
+    responses={200: {"content": {"text/html": {}}}},
+)
+async def get_order_receipt(
+        order_uuid: UUID,
+        interactor: FromDishka[GenerateReceiptHtmlCommandHandler],
+        current_employee: CurrentEmployee,
+) -> Response:
+    logger.info("Generate receipt endpoint called", order_uuid=str(order_uuid))
+    dto = GenerateReceiptHtmlCommand(uuid=order_uuid)
     html = await interactor.run(dto, current_employee)
     return Response(content=html, media_type="text/html; charset=utf-8")
 

@@ -1,10 +1,13 @@
-from typing import Optional
+from typing import Optional, Iterable, List
 from datetime import datetime
 from uuid import uuid4
 
 from src.application.errors._base import FieldError
 from src.entities.orders.models import Order, OrderID, OrderUUID
 from src.entities.orders.enum import OrderStatus
+from src.entities.employees.enum import EmployeePosition
+from src.entities.works.models import Work
+from src.entities.order_parts.models import OrderPart
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
 from src.entities.employees.models import EmployeeID
@@ -92,3 +95,43 @@ class OrderService:
                 work.employee_id = employee_id
                 updated.append(work)
         return updated
+
+    # --- Расчёт цены заказа и доступных статусов ---
+
+    @staticmethod
+    def calculate_total_price(order: Order) -> float:
+        """
+        Считает итоговую стоимость заказа по работам и запчастям.
+        Логика совпадает с тем, что сейчас делает фронтенд.
+        """
+        total = 0.0
+
+        works: Iterable[Work] = getattr(order, "works", []) or []
+        for work in works:
+            price = work.price or 0.0
+            qty = work.qty or 1
+            total += price * qty
+
+        parts: Iterable[OrderPart] = getattr(order, "parts", []) or []
+        for op in parts:
+            qty = op.qty or 0
+            unit_price = op.price
+            if unit_price is None:
+                part_info = getattr(op, "part_info", None)
+                unit_price = getattr(part_info, "price", 0.0)
+            total += (unit_price or 0.0) * qty
+
+        return total
+
+    @staticmethod
+    def allowed_statuses_for_position(position: EmployeePosition) -> List[OrderStatus]:
+        """
+        Возвращает список статусов, которые пользователь с данной ролью может устанавливать.
+        Сейчас логика такая же, как на фронте:
+        - supervisor: может ставить любые статусы
+        - остальные роли: все, кроме 'closed'
+        """
+        if position == EmployeePosition.SUPERVISOR:
+            return list(OrderStatus)
+
+        return [s for s in OrderStatus if s is not OrderStatus.CLOSED]

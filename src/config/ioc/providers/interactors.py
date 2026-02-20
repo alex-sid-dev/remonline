@@ -16,11 +16,15 @@ from src.application.commands.client.read_client import ReadClientCommandHandler
 from src.application.commands.client.update_client import UpdateClientCommandHandler
 from src.application.commands.client.delete_client import DeleteClientCommandHandler
 from src.application.commands.order.create_order import CreateOrderCommandHandler
+from src.application.commands.order.create_order_with_client_and_device import (
+    CreateOrderWithClientAndDeviceCommandHandler,
+)
 from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler
 from src.application.commands.order.read_order import ReadOrderCommandHandler
 from src.application.commands.order.update_order import UpdateOrderCommandHandler
 from src.application.commands.order.delete_order import DeleteOrderCommandHandler
 from src.application.commands.order.generate_act_pdf import GenerateActPdfCommandHandler
+from src.application.commands.order.generate_receipt_html import GenerateReceiptHtmlCommandHandler
 from src.application.commands.device_type.create_device_type import CreateDeviceTypeCommandHandler
 from src.application.commands.device_type.read_all_device_type import ReadAllDeviceTypeCommandHandler
 from src.application.commands.device_type.read_device_type import ReadDeviceTypeCommandHandler
@@ -52,6 +56,10 @@ from src.application.commands.order_part.read_order_part import ReadOrderPartCom
 from src.application.commands.order_part.update_order_part import UpdateOrderPartCommandHandler
 from src.application.commands.order_part.delete_order_part import DeleteOrderPartCommandHandler
 from src.application.commands.order_comment.create_order_comment import CreateOrderCommentCommandHandler
+from src.application.commands.organization.get_organization import GetOrganizationCommandHandler
+from src.application.commands.organization.create_organization import CreateOrganizationCommandHandler
+from src.application.commands.organization.update_organization import UpdateOrganizationCommandHandler
+from src.application.commands.organization.delete_organization import DeleteOrganizationCommandHandler
 from src.application.commands.statistics.get_statistics import GetStatisticsCommandHandler
 
 
@@ -79,9 +87,11 @@ def interactors_provider() -> Provider:
         ReadAllOrderCommandHandler,
         ReadOrderCommandHandler,
         CreateOrderCommandHandler,
+        CreateOrderWithClientAndDeviceCommandHandler,
         UpdateOrderCommandHandler,
         DeleteOrderCommandHandler,
         GenerateActPdfCommandHandler,
+        GenerateReceiptHtmlCommandHandler,
 
         ReadAllDeviceTypeCommandHandler,
         ReadDeviceTypeCommandHandler,
@@ -120,6 +130,11 @@ def interactors_provider() -> Provider:
         DeleteOrderPartCommandHandler,
 
         CreateOrderCommentCommandHandler,
+
+        GetOrganizationCommandHandler,
+        CreateOrganizationCommandHandler,
+        UpdateOrganizationCommandHandler,
+        DeleteOrganizationCommandHandler,
 
         GetStatisticsCommandHandler,
     )

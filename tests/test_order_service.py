@@ -1,5 +1,6 @@
-from src.entities.orders.services import OrderService
+from src.entities.employees.enum import EmployeePosition
 from src.entities.orders.enum import OrderStatus
+from src.entities.orders.services import OrderService
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
 from src.entities.employees.models import EmployeeID
@@ -84,3 +85,33 @@ class TestOrderService:
         original_updated_at = order.updated_at
         updated = self.service.update_order(order, price=50.0)
         assert updated.updated_at >= original_updated_at
+
+    def test_calculate_total_price_empty_order(self):
+        order = self.service.create_order(
+            client_id=ClientID(1),
+            device_id=DeviceID(2),
+            creator_id=EmployeeID(3),
+        )
+        assert OrderService.calculate_total_price(order) == 0.0
+
+    def test_calculate_total_price_with_works_and_parts(self):
+        order = self.service.create_order(
+            client_id=ClientID(1),
+            device_id=DeviceID(2),
+            creator_id=EmployeeID(3),
+        )
+        work = type("Work", (), {"price": 100.0, "qty": 2})()
+        op = type("OrderPart", (), {"qty": 1, "price": 50.0, "part_info": None})()
+        order.works = [work]
+        order.parts = [op]
+        assert OrderService.calculate_total_price(order) == 250.0
+
+    def test_allowed_statuses_supervisor_sees_all(self):
+        result = OrderService.allowed_statuses_for_position(EmployeePosition.SUPERVISOR)
+        assert set(result) == set(OrderStatus)
+
+    def test_allowed_statuses_non_supervisor_no_closed(self):
+        for pos in (EmployeePosition.ADMIN, EmployeePosition.MANAGER, EmployeePosition.MASTER):
+            result = OrderService.allowed_statuses_for_position(pos)
+            assert OrderStatus.CLOSED not in result
+            assert len(result) == len(OrderStatus) - 1
