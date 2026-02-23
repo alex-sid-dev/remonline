@@ -5,6 +5,7 @@ from src.entities.users.services import UserService
 from src.entities.clients.services import ClientService
 from src.entities.orders.services import OrderService
 from src.entities.device_types.services import DeviceTypeService
+from src.entities.brands.services import BrandService
 from src.entities.devices.services import DeviceService
 from src.entities.parts.services import PartService
 from src.entities.works.services import WorkService
@@ -22,6 +23,7 @@ def services_provider() -> Provider:
         ClientService,
         OrderService,
         DeviceTypeService,
+        BrandService,
         DeviceService,
         PartService,
         WorkService,

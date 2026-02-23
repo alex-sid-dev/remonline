@@ -423,6 +423,7 @@ const availableStatuses = computed(() => {
   return ORDER_STATUS_OPTIONS.filter((s) => s.value !== 'closed');
 });
 
+// Цена пересчитывается на бэкенде при сохранении; здесь только для отображения
 const orderCalculatedPrice = computed(() => {
   const d = props.orderDetails.data;
   if (!d) return 0;
@@ -442,7 +443,6 @@ async function saveOrderDetails() {
   try {
     const payload = {
       status: props.orderDetails.data.status,
-      price: orderCalculatedPrice.value,
       problem_description: props.orderDetails.data.problem_description,
     };
     if (detailsEngineerUuid.value !== (props.orderDetails.data.assigned_employee?.uuid ?? null)) {

@@ -3,6 +3,7 @@ from typing import Optional, NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
+from src.entities.brands.models import BrandID
 from src.entities.clients.models import ClientID
 from src.entities.device_types.models import DeviceTypeID
 
@@ -14,7 +15,7 @@ DeviceUUID = NewType("DeviceUUID", UUID)
 class Device(BaseEntity[DeviceID, DeviceUUID]):
     client_id: ClientID
     type_id: DeviceTypeID
-    brand: str
+    brand_id: BrandID
     model: str
     serial_number: Optional[str] = None
     description: Optional[str] = None

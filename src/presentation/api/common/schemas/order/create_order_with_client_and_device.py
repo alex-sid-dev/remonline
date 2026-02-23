@@ -20,7 +20,7 @@ class CreateOrderWithClientAndDeviceSchema(BaseModel):
 
   # Устройство (новое)
   device_type_uuid: UUID
-  device_brand: str
+  device_brand_uuid: UUID
   device_model: str
   device_serial_number: Optional[str] = None
   device_description: Optional[str] = None

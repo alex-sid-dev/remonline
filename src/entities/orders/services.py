@@ -1,4 +1,4 @@
-from typing import Optional, Iterable, List
+from typing import Optional, Iterable, List, Sequence
 from datetime import datetime
 from uuid import uuid4
 
@@ -121,6 +121,22 @@ class OrderService:
                 unit_price = getattr(part_info, "price", 0.0)
             total += (unit_price or 0.0) * qty
 
+        return total
+
+    @staticmethod
+    def calculate_total_price_from_works_parts(
+        works: Sequence[Work], parts: Sequence[OrderPart]
+    ) -> float:
+        """Считает итоговую стоимость по спискам работ и запчастей (для пересчёта при update)."""
+        total = 0.0
+        for work in works:
+            total += (work.price or 0.0) * (work.qty or 1)
+        for op in parts:
+            unit_price = op.price
+            if unit_price is None:
+                part_info = getattr(op, "part_info", None)
+                unit_price = getattr(part_info, "price", 0.0)
+            total += (unit_price or 0.0) * (op.qty or 0)
         return total
 
     @staticmethod

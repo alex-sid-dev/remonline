@@ -1,3 +1,4 @@
+from .brands import map_brands_table
 from .clients import map_clients_table
 from .employees import map_employee_table
 from .users import map_user_table

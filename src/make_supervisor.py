@@ -17,7 +17,7 @@ logger = structlog.get_logger("make_supervisor").bind(service="bootstrap")
 SUPERVISOR_EMAIL = "admin@admin.ru"
 SUPERVISOR_PASSWORD = "1!String"
 SUPERVISOR_FULL_NAME = "Yahve"
-SUPERVISOR_PHONE = "+1 000 000 000"
+SUPERVISOR_PHONE = "+7 965 000 57 27"
 
 
 async def make_supervisor(container: AsyncContainer) -> None:

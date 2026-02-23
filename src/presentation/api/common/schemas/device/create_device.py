@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class CreateDeviceSchema(BaseModel):
     client_uuid: UUID
     type_uuid: UUID
-    brand: str
+    brand_uuid: UUID
     model: str
     serial_number: Optional[str] = None
     description: Optional[str] = None

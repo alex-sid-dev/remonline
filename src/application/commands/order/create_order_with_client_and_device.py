@@ -6,10 +6,12 @@ import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.errors._base import EntityNotFoundError, ConflictError, FieldError
+from src.application.ports.brand_reader import BrandReader
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.device_type_reader import DeviceTypeReader
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.transaction import Transaction, EntitySaver
+from src.entities.brands.models import BrandUUID
 from src.entities.clients.models import ClientUUID
 from src.entities.clients.services import ClientService
 from src.entities.device_types.models import DeviceTypeUUID
@@ -44,7 +46,7 @@ class CreateOrderWithClientAndDeviceCommand:
 
   # Данные устройства (всегда создаём новое устройство для заказа)
   device_type_uuid: UUID = None  # type: ignore[assignment]
-  device_brand: str = ""
+  device_brand_uuid: Optional[UUID] = None
   device_model: str = ""
   device_serial_number: Optional[str] = None
   device_description: Optional[str] = None
@@ -67,6 +69,7 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
       order_service: OrderService,
       client_reader: ClientReader,
       device_type_reader: DeviceTypeReader,
+      brand_reader: BrandReader,
       employee_reader: EmployeeReader,
   ) -> None:
     self._transaction = transaction
@@ -76,6 +79,7 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
     self._order_service = order_service
     self._client_reader = client_reader
     self._device_type_reader = device_type_reader
+    self._brand_reader = brand_reader
     self._employee_reader = employee_reader
 
   async def _resolve_client(self, data: CreateOrderWithClientAndDeviceCommand) -> "Client":
@@ -108,20 +112,23 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
     return client
 
   async def _resolve_device(self, data: CreateOrderWithClientAndDeviceCommand, client: "Client") -> "Device":
-    # Для нового заказа всегда создаём новое устройство, привязанное к клиенту
     if not data.device_type_uuid:
       raise FieldError(message="device_type_uuid is required for new device.")
-    if not data.device_brand or not data.device_model:
-      raise FieldError(message="device_brand and device_model are required for new device.")
+    if not data.device_brand_uuid or not data.device_model:
+      raise FieldError(message="device_brand_uuid and device_model are required for new device.")
 
     device_type = await self._device_type_reader.read_by_uuid(DeviceTypeUUID(data.device_type_uuid))
     if not device_type:
       raise EntityNotFoundError(message=f"Device type with uuid {data.device_type_uuid} not found")
 
+    brand = await self._brand_reader.read_by_uuid(BrandUUID(data.device_brand_uuid))
+    if not brand:
+      raise EntityNotFoundError(message=f"Brand with uuid {data.device_brand_uuid} not found")
+
     device = self._device_service.create_device(
       client_id=client.id,
       type_id=device_type.id,
-      brand=data.device_brand,
+      brand_id=brand.id,
       model=data.device_model,
       serial_number=data.device_serial_number,
       description=data.device_description,
@@ -140,7 +147,7 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
   async def _resolve_creator_id(self, data: CreateOrderWithClientAndDeviceCommand, current_employee: Employee) -> int:
     """
     Логика полностью повторяет CreateOrderCommand:
-    - если передан manager_uuid — используем его, проверяя, что это сотрудник с ролью MANAGER;
+    - если передан manager_uuid — используем его; назначить менеджером заказа нельзя только мастера;
     - если заказ создаёт менеджер — он сам становится менеджером заказа;
     - иначе (админ/супервизор/мастер) — creator_id = current_employee.id.
     """
@@ -149,8 +156,8 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
       manager = await self._employee_reader.read_by_uuid(EmployeeUUID(data.manager_uuid))
       if not manager:
         raise EntityNotFoundError(message=f"Employee with uuid {data.manager_uuid} not found")
-      if manager.position != EmployeePosition.MANAGER:
-        raise EntityNotFoundError(message="Назначить менеджером можно только сотрудника с ролью manager.")
+      if manager.position == EmployeePosition.MASTER:
+        raise EntityNotFoundError(message="Назначить менеджером нельзя сотрудника с ролью мастер.")
       creator_id = manager.id
     elif getattr(current_employee, "position", None) == EmployeePosition.MANAGER:
       creator_id = current_employee.id

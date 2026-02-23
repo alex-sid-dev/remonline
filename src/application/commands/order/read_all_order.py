@@ -41,7 +41,8 @@ class ReadOrderResponse:
 
         device_label = "—"
         if device:
-            device_label = f"{device.brand} {device.model}".strip()
+            brand_name = device.brand.name if getattr(device, "brand", None) else "—"
+            device_label = f"{brand_name} {device.model}".strip()
             if device.serial_number:
                 device_label += f" · SN: {device.serial_number}"
 

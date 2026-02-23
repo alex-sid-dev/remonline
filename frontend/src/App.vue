@@ -3,10 +3,7 @@
     <header class="shell-header">
       <div class="brand">
         <div class="brand-mark" />
-        <div>
-          <div class="brand-title">RemOnline</div>
-          <div class="brand-subtitle">панель управления сервисом</div>
-        </div>
+        <div class="brand-title">CRM</div>
       </div>
       <div class="user-controls">
         <template v-if="isAuthenticated">
@@ -21,8 +18,6 @@
 
     <section class="shell-body">
       <aside class="side-panel">
-        <h2 class="side-title">Разделы</h2>
-        <p class="side-description">Выберите, с чем работать сейчас.</p>
         <div class="divider" />
         <nav class="side-nav">
           <button
@@ -44,6 +39,18 @@
             type="button"
             @click="() => changeTab('parts')"
           >Запчасти</button>
+          <button
+            class="btn side-nav-item"
+            :class="{ 'side-nav-item--active': activeTab === 'brands' }"
+            type="button"
+            @click="() => changeTab('brands')"
+          >Бренды</button>
+          <button
+            class="btn side-nav-item"
+            :class="{ 'side-nav-item--active': activeTab === 'deviceTypes' }"
+            type="button"
+            @click="() => changeTab('deviceTypes')"
+          >Типы устройств</button>
           <button
             class="btn side-nav-item"
             :class="{ 'side-nav-item--active': activeTab === 'statistics' }"
@@ -69,6 +76,8 @@
               <span v-if="activeTab === 'orders'">Заказы</span>
               <span v-else-if="activeTab === 'employees'">Сотрудники</span>
               <span v-else-if="activeTab === 'parts'">Запчасти</span>
+              <span v-else-if="activeTab === 'brands'">Бренды</span>
+              <span v-else-if="activeTab === 'deviceTypes'">Типы устройств</span>
             </div>
             <div class="table-meta">
               <span v-if="!isAuthenticated">Чтобы работать с API, авторизуйтесь.</span>
@@ -128,6 +137,7 @@
                 :clients="clients"
                 :devices="devices"
                 :device-types="deviceTypes"
+                :brands="brands"
                 :user-role="userRole"
                 :current-employee-name="currentEmployeeName"
                 :order-form="orderForm"
@@ -172,6 +182,22 @@
                 @create-part="openNewPartModal"
                 @edit-part="openEditPartModal"
               />
+              <BrandList
+                v-else-if="activeTab === 'brands'"
+                :brands="brands"
+                :user-role="userRole"
+                @create-brand="openBrandModal"
+                @edit-brand="editBrandModal"
+                @delete-brand="handleDeleteBrand"
+              />
+              <DeviceTypeList
+                v-else-if="activeTab === 'deviceTypes'"
+                :device-types="deviceTypes"
+                :user-role="userRole"
+                @create-device-type="openDeviceTypeModal"
+                @edit-device-type="editDeviceTypeModal"
+                @delete-device-type="handleDeleteDeviceType"
+              />
               <StatisticsView
                 v-else-if="activeTab === 'statistics' && statisticsData"
                 :data="statisticsData"
@@ -213,6 +239,20 @@
       @close="organizationModalOpen = false"
       @saved="organizationModalOpen = false"
     />
+
+    <BrandModal
+      :open="brandModalOpen"
+      :edit-brand="editingBrand"
+      @close="closeBrandModal"
+      @submit="submitBrandModal"
+    />
+
+    <DeviceTypeModal
+      :open="deviceTypeModalOpen"
+      :edit-device-type="editingDeviceType"
+      @close="closeDeviceTypeModal"
+      @submit="submitDeviceTypeModal"
+    />
   </div>
 </template>
 
@@ -228,6 +268,10 @@ import OrderDetail from './components/OrderDetail.vue';
 import EmployeeList from './components/EmployeeList.vue';
 import EmployeeForm from './components/EmployeeForm.vue';
 import PartsList from './components/PartsList.vue';
+import BrandList from './components/BrandList.vue';
+import BrandModal from './components/BrandModal.vue';
+import DeviceTypeList from './components/DeviceTypeList.vue';
+import DeviceTypeModal from './components/DeviceTypeModal.vue';
 import StatisticsView from './components/StatisticsView.vue';
 import InfoView from './components/InfoView.vue';
 import ClientModal from './components/ClientModal.vue';
@@ -249,8 +293,15 @@ import {
   getOrderDetails,
   getOrders,
   getParts,
+  getBrands,
   getStatistics,
   getValidationRules,
+  createBrand,
+  updateBrand,
+  deleteBrand,
+  createDeviceType,
+  updateDeviceType,
+  deleteDeviceType,
   updateOrder,
   updatePart,
 } from './services/api';
@@ -274,6 +325,7 @@ const orders = ref([]);
 const devices = ref([]);
 const deviceTypes = ref([]);
 const parts = ref([]);
+const brands = ref([]);
 const employees = ref([]);
 const isLoading = ref(false);
 const loadError = ref('');
@@ -296,7 +348,7 @@ const orderForm = ref({
   },
   newDevice: {
     type_uuid: '',
-    brand: '',
+    brand_uuid: '',
     model: '',
     serial_number: '',
     description: '',
@@ -319,12 +371,18 @@ const organizationModalOpen = ref(false);
 const partModalOpen = ref(false);
 const editPartUuid = ref(null);
 const partModalData = ref(null);
+const brandModalOpen = ref(false);
+const editingBrand = ref(null);
+const deviceTypeModalOpen = ref(false);
+const editingDeviceType = ref(null);
 
 const currentCount = computed(() => {
   switch (activeTab.value) {
     case 'orders': return orders.value.length;
     case 'employees': return employees.value.length;
     case 'parts': return parts.value.length;
+    case 'brands': return brands.value.length;
+    case 'deviceTypes': return deviceTypes.value.length;
     default: return 0;
   }
 });
@@ -337,13 +395,14 @@ async function loadData() {
     switch (activeTab.value) {
       case 'orders': {
         if (canManageEmployees(userRole.value)) {
-          const [ordersRes, clientsRes, devicesData, employeesRes] = await Promise.all([
-            getOrders(), getClients(), getDevices(), getEmployees(),
+          const [ordersRes, clientsRes, devicesData, employeesRes, brandsData] = await Promise.all([
+            getOrders(), getClients(), getDevices(), getEmployees(), getBrands(),
           ]);
           orders.value = ordersRes.items;
           clients.value = clientsRes.items;
           devices.value = devicesData;
           employees.value = employeesRes.items;
+          brands.value = brandsData;
         } else {
           const [ordersRes, clientsRes, devicesData] = await Promise.all([
             getOrders(), getClients(), getDevices(),
@@ -360,6 +419,12 @@ async function loadData() {
         break;
       case 'parts':
         parts.value = (await getParts()).items;
+        break;
+      case 'brands':
+        brands.value = await getBrands();
+        break;
+      case 'deviceTypes':
+        deviceTypes.value = await getDeviceTypes();
         break;
       case 'statistics':
         statisticsData.value = await getStatistics();
@@ -383,6 +448,7 @@ async function onLogout() {
   devices.value = [];
   deviceTypes.value = [];
   parts.value = [];
+  brands.value = [];
   employees.value = [];
 }
 
@@ -474,9 +540,20 @@ async function ensureDeviceTypes() {
   }
 }
 
+async function ensureBrands() {
+  try {
+    if (!brands.value.length) {
+      brands.value = await getBrands();
+    }
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Не удалось загрузить бренды.');
+  }
+}
+
 async function startCreateOrder() {
   await ensureOrderReferences();
   await ensureDeviceTypes();
+  await ensureBrands();
   orderForm.value.open = true;
   orderForm.value.editMode = false;
   orderForm.value.uuid = null;
@@ -490,7 +567,7 @@ async function startCreateOrder() {
   };
   orderForm.value.newDevice = {
     type_uuid: '',
-    brand: '',
+    brand_uuid: '',
     model: '',
     serial_number: '',
     description: '',
@@ -532,7 +609,7 @@ async function submitOrderForm() {
         client_address: nc.address || null,
 
         device_type_uuid: nd.type_uuid,
-        device_brand: nd.brand,
+        device_brand_uuid: nd.brand_uuid || null,
         device_model: nd.model,
         device_serial_number: nd.serial_number || null,
         device_description: nd.description || null,
@@ -606,6 +683,84 @@ function closeOrderDetails() {
 }
 
 // submitOrderClientModal больше не используется после переноса формы клиента в OrderList
+
+function openBrandModal() {
+  editingBrand.value = null;
+  brandModalOpen.value = true;
+}
+
+function editBrandModal(brand) {
+  editingBrand.value = brand;
+  brandModalOpen.value = true;
+}
+
+function closeBrandModal() {
+  brandModalOpen.value = false;
+  editingBrand.value = null;
+}
+
+async function submitBrandModal(payload) {
+  try {
+    if (editingBrand.value) {
+      await updateBrand(editingBrand.value.uuid, payload);
+    } else {
+      await createBrand(payload);
+    }
+    brands.value = await getBrands();
+    closeBrandModal();
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Ошибка сохранения бренда.');
+  }
+}
+
+async function handleDeleteBrand(brand) {
+  if (!window.confirm(`Удалить бренд «${brand.name}»?`)) return;
+  try {
+    await deleteBrand(brand.uuid);
+    brands.value = await getBrands();
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Не удалось удалить бренд.');
+  }
+}
+
+function openDeviceTypeModal() {
+  editingDeviceType.value = null;
+  deviceTypeModalOpen.value = true;
+}
+
+function editDeviceTypeModal(deviceType) {
+  editingDeviceType.value = deviceType;
+  deviceTypeModalOpen.value = true;
+}
+
+function closeDeviceTypeModal() {
+  deviceTypeModalOpen.value = false;
+  editingDeviceType.value = null;
+}
+
+async function submitDeviceTypeModal(payload) {
+  try {
+    if (editingDeviceType.value) {
+      await updateDeviceType(editingDeviceType.value.uuid, payload);
+    } else {
+      await createDeviceType(payload);
+    }
+    deviceTypes.value = await getDeviceTypes();
+    closeDeviceTypeModal();
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Ошибка сохранения типа устройства.');
+  }
+}
+
+async function handleDeleteDeviceType(deviceType) {
+  if (!window.confirm(`Удалить тип «${deviceType.name}»?`)) return;
+  try {
+    await deleteDeviceType(deviceType.uuid);
+    deviceTypes.value = await getDeviceTypes();
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Не удалось удалить тип устройства.');
+  }
+}
 
 function openNewPartModal() {
   editPartUuid.value = null;

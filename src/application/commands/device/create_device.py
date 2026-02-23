@@ -4,10 +4,12 @@ from uuid import UUID
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.ports.brand_reader import BrandReader
 from src.application.ports.device_reader import DeviceReader
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.device_type_reader import DeviceTypeReader
 from src.application.ports.transaction import Transaction, EntitySaver
+from src.entities.brands.models import BrandUUID
 from src.entities.devices.services import DeviceService
 from src.entities.employees.models import Employee
 from src.entities.clients.models import ClientUUID
@@ -26,7 +28,7 @@ class CreateDeviceCommandResponse:
 class CreateDeviceCommand:
     client_uuid: UUID
     type_uuid: UUID
-    brand: str
+    brand_uuid: UUID
     model: str
     serial_number: Optional[str] = None
     description: Optional[str] = None
@@ -41,6 +43,7 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
             device_reader: DeviceReader,
             client_reader: ClientReader,
             device_type_reader: DeviceTypeReader,
+            brand_reader: BrandReader,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
@@ -48,6 +51,7 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
         self._device_service = device_service
         self._client_reader = client_reader
         self._device_type_reader = device_type_reader
+        self._brand_reader = brand_reader
 
     async def run(self, data: CreateDeviceCommand) -> CreateDeviceCommandResponse:
         client = await self._client_reader.read_by_uuid(ClientUUID(data.client_uuid))
@@ -58,10 +62,14 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
         if not device_type:
             raise EntityNotFoundError(message=f"Device type with uuid {data.type_uuid} not found")
 
+        brand = await self._brand_reader.read_by_uuid(BrandUUID(data.brand_uuid))
+        if not brand:
+            raise EntityNotFoundError(message=f"Brand with uuid {data.brand_uuid} not found")
+
         device = self._device_service.create_device(
             client_id=client.id,
             type_id=device_type.id,
-            brand=data.brand,
+            brand_id=brand.id,
             model=data.model,
             serial_number=data.serial_number,
             description=data.description

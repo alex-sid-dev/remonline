@@ -106,7 +106,7 @@ async def create_order_with_client_and_device(
         client_comment=request_data.client_comment,
         client_address=request_data.client_address,
         device_type_uuid=request_data.device_type_uuid,
-        device_brand=request_data.device_brand,
+        device_brand_uuid=request_data.device_brand_uuid,
         device_model=request_data.device_model,
         device_serial_number=request_data.device_serial_number,
         device_description=request_data.device_description,

@@ -9,7 +9,8 @@ class OrderStatRow:
     creator_id: int | None
     assigned_employee_id: int | None
     works_revenue: float
-    parts_expenses: float
+    parts_revenue: float  # выручка от запчастей (цена в заказе * qty)
+    parts_cost: float     # затраты на запчасти (цена из справочника запчастей * qty)
 
 
 class StatisticsReader(Protocol):

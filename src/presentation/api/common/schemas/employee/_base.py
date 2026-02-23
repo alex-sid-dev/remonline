@@ -14,12 +14,12 @@ class EmployeeBaseSchema(BaseModel):
     @field_validator('phone')
     @classmethod
     def validate_phone_format(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
         pattern = r"^\+\d{10,15}$"
-        if not re.match(pattern, v):
+        if not re.match(pattern, v.strip()):
             raise ValueError("Номер должен начинаться с '+' и содержать от 10 до 15 цифр")
-        return v
+        return v.strip()
 
 class CreateEmployeeSchema(EmployeeBaseSchema):
     """Схема создания: все поля обязательны"""

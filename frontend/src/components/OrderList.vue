@@ -109,12 +109,20 @@
 
       <div class="field">
         <label class="field-label" for="order-device-brand">Бренд *</label>
-        <input
+        <select
           id="order-device-brand"
-          v-model="orderForm.newDevice.brand"
+          v-model="orderForm.newDevice.brand_uuid"
           class="field-input"
-          type="text"
         >
+          <option disabled value="">Выберите бренд</option>
+          <option
+            v-for="b in brands"
+            :key="b.uuid"
+            :value="b.uuid"
+          >
+            {{ b.name }}
+          </option>
+        </select>
       </div>
 
       <div class="field">
@@ -151,7 +159,7 @@
             @click="pickDeviceFromSearch(d)"
           >
             <div class="autocomplete-item-main">
-              {{ d.brand || 'Устройство' }} {{ d.model || '' }}
+              {{ (d.brand && d.brand.name) || d.brand || 'Устройство' }} {{ d.model || '' }}
             </div>
             <div class="autocomplete-item-sub">
               SN: {{ d.serial_number || '—' }}
@@ -275,7 +283,6 @@
     <div v-else>
       <div class="table-header">
         <div class="table-meta">
-          Заказы: выбор клиента и устройства из существующих сущностей, изменение статуса и цены.
           <div class="table-status-filters">
             <button
               v-for="s in ORDER_STATUS_OPTIONS"
@@ -461,6 +468,7 @@ const props = defineProps({
   clients: { type: Array, required: true },
   devices: { type: Array, required: true },
   deviceTypes: { type: Array, required: true },
+  brands: { type: Array, default: () => [] },
   userRole: { type: String, required: true },
   currentEmployeeName: { type: String, default: '' },
   orderForm: { type: Object, required: true },
@@ -515,7 +523,7 @@ const orderFormValid = computed(() => {
   const nc = props.orderForm.newClient || {};
   const nd = props.orderForm.newDevice || {};
   const hasClient = !!nc.phone && !!nc.full_name;
-  const hasDevice = !!nd.type_uuid && !!nd.brand && !!nd.model;
+  const hasDevice = !!nd.type_uuid && !!nd.brand_uuid && !!nd.model;
   return hasClient && hasDevice;
 });
 
@@ -532,7 +540,7 @@ function pickClientFromPhone(client) {
 function pickDeviceFromSearch(device) {
   if (!props.orderForm.newDevice) return;
   props.orderForm.newDevice.type_uuid = device.type_uuid || '';
-  props.orderForm.newDevice.brand = device.brand || '';
+  props.orderForm.newDevice.brand_uuid = device.brand_uuid || (device.brand && device.brand.uuid) || '';
   props.orderForm.newDevice.model = device.model || '';
   props.orderForm.newDevice.serial_number = device.serial_number || '';
   props.orderForm.newDevice.description = device.description || '';

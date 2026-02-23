@@ -30,6 +30,11 @@ from src.application.commands.device_type.read_all_device_type import ReadAllDev
 from src.application.commands.device_type.read_device_type import ReadDeviceTypeCommandHandler
 from src.application.commands.device_type.update_device_type import UpdateDeviceTypeCommandHandler
 from src.application.commands.device_type.delete_device_type import DeleteDeviceTypeCommandHandler
+from src.application.commands.brand.create_brand import CreateBrandCommandHandler
+from src.application.commands.brand.read_all_brand import ReadAllBrandCommandHandler
+from src.application.commands.brand.read_brand import ReadBrandCommandHandler
+from src.application.commands.brand.update_brand import UpdateBrandCommandHandler
+from src.application.commands.brand.delete_brand import DeleteBrandCommandHandler
 from src.application.commands.device.create_device import CreateDeviceCommandHandler
 from src.application.commands.device.read_all_device import ReadAllDeviceCommandHandler
 from src.application.commands.device.read_device import ReadDeviceCommandHandler
@@ -98,6 +103,12 @@ def interactors_provider() -> Provider:
         CreateDeviceTypeCommandHandler,
         UpdateDeviceTypeCommandHandler,
         DeleteDeviceTypeCommandHandler,
+
+        CreateBrandCommandHandler,
+        ReadAllBrandCommandHandler,
+        ReadBrandCommandHandler,
+        UpdateBrandCommandHandler,
+        DeleteBrandCommandHandler,
 
         ReadAllDeviceCommandHandler,
         ReadDeviceCommandHandler,

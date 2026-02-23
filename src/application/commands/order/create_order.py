@@ -71,7 +71,7 @@ class CreateOrderCommandHandler(BaseCommandHandler):
             assigned_employee_id = assigned_employee.id
 
         # Определяем менеджера (creator_id):
-        # - если передан manager_uuid — используем его, проверяя, что это сотрудник с ролью MANAGER;
+        # - если передан manager_uuid — используем его; назначить менеджером заказа нельзя только мастера;
         # - если заказ создаёт менеджер — он сам становится менеджером заказа;
         # - иначе (админ/супервизор/мастер) — creator_id = current_employee.id.
         creator_id = current_employee.id
@@ -79,8 +79,8 @@ class CreateOrderCommandHandler(BaseCommandHandler):
             manager = await self._employee_reader.read_by_uuid(EmployeeUUID(data.manager_uuid))
             if not manager:
                 raise EntityNotFoundError(message=f"Employee with uuid {data.manager_uuid} not found")
-            if manager.position != EmployeePosition.MANAGER:
-                raise EntityNotFoundError(message="Назначить менеджером можно только сотрудника с ролью manager.")
+            if manager.position == EmployeePosition.MASTER:
+                raise EntityNotFoundError(message="Назначить менеджером нельзя сотрудника с ролью мастер.")
             creator_id = manager.id
         elif getattr(current_employee, "position", None) == EmployeePosition.MANAGER:
             creator_id = current_employee.id

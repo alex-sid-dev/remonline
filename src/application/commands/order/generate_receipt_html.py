@@ -66,7 +66,7 @@ class GenerateReceiptHtmlCommandHandler(BaseCommandHandler):
                 "address": client.address if client else None,
             },
             "device": {
-                "brand": device.brand if device else "—",
+                "brand": (device.brand.name if getattr(device, "brand", None) else "—") if device else "—",
                 "model": device.model if device else "—",
                 "serial_number": device.serial_number if device else None,
             },

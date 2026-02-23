@@ -50,11 +50,11 @@ async def create_device(
         interactor: FromDishka[CreateDeviceCommandHandler],
         current_employee: CurrentEmployee,
 ) -> CreateDeviceCommandResponse:
-    logger.info("Create device endpoint called", brand=request_data.brand, model=request_data.model)
+    logger.info("Create device endpoint called", brand_uuid=str(request_data.brand_uuid), model=request_data.model)
     dto = CreateDeviceCommand(
         client_uuid=request_data.client_uuid,
         type_uuid=request_data.type_uuid,
-        brand=request_data.brand,
+        brand_uuid=request_data.brand_uuid,
         model=request_data.model,
         serial_number=request_data.serial_number,
         description=request_data.description

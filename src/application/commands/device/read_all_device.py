@@ -18,6 +18,7 @@ class ReadDeviceResponse:
     uuid: str
     client_id: int
     type_id: int
+    brand_uuid: Optional[str]
     brand: str
     model: str
     serial_number: Optional[str]
@@ -25,11 +26,15 @@ class ReadDeviceResponse:
 
     @classmethod
     def from_entity(cls, entity: Device) -> "ReadDeviceResponse":
+        brand_obj = getattr(entity, "brand", None)
+        brand_name = brand_obj.name if brand_obj else "—"
+        brand_uuid = str(brand_obj.uuid) if brand_obj else None
         return cls(
             uuid=str(entity.uuid),
             client_id=entity.client_id,
             type_id=entity.type_id,
-            brand=entity.brand,
+            brand_uuid=brand_uuid,
+            brand=brand_name,
             model=entity.model,
             serial_number=entity.serial_number,
             description=entity.description

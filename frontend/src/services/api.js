@@ -152,6 +152,25 @@ export async function deleteDeviceType(uuid) {
   await api.delete(`/device_type/${uuid}`);
 }
 
+// Brands CRUD
+export async function getBrands() {
+  const response = await api.get('/brand/all');
+  return response.data;
+}
+
+export async function createBrand(payload) {
+  const response = await api.post('/brand/create', payload);
+  return response.data;
+}
+
+export async function updateBrand(uuid, payload) {
+  await api.patch(`/brand/update/${uuid}`, payload);
+}
+
+export async function deleteBrand(uuid) {
+  await api.delete(`/brand/${uuid}`);
+}
+
 // Devices CRUD
 export async function getDevices() {
   const response = await api.get('/device/all');

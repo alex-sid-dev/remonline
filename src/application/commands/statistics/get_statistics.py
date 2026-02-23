@@ -49,16 +49,16 @@ class GetStatisticsCommandHandler(BaseCommandHandler):
         order_rows = await self._statistics_reader.get_closed_orders_stats()
         employees, _ = await self._employee_reader.read_all_active(limit=1000, offset=0)
 
-        total_revenue = sum(r.works_revenue + r.parts_expenses for r in order_rows)
-        total_expenses = sum(r.parts_expenses for r in order_rows)
+        total_revenue = sum(r.works_revenue + r.parts_revenue for r in order_rows)
+        total_expenses = sum(r.parts_cost for r in order_rows)
         total_profit = total_revenue - total_expenses
 
         employee_stats: List[EmployeeStatisticsResponse] = []
         for emp in employees:
             emp_rows = self._filter_orders_for_employee(emp, order_rows)
 
-            emp_revenue = sum(r.works_revenue + r.parts_expenses for r in emp_rows)
-            emp_expenses = sum(r.parts_expenses for r in emp_rows)
+            emp_revenue = sum(r.works_revenue + r.parts_revenue for r in emp_rows)
+            emp_expenses = sum(r.parts_cost for r in emp_rows)
             emp_profit = emp_revenue - emp_expenses
 
             base_salary = emp.salary or 0.0

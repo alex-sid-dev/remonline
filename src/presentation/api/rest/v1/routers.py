@@ -8,6 +8,7 @@ from . import (
     order,
     organization,
     device_type,
+    brand,
     device,
     part,
     work,
@@ -26,6 +27,7 @@ api_v1_router.include_router(client.router)
 api_v1_router.include_router(order.router)
 api_v1_router.include_router(organization.router)
 api_v1_router.include_router(device_type.router)
+api_v1_router.include_router(brand.router)
 api_v1_router.include_router(device.router)
 api_v1_router.include_router(part.router)
 api_v1_router.include_router(work.router)

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 import structlog
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.order_reader import OrderReader
@@ -31,6 +31,15 @@ class DeviceShortResponse(BaseResponse):
     model: str
     brand: Optional[str] = None
     serial_number: Optional[str] = None
+
+    @field_validator("brand", mode="before")
+    @classmethod
+    def brand_to_str(cls, v):  # noqa: N805
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return v
+        return getattr(v, "name", None)
 
 
 class EmployeeShortResponse(BaseResponse):

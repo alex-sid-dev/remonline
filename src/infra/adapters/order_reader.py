@@ -27,7 +27,7 @@ class OrderReaderAdapter(OrderReader):
         stmt = (
             select(Order)
             .where(Order.is_active.is_(True))
-            .order_by(Order.id.desc())
+            .order_by(Order.id.asc())
             .limit(limit)
             .offset(offset)
         )
