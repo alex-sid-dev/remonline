@@ -12,12 +12,14 @@ jobs:
     runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: actions/checkout@v4
-
       - name: Deploy
         run: |
           cd /opt/remonline
-          git pull origin main
+          cp .env .env.backup 2>/dev/null || true
+          git fetch origin main
+          git reset --hard origin/main
+          cp .env.backup .env 2>/dev/null || true
+          rm -f .env.backup
           docker compose -f docker-compose.prod.yaml build --no-cache
           docker compose -f docker-compose.prod.yaml up -d
           docker image prune -f
