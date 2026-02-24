@@ -2,10 +2,8 @@ import traceback
 from typing import TYPE_CHECKING
 
 import structlog
-from starlette.responses import JSONResponse
 
 if TYPE_CHECKING:
-    from starlette.requests import Request
     from src.application.errors._base import ApplicationError
 
 from src.application.errors._base import (
@@ -14,14 +12,14 @@ from src.application.errors._base import (
     DomainError,
     EntityNotFoundError,
     FieldError,
+    FileError,
     KeycloakError,
     PermissionDeniedError,
-    ProductCardError,
-    S3Error,
-    FileError,
-    VaultError,
     PhiError,
+    ProductCardError,
     QwenError,
+    S3Error,
+    VaultError,
 )
 
 logger = structlog.get_logger(__name__)

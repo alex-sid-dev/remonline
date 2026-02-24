@@ -1,16 +1,17 @@
-from typing import Optional, Iterable, List, Sequence
+from collections.abc import Iterable, Sequence
 from datetime import datetime
 from uuid import uuid4
 
 from src.application.errors._base import FieldError
-from src.entities.orders.models import Order, OrderID, OrderUUID
-from src.entities.orders.enum import OrderStatus
-from src.entities.employees.enum import EmployeePosition
-from src.entities.works.models import Work
-from src.entities.order_parts.models import OrderPart
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
+from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import EmployeeID
+from src.entities.order_parts.models import OrderPart
+from src.entities.orders.enum import OrderStatus
+from src.entities.orders.models import Order, OrderUUID
+from src.entities.works.models import Work
+
 
 class OrderService:
     def _normalize_status(self, status: OrderStatus | str | None) -> OrderStatus:
@@ -37,10 +38,10 @@ class OrderService:
         client_id: ClientID,
         device_id: DeviceID,
         creator_id: EmployeeID,
-        problem_description: Optional[str] = None,
-        assigned_employee_id: Optional[EmployeeID] = None,
+        problem_description: str | None = None,
+        assigned_employee_id: EmployeeID | None = None,
         status: OrderStatus | str = OrderStatus.NEW,
-        price: Optional[float] = None,
+        price: float | None = None,
     ) -> Order:
         now = datetime.now()
         normalized_status = self._normalize_status(status)
@@ -63,12 +64,12 @@ class OrderService:
     def update_order(
         self,
         order: Order,
-        creator_id: Optional[EmployeeID] = None,
-        assigned_employee_id: Optional[EmployeeID] = None,
-        status: Optional[OrderStatus] = None,
-        problem_description: Optional[str] = None,
-        price: Optional[float] = None,
-        is_active: Optional[bool] = None,
+        creator_id: EmployeeID | None = None,
+        assigned_employee_id: EmployeeID | None = None,
+        status: OrderStatus | None = None,
+        problem_description: str | None = None,
+        price: float | None = None,
+        is_active: bool | None = None,
     ) -> Order:
         if creator_id is not None:
             order.creator_id = creator_id
@@ -82,7 +83,7 @@ class OrderService:
             order.price = price
         if is_active is not None:
             order.is_active = is_active
-        
+
         order.updated_at = datetime.now()
         return order
 
@@ -140,7 +141,7 @@ class OrderService:
         return total
 
     @staticmethod
-    def allowed_statuses_for_position(position: EmployeePosition) -> List[OrderStatus]:
+    def allowed_statuses_for_position(position: EmployeePosition) -> list[OrderStatus]:
         """
         Возвращает список статусов, которые пользователь с данной ролью может устанавливать.
         Сейчас логика такая же, как на фронте:

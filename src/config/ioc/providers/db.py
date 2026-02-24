@@ -1,7 +1,7 @@
 from dishka import Provider, Scope
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.ioc.providers.db_provider import get_engine, get_sessionmaker, get_session
+from src.config.ioc.providers.db_provider import get_engine, get_session, get_sessionmaker
 
 
 def db_provider() -> Provider:

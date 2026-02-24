@@ -1,7 +1,6 @@
-from typing import Optional
 from uuid import uuid4
 
-from src.entities.brands.models import Brand, BrandID, BrandUUID
+from src.entities.brands.models import Brand, BrandUUID
 
 
 class BrandService:
@@ -18,8 +17,8 @@ class BrandService:
     def update_brand(
         self,
         brand: Brand,
-        name: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        name: str | None = None,
+        is_active: bool | None = None,
     ) -> Brand:
         if name is not None:
             brand.name = name.strip()

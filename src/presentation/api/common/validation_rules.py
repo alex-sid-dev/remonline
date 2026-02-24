@@ -6,7 +6,7 @@
 # Пароль (RegisterSchema, LoginSchema)
 PASSWORD_MIN_LENGTH = 6
 PASSWORD_MAX_LENGTH = 10
-PASSWORD_SPECIAL_CHARACTERS = "!@#$%^&*(),.?\":{}|<>_-+[]=\\/"
+PASSWORD_SPECIAL_CHARACTERS = '!@#$%^&*(),.?":{}|<>_-+[]=\\/'
 
 PASSWORD_MESSAGES = {
     "required": "Введите пароль",

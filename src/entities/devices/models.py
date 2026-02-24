@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, NewType
+from typing import NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
@@ -17,14 +17,14 @@ class Device(BaseEntity[DeviceID, DeviceUUID]):
     type_id: DeviceTypeID
     brand_id: BrandID
     model: str
-    serial_number: Optional[str] = None
-    description: Optional[str] = None
+    serial_number: str | None = None
+    description: str | None = None
     is_active: bool = True
 
-    _type_name: Optional[str] = None
+    _type_name: str | None = None
 
     @property
-    def type_name(self) -> Optional[str]:
+    def type_name(self) -> str | None:
         if hasattr(self, "type") and self.type is not None:
             return self.type.name
         return self._type_name

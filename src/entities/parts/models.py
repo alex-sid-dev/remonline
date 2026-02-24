@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, NewType
+from typing import NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
@@ -11,7 +11,7 @@ PartUUID = NewType("PartUUID", UUID)
 @dataclass
 class Part(BaseEntity[PartID, PartUUID]):
     name: str
-    sku: Optional[str] = None
-    price: Optional[float] = None
-    stock_qty: Optional[int] = None
+    sku: str | None = None
+    price: float | None = None
+    stock_qty: int | None = None
     is_active: bool = True

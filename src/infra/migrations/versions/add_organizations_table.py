@@ -5,8 +5,9 @@ Revises: add_performance_indexes
 Create Date: 2026-02-20
 
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
 
 revision = "add_organizations_table"
@@ -32,8 +33,12 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("organization_id"),
     )
-    op.create_index("ix_organizations_organization_uuid", "organizations", ["organization_uuid"], unique=True)
-    op.create_index("uq_organizations_singleton_key", "organizations", ["singleton_key"], unique=True)
+    op.create_index(
+        "ix_organizations_organization_uuid", "organizations", ["organization_uuid"], unique=True
+    )
+    op.create_index(
+        "uq_organizations_singleton_key", "organizations", ["singleton_key"], unique=True
+    )
 
 
 def downgrade() -> None:

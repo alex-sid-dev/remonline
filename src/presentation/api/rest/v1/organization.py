@@ -1,30 +1,29 @@
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, status
 from dishka import FromDishka
-from dishka.integrations.fastapi import inject, DishkaRoute
+from dishka.integrations.fastapi import DishkaRoute, inject
+from fastapi import APIRouter, Depends, status
 
-from src.application.commands.organization.get_organization import (
-    GetOrganizationCommandHandler,
-    GetOrganizationResponse,
-)
 from src.application.commands.organization.create_organization import (
-    CreateOrganizationCommandHandler,
     CreateOrganizationCommand,
+    CreateOrganizationCommandHandler,
     CreateOrganizationCommandResponse,
-)
-from src.application.commands.organization.update_organization import (
-    UpdateOrganizationCommandHandler,
-    UpdateOrganizationCommand,
 )
 from src.application.commands.organization.delete_organization import (
     DeleteOrganizationCommandHandler,
 )
+from src.application.commands.organization.get_organization import (
+    GetOrganizationCommandHandler,
+)
+from src.application.commands.organization.update_organization import (
+    UpdateOrganizationCommand,
+    UpdateOrganizationCommandHandler,
+)
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.organization.organization import (
-    OrganizationSchema,
     OrganizationResponseSchema,
+    OrganizationSchema,
 )
 from src.presentation.api.rest.v1.permissions import RoleChecker
 

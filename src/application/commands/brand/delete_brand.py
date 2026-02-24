@@ -1,14 +1,13 @@
 from uuid import UUID
 
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import ConflictError, EntityNotFoundError
 from src.application.ports.brand_reader import BrandReader
 from src.application.ports.device_reader import DeviceReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.brands.models import BrandUUID
 from src.entities.employees.models import Employee
-from src.application.errors._base import EntityNotFoundError, ConflictError
 
 logger = structlog.get_logger("delete_brand").bind(service="brand")
 

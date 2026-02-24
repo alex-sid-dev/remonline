@@ -6,11 +6,11 @@ import structlog
 from jinja2 import Environment, FileSystemLoader
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.organization_reader import OrganizationReader
 from src.entities.employees.models import Employee
 from src.entities.orders.models import OrderUUID
-from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("generate_receipt").bind(service="order")
 
@@ -66,7 +66,9 @@ class GenerateReceiptHtmlCommandHandler(BaseCommandHandler):
                 "address": client.address if client else None,
             },
             "device": {
-                "brand": (device.brand.name if getattr(device, "brand", None) else "—") if device else "—",
+                "brand": (device.brand.name if getattr(device, "brand", None) else "—")
+                if device
+                else "—",
                 "model": device.model if device else "—",
                 "serial_number": device.serial_number if device else None,
             },

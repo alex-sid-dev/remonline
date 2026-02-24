@@ -1,7 +1,7 @@
-from sqlalchemy import Table, Column, BigInteger, String, Integer, Text, DateTime, func, Index
+from sqlalchemy import BigInteger, Column, DateTime, Index, Integer, String, Table, Text, func
 
-from src.infra.models._base import mapper_registry
 from src.entities.error_logs.models import ErrorLog
+from src.infra.models._base import mapper_registry
 
 error_logs_table = Table(
     "error_logs",

@@ -4,12 +4,12 @@ from uuid import UUID
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
 from src.application.keycloak.auth_managers import AdminManager
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.user_reader import UserReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee, EmployeeUUID
-from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
 
 logger = structlog.get_logger("change_password").bind(service="employee")
 
@@ -24,10 +24,10 @@ class ChangePasswordCommand:
 
 class ChangePasswordCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            employee_reader: EmployeeReader,
-            user_reader: UserReader,
-            admin_manager: AdminManager,
+        self,
+        employee_reader: EmployeeReader,
+        user_reader: UserReader,
+        admin_manager: AdminManager,
     ) -> None:
         self._employee_reader = employee_reader
         self._user_reader = user_reader

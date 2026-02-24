@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import NewType, Optional
+from typing import NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
@@ -15,4 +15,4 @@ class OrderPart(BaseEntity[OrderPartID, OrderPartUUID]):
     order_id: OrderID
     part_id: PartID
     qty: int
-    price: Optional[float] = None
+    price: float | None = None

@@ -1,37 +1,38 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.brand_reader import BrandReader
 from src.application.ports.device_reader import DeviceReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.brands.models import BrandUUID
 from src.entities.devices.models import DeviceUUID
 from src.entities.devices.services import DeviceService
 from src.entities.employees.models import Employee
-from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("update_device").bind(service="device")
+
 
 @dataclass
 class UpdateDeviceCommand:
     uuid: UUID
-    brand_uuid: Optional[UUID] = None
-    model: Optional[str] = None
-    serial_number: Optional[str] = None
-    is_active: Optional[bool] = None
+    brand_uuid: UUID | None = None
+    model: str | None = None
+    serial_number: str | None = None
+    is_active: bool | None = None
 
 
 class UpdateDeviceCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            transaction: Transaction,
-            entity_saver: EntitySaver,
-            device_reader: DeviceReader,
-            brand_reader: BrandReader,
-            device_service: DeviceService,
+        self,
+        transaction: Transaction,
+        entity_saver: EntitySaver,
+        device_reader: DeviceReader,
+        brand_reader: BrandReader,
+        device_service: DeviceService,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
@@ -56,7 +57,7 @@ class UpdateDeviceCommandHandler(BaseCommandHandler):
             brand_id=brand_id,
             model=data.model,
             serial_number=data.serial_number,
-            is_active=data.is_active
+            is_active=data.is_active,
         )
         self._entity_saver.add_one(device)
         await self._transaction.commit()

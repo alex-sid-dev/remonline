@@ -6,11 +6,11 @@ import structlog
 from jinja2 import Environment, FileSystemLoader
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.organization_reader import OrganizationReader
 from src.entities.employees.models import Employee
 from src.entities.orders.models import OrderUUID
-from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("generate_act").bind(service="order")
 
@@ -59,29 +59,35 @@ class GenerateActPdfCommandHandler(BaseCommandHandler):
             total = price * qty
             works_total += total
             employee = getattr(w, "employee", None)
-            works_data.append({
-                "title": w.title,
-                "employee_name": employee.full_name if employee else "—",
-                "qty": qty,
-                "price": price,
-                "total": total,
-            })
+            works_data.append(
+                {
+                    "title": w.title,
+                    "employee_name": employee.full_name if employee else "—",
+                    "qty": qty,
+                    "price": price,
+                    "total": total,
+                }
+            )
 
         parts_data = []
         parts_total = 0.0
         for op in getattr(order, "parts", []):
             part = getattr(op, "part_info", None)
-            price = op.price if op.price is not None else (part.price if part and part.price else 0.0)
+            price = (
+                op.price if op.price is not None else (part.price if part and part.price else 0.0)
+            )
             qty = op.qty or 1
             total = price * qty
             parts_total += total
-            parts_data.append({
-                "name": part.name if part else "—",
-                "sku": part.sku if part else None,
-                "qty": qty,
-                "price": price,
-                "total": total,
-            })
+            parts_data.append(
+                {
+                    "name": part.name if part else "—",
+                    "sku": part.sku if part else None,
+                    "qty": qty,
+                    "price": price,
+                    "total": total,
+                }
+            )
 
         creator = getattr(order, "creator", None)
         assigned = getattr(order, "assigned_employee", None)
@@ -99,7 +105,9 @@ class GenerateActPdfCommandHandler(BaseCommandHandler):
                 "address": client.address if client else None,
             },
             "device": {
-                "brand": (device.brand.name if getattr(device, "brand", None) else "—") if device else "—",
+                "brand": (device.brand.name if getattr(device, "brand", None) else "—")
+                if device
+                else "—",
                 "model": device.model if device else "—",
                 "serial_number": device.serial_number if device else None,
             },

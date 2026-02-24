@@ -1,13 +1,12 @@
+from typing import Final
+
 import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Final
 
-from sqlalchemy.orm import selectinload
-
+from src.application.ports.user_reader import UserReader
 from src.entities.users.models import User, UserID, UserUUID
 from src.infra.models.users import users_table
-from src.application.ports.user_reader import UserReader
 
 
 class UserReaderAdapter(UserReader):
@@ -28,10 +27,7 @@ class UserReaderAdapter(UserReader):
 
     async def read_by_uuid(self, user_uuid: UserUUID) -> User | None:
         self._logger.info("Reading user by UUID", user_uuid=str(user_uuid))
-        stmt = (
-            select(User)
-            .where(users_table.c.user_uuid == user_uuid)
-        )
+        stmt = select(User).where(users_table.c.user_uuid == user_uuid)
         result = await self._session.execute(stmt)
         user = result.scalar_one_or_none()
         if user is None:

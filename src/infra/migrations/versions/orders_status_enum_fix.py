@@ -7,7 +7,6 @@ Create Date: 2026-02-18
 
 from alembic import op
 
-
 revision = "orders_status_enum_fix"
 down_revision = "orders_status_enum"
 branch_labels = None
@@ -26,4 +25,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Откат — просто ничего не делаем, старый констрейнт не восстанавливаем.
     pass
-

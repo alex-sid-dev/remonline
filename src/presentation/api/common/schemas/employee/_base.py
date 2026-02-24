@@ -1,19 +1,24 @@
 import re
-from typing import Optional
-from pydantic import BaseModel, field_validator, Field
+
+from pydantic import BaseModel, Field, field_validator
+
 from src.entities.employees.enum import EmployeePosition
+
 
 class EmployeeBaseSchema(BaseModel):
     """Базовая схема с общей логикой"""
-    full_name: Optional[str] = Field(None, description="ФИО сотрудника", examples=["Иванов Иван Иванович"])
-    phone: Optional[str] = Field(None, description="Номер телефона", examples=["+79001234567"])
-    position: Optional[EmployeePosition] = Field(None, description="Роль сотрудника")
-    salary: Optional[float] = Field(None, ge=0, description="Зарплата в месяц")
-    profit_percent: Optional[float] = Field(None, ge=0, le=100, description="Процент от прибыли")
 
-    @field_validator('phone')
+    full_name: str | None = Field(
+        None, description="ФИО сотрудника", examples=["Иванов Иван Иванович"]
+    )
+    phone: str | None = Field(None, description="Номер телефона", examples=["+79001234567"])
+    position: EmployeePosition | None = Field(None, description="Роль сотрудника")
+    salary: float | None = Field(None, ge=0, description="Зарплата в месяц")
+    profit_percent: float | None = Field(None, ge=0, le=100, description="Процент от прибыли")
+
+    @field_validator("phone")
     @classmethod
-    def validate_phone_format(cls, v: Optional[str]) -> Optional[str]:
+    def validate_phone_format(cls, v: str | None) -> str | None:
         if v is None or (isinstance(v, str) and not v.strip()):
             return None
         pattern = r"^\+\d{10,15}$"
@@ -21,9 +26,10 @@ class EmployeeBaseSchema(BaseModel):
             raise ValueError("Номер должен начинаться с '+' и содержать от 10 до 15 цифр")
         return v.strip()
 
+
 class CreateEmployeeSchema(EmployeeBaseSchema):
     """Схема создания: все поля обязательны"""
+
     full_name: str = Field(..., description="ФИО сотрудника")
     phone: str = Field(..., description="Номер телефона")
     position: EmployeePosition = Field(..., description="Роль сотрудника")
-

@@ -1,17 +1,16 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import PermissionDeniedError
+from src.application.errors.employee import EmployeeNotFoundError
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.transaction import Transaction
 from src.entities.employees.enum import EmployeePosition
-from src.entities.employees.models import EmployeeUUID, Employee
+from src.entities.employees.models import Employee, EmployeeUUID
 from src.entities.employees.services import EmployeeService
-from src.application.errors._base import PermissionDeniedError
-from src.application.errors.employee import EmployeeNotFoundError
 
 logger = structlog.get_logger("update_employee").bind(service="employee")
 
@@ -19,39 +18,52 @@ logger = structlog.get_logger("update_employee").bind(service="employee")
 @dataclass
 class UpdateEmployeeCommand:
     uuid: UUID
-    full_name: Optional[str] = None
-    phone: Optional[str] = None
-    position: Optional[EmployeePosition] = None
-    salary: Optional[float] = None
-    profit_percent: Optional[float] = None
+    full_name: str | None = None
+    phone: str | None = None
+    position: EmployeePosition | None = None
+    salary: float | None = None
+    profit_percent: float | None = None
 
 
 class UpdateEmployeeCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            transaction: Transaction,
-            employee_reader: EmployeeReader,
-            employee_service: EmployeeService,
+        self,
+        transaction: Transaction,
+        employee_reader: EmployeeReader,
+        employee_service: EmployeeService,
     ) -> None:
         self._transaction = transaction
         self._employee_reader = employee_reader
         self._employee_service = employee_service
 
     async def run(self, data: UpdateEmployeeCommand, current_employee: Employee) -> None:
-        if data.position == EmployeePosition.SUPERVISOR and current_employee.position != EmployeePosition.SUPERVISOR:
-            raise PermissionDeniedError(message="Только супервизор может назначать роль «супервизор».")
+        if (
+            data.position == EmployeePosition.SUPERVISOR
+            and current_employee.position != EmployeePosition.SUPERVISOR
+        ):
+            raise PermissionDeniedError(
+                message="Только супервизор может назначать роль «супервизор»."
+            )
 
-        if (data.salary is not None or data.profit_percent is not None) \
-                and current_employee.position != EmployeePosition.SUPERVISOR:
-            raise PermissionDeniedError(message="Только супервизор может менять зарплату и процент от прибыли.")
+        if (
+            data.salary is not None or data.profit_percent is not None
+        ) and current_employee.position != EmployeePosition.SUPERVISOR:
+            raise PermissionDeniedError(
+                message="Только супервизор может менять зарплату и процент от прибыли."
+            )
 
         employee_to_update = await self._employee_reader.read_by_uuid(EmployeeUUID(data.uuid))
         if not employee_to_update:
             raise EmployeeNotFoundError()
 
-        if current_employee.position == EmployeePosition.ADMIN \
-                and employee_to_update.position not in (EmployeePosition.MASTER, EmployeePosition.MANAGER):
-            raise PermissionDeniedError(message="Админ может редактировать только мастеров и менеджеров.")
+        if (
+            current_employee.position == EmployeePosition.ADMIN
+            and employee_to_update.position
+            not in (EmployeePosition.MASTER, EmployeePosition.MANAGER)
+        ):
+            raise PermissionDeniedError(
+                message="Админ может редактировать только мастеров и менеджеров."
+            )
 
         self._employee_service.update_employee(
             employee=employee_to_update,

@@ -1,15 +1,15 @@
-from typing import Final, List
+from typing import Final
 
 import structlog
-from sqlalchemy import select, func, literal
+from sqlalchemy import func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.ports.statistics_reader import OrderStatRow, StatisticsReader
 from src.entities.orders.enum import OrderStatus
-from src.infra.models.orders import orders_table
-from src.infra.models.works import works_table
 from src.infra.models.order_parts import order_parts_table
+from src.infra.models.orders import orders_table
 from src.infra.models.parts import parts_table
+from src.infra.models.works import works_table
 
 
 class StatisticsReaderAdapter(StatisticsReader):
@@ -17,15 +17,15 @@ class StatisticsReaderAdapter(StatisticsReader):
         self._session: Final = session
         self._logger = structlog.get_logger("db").bind(service="db", entity="statistics")
 
-    async def get_closed_orders_stats(self) -> List[OrderStatRow]:
+    async def get_closed_orders_stats(self) -> list[OrderStatRow]:
         self._logger.info("Reading closed orders statistics")
 
         works_sub = (
             select(
                 works_table.c.order_id,
-                func.coalesce(
-                    func.sum(works_table.c.price * works_table.c.qty), literal(0)
-                ).label("works_revenue"),
+                func.coalesce(func.sum(works_table.c.price * works_table.c.qty), literal(0)).label(
+                    "works_revenue"
+                ),
             )
             .where(works_table.c.is_active.is_(True))
             .group_by(works_table.c.order_id)
@@ -50,7 +50,8 @@ class StatisticsReaderAdapter(StatisticsReader):
                 func.coalesce(
                     func.sum(
                         func.coalesce(parts_table.c.price, literal(0)) * order_parts_table.c.qty
-                    ), literal(0)
+                    ),
+                    literal(0),
                 ).label("parts_cost"),
             )
             .join(parts_table, order_parts_table.c.part_id == parts_table.c.part_id)

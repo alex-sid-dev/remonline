@@ -1,10 +1,11 @@
 from dataclasses import dataclass
+
 from src.application.errors._base import (
     AuthenticationError,
-    EntityNotFoundError,
     ConflictError,
-    PermissionDeniedError,
     DomainError,
+    EntityNotFoundError,
+    PermissionDeniedError,
 )
 
 

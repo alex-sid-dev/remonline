@@ -1,30 +1,32 @@
-from typing import List, Annotated
+from typing import Annotated
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends, status
 from dishka import FromDishka
-from dishka.integrations.fastapi import inject, DishkaRoute
+from dishka.integrations.fastapi import DishkaRoute, inject
+from fastapi import APIRouter, Depends, status
 
 from src.application.commands.brand.create_brand import (
-    CreateBrandCommandHandler,
     CreateBrandCommand,
+    CreateBrandCommandHandler,
     CreateBrandCommandResponse,
 )
+from src.application.commands.brand.delete_brand import DeleteBrandCommandHandler
 from src.application.commands.brand.read_all_brand import (
     ReadAllBrandCommandHandler,
+)
+from src.application.commands.brand.read_all_brand import (
     ReadBrandResponse as ReadBrandResponseDto,
 )
 from src.application.commands.brand.read_brand import (
-    ReadBrandCommandHandler,
     ReadBrandCommand,
+    ReadBrandCommandHandler,
     ReadBrandResponse,
 )
 from src.application.commands.brand.update_brand import (
-    UpdateBrandCommandHandler,
     UpdateBrandCommand,
+    UpdateBrandCommandHandler,
 )
-from src.application.commands.brand.delete_brand import DeleteBrandCommandHandler
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.brand.create_brand import CreateBrandSchema
 from src.presentation.api.common.schemas.brand.update_brand import UpdateBrandSchema
@@ -34,7 +36,12 @@ router = APIRouter(prefix="/brand", tags=["Brand"], route_class=DishkaRoute)
 logger = structlog.get_logger("api.brand").bind(service="brand")
 
 role_checker = RoleChecker(
-    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER]
+    [
+        EmployeePosition.SUPERVISOR,
+        EmployeePosition.ADMIN,
+        EmployeePosition.MASTER,
+        EmployeePosition.MANAGER,
+    ]
 )
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
 
@@ -43,7 +50,7 @@ CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
 async def get_all_brands(
     interactor: FromDishka[ReadAllBrandCommandHandler],
     current_employee: CurrentEmployee,
-) -> List[ReadBrandResponseDto]:
+) -> list[ReadBrandResponseDto]:
     return await interactor.run(current_employee)
 
 

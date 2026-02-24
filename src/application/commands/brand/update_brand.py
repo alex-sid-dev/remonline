@@ -1,16 +1,14 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.brand_reader import BrandReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.brands.models import BrandUUID
 from src.entities.brands.services import BrandService
 from src.entities.employees.models import Employee
-from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("update_brand").bind(service="brand")
 
@@ -18,8 +16,8 @@ logger = structlog.get_logger("update_brand").bind(service="brand")
 @dataclass
 class UpdateBrandCommand:
     uuid: UUID
-    name: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    is_active: bool | None = None
 
 
 class UpdateBrandCommandHandler(BaseCommandHandler):

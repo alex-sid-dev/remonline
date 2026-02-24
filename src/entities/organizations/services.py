@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
-from src.entities.organizations.models import Organization, OrganizationID, OrganizationUUID
+from src.entities.organizations.models import Organization, OrganizationUUID
 
 
 class OrganizationService:
@@ -10,11 +9,11 @@ class OrganizationService:
         self,
         name: str,
         inn: str,
-        address: Optional[str] = None,
-        kpp: Optional[str] = None,
-        bank_account: Optional[str] = None,
-        corr_account: Optional[str] = None,
-        bik: Optional[str] = None,
+        address: str | None = None,
+        kpp: str | None = None,
+        bank_account: str | None = None,
+        corr_account: str | None = None,
+        bik: str | None = None,
     ) -> Organization:
         now = datetime.now()
         return Organization(
@@ -35,13 +34,13 @@ class OrganizationService:
     def update(
         self,
         org: Organization,
-        name: Optional[str] = None,
-        inn: Optional[str] = None,
-        address: Optional[str] = None,
-        kpp: Optional[str] = None,
-        bank_account: Optional[str] = None,
-        corr_account: Optional[str] = None,
-        bik: Optional[str] = None,
+        name: str | None = None,
+        inn: str | None = None,
+        address: str | None = None,
+        kpp: str | None = None,
+        bank_account: str | None = None,
+        corr_account: str | None = None,
+        bik: str | None = None,
     ) -> Organization:
         if name is not None:
             org.name = name

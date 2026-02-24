@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,12 +10,12 @@ class OrderCommentReaderAdapter(OrderCommentReader):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def read_by_uuid(self, uuid: OrderCommentUUID) -> Optional[OrderComment]:
+    async def read_by_uuid(self, uuid: OrderCommentUUID) -> OrderComment | None:
         stmt = select(OrderComment).where(OrderComment.uuid == uuid)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_for_order(self, order_id: OrderID) -> List[OrderComment]:
+    async def read_for_order(self, order_id: OrderID) -> list[OrderComment]:
         stmt = select(OrderComment).where(OrderComment.order_id == order_id)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())

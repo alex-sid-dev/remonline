@@ -1,29 +1,27 @@
-from typing import List
-
 import structlog
 from dishka.integrations.fastapi import FromDishka
 
-from src.application.errors.auth import UserNotFoundError, InvalidAccessTokenErrorPerm
+from src.application.errors.auth import InvalidAccessTokenErrorPerm, UserNotFoundError
 from src.application.keycloak.auth_managers import OpenIDManager
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.user_reader import UserReader
-from src.entities.users.models import UserUUID, User
-from src.entities.employees.models import EmployeePosition, Employee
+from src.entities.employees.models import Employee, EmployeePosition
+from src.entities.users.models import User, UserUUID
 from src.presentation.api.common.dependencies import CredentialsDependency
 
 logger = structlog.get_logger("api.permissions")
 
 
 class RoleChecker:
-    def __init__(self, list_role: List[EmployeePosition]):
+    def __init__(self, list_role: list[EmployeePosition]):
         self.list_role = list_role
 
     async def __call__(
-            self,
-            user_reader: FromDishka[UserReader],
-            open_id_manager: FromDishka[OpenIDManager],
-            employee_reader: FromDishka[EmployeeReader],
-            credentials: CredentialsDependency,
+        self,
+        user_reader: FromDishka[UserReader],
+        open_id_manager: FromDishka[OpenIDManager],
+        employee_reader: FromDishka[EmployeeReader],
+        credentials: CredentialsDependency,
     ) -> Employee:
         await open_id_manager.verify_token(access_token=credentials.credentials)
 

@@ -1,13 +1,11 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 from src.config.db_tables import map_tables
-from src.infra.models._base import mapper_registry
 from src.config.settings import Settings
+from src.infra.models._base import mapper_registry
 
 config = context.config
 
@@ -17,7 +15,7 @@ if config.config_file_name is not None:
 settings = Settings()
 postgres_url = settings.database_url
 
-config.set_main_option('sqlalchemy.url', postgres_url)
+config.set_main_option("sqlalchemy.url", postgres_url)
 
 target_metadata = mapper_registry.metadata
 map_tables()
@@ -61,9 +59,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

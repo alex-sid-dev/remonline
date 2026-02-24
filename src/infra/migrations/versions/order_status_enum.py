@@ -19,7 +19,6 @@ This migration aligns the database with the Python OrderStatus enum:
 
 from alembic import op
 
-
 revision = "orders_status_enum"
 down_revision = "employees_fk_set_null"
 branch_labels = None
@@ -67,4 +66,3 @@ def downgrade() -> None:
         "orders",
         type_="check",
     )
-

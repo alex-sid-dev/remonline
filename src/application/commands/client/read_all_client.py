@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
@@ -21,10 +21,10 @@ class ReadClientResponse:
     uuid: str
     full_name: str
     phone: str
-    email: Optional[str]
-    telegram_nick: Optional[str]
-    comment: Optional[str]
-    address: Optional[str]
+    email: str | None
+    telegram_nick: str | None
+    comment: str | None
+    address: str | None
 
     @classmethod
     def from_entity(cls, entity: Client) -> "ReadClientResponse":
@@ -41,7 +41,7 @@ class ReadClientResponse:
 
 @dataclass
 class PaginatedClientResponse:
-    items: List[ReadClientResponse]
+    items: list[ReadClientResponse]
     total: int
     limit: int
     offset: int
@@ -51,7 +51,9 @@ class ReadAllClientCommandHandler(BaseCommandHandler):
     def __init__(self, client_reader: ClientReader) -> None:
         self._client_reader = client_reader
 
-    async def run(self, data: ReadAllClientCommand, current_employee: Employee) -> PaginatedClientResponse:
+    async def run(
+        self, data: ReadAllClientCommand, current_employee: Employee
+    ) -> PaginatedClientResponse:
         clients, total = await self._client_reader.read_all_active(data.limit, data.offset)
         return PaginatedClientResponse(
             items=[ReadClientResponse.from_entity(c) for c in clients],

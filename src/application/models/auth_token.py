@@ -8,5 +8,3 @@ class AuthToken:
     expires_in: int
     refresh_expires_in: int
     token_type: str
-
-

@@ -2,21 +2,21 @@ from fastapi import APIRouter
 
 from . import (
     auth,
-    health,
-    employee,
-    client,
-    order,
-    organization,
-    device_type,
     brand,
+    client,
     device,
-    part,
-    work,
-    payment,
-    order_part,
+    device_type,
+    employee,
+    health,
+    order,
     order_comment,
-    validation_rules,
+    order_part,
+    organization,
+    part,
+    payment,
     statistics,
+    validation_rules,
+    work,
 )
 
 api_v1_router = APIRouter()
@@ -36,4 +36,3 @@ api_v1_router.include_router(order_part.router)
 api_v1_router.include_router(order_comment.router)
 api_v1_router.include_router(validation_rules.router)
 api_v1_router.include_router(statistics.router)
-

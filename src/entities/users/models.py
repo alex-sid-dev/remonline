@@ -12,4 +12,3 @@ UserUUID = NewType("UserUUID", UUID)
 class User(BaseEntity[UserID, UserUUID]):
     email: str
     is_active: bool
-

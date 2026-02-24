@@ -7,6 +7,7 @@ Create Date: 2026-02-16
 When an employee is deleted, orders that had them as assigned_employee_id
 will get assigned_employee_id = NULL instead of blocking the delete.
 """
+
 from alembic import op
 
 revision = "orders_assigned_set_null"

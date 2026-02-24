@@ -1,9 +1,9 @@
-from src.entities.employees.enum import EmployeePosition
-from src.entities.orders.enum import OrderStatus
-from src.entities.orders.services import OrderService
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
+from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import EmployeeID
+from src.entities.orders.enum import OrderStatus
+from src.entities.orders.services import OrderService
 
 
 class TestOrderService:

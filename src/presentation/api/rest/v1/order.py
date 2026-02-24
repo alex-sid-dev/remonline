@@ -1,27 +1,47 @@
-from typing import List, Annotated
-import structlog
-from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import Response
-from dishka import FromDishka
-from dishka.integrations.fastapi import inject, DishkaRoute
+from typing import Annotated
 from uuid import UUID
 
-from src.application.commands.order.create_order import CreateOrderCommandHandler, CreateOrderCommand, \
-    CreateOrderCommandResponse
-from src.application.commands.order.read_all_order import ReadAllOrderCommandHandler, ReadAllOrderCommand, \
-    ReadOrderResponse, PaginatedOrderResponse
-from src.application.commands.order.read_order import ReadOrderCommandHandler, ReadOrderCommand, ReadOrderOneResponse
+import structlog
+from dishka import FromDishka
+from dishka.integrations.fastapi import DishkaRoute, inject
+from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
+
+from src.application.commands.order.create_order import (
+    CreateOrderCommand,
+    CreateOrderCommandHandler,
+    CreateOrderCommandResponse,
+)
 from src.application.commands.order.create_order_with_client_and_device import (
-    CreateOrderWithClientAndDeviceCommandHandler,
     CreateOrderWithClientAndDeviceCommand,
+    CreateOrderWithClientAndDeviceCommandHandler,
     CreateOrderWithClientAndDeviceCommandResponse,
 )
-from src.application.commands.order.update_order import UpdateOrderCommandHandler, UpdateOrderCommand
-from src.application.commands.order.delete_order import DeleteOrderCommandHandler, DeleteOrderCommand
-from src.application.commands.order.generate_act_pdf import GenerateActPdfCommandHandler, GenerateActPdfCommand
+from src.application.commands.order.delete_order import (
+    DeleteOrderCommand,
+    DeleteOrderCommandHandler,
+)
+from src.application.commands.order.generate_act_pdf import (
+    GenerateActPdfCommand,
+    GenerateActPdfCommandHandler,
+)
 from src.application.commands.order.generate_receipt_html import (
-    GenerateReceiptHtmlCommandHandler,
     GenerateReceiptHtmlCommand,
+    GenerateReceiptHtmlCommandHandler,
+)
+from src.application.commands.order.read_all_order import (
+    PaginatedOrderResponse,
+    ReadAllOrderCommand,
+    ReadAllOrderCommandHandler,
+)
+from src.application.commands.order.read_order import (
+    ReadOrderCommand,
+    ReadOrderCommandHandler,
+    ReadOrderOneResponse,
+)
+from src.application.commands.order.update_order import (
+    UpdateOrderCommand,
+    UpdateOrderCommandHandler,
 )
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.order.create_order import CreateOrderSchema
@@ -36,13 +56,20 @@ router = APIRouter(prefix="/order", tags=["Order"], route_class=DishkaRoute)
 logger = structlog.get_logger("api.order").bind(service="order")
 
 role_checker_all = RoleChecker(
-    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+    [
+        EmployeePosition.SUPERVISOR,
+        EmployeePosition.ADMIN,
+        EmployeePosition.MASTER,
+        EmployeePosition.MANAGER,
+    ]
+)
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker_all.__call__))]
 
 # Только супервизор / админ / менеджер могут создавать заказы,
 # мастер может только работать с уже существующими.
 role_checker_create = RoleChecker(
-    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MANAGER])
+    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MANAGER]
+)
 CreatorEmployee = Annotated[Employee, Depends(inject(role_checker_create.__call__))]
 
 
@@ -51,10 +78,10 @@ CreatorEmployee = Annotated[Employee, Depends(inject(role_checker_create.__call_
     status_code=status.HTTP_200_OK,
 )
 async def get_all_orders(
-        interactor: FromDishka[ReadAllOrderCommandHandler],
-        current_employee: CurrentEmployee,
-        limit: int = Query(200, ge=1, le=1000),
-        offset: int = Query(0, ge=0),
+    interactor: FromDishka[ReadAllOrderCommandHandler],
+    current_employee: CurrentEmployee,
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
 ) -> PaginatedOrderResponse:
     logger.info("ReadAll orders endpoint called", limit=limit, offset=offset)
     dto = ReadAllOrderCommand(limit=limit, offset=offset)
@@ -68,9 +95,9 @@ async def get_all_orders(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_order(
-        request_data: CreateOrderSchema,
-        interactor: FromDishka[CreateOrderCommandHandler],
-        current_employee: CreatorEmployee,
+    request_data: CreateOrderSchema,
+    interactor: FromDishka[CreateOrderCommandHandler],
+    current_employee: CreatorEmployee,
 ) -> CreateOrderCommandResponse:
     logger.info("Create order endpoint called", client_uuid=str(request_data.client_uuid))
     dto = CreateOrderCommand(
@@ -80,7 +107,7 @@ async def create_order(
         assigned_employee_uuid=request_data.assigned_employee_uuid,
         manager_uuid=request_data.manager_uuid,
         status=request_data.status.value,
-        price=request_data.price
+        price=request_data.price,
     )
     result = await interactor.run(dto, current_employee)
     logger.info("Order created successfully")
@@ -92,9 +119,9 @@ async def create_order(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_order_with_client_and_device(
-        request_data: CreateOrderWithClientAndDeviceSchema,
-        interactor: FromDishka[CreateOrderWithClientAndDeviceCommandHandler],
-        current_employee: CreatorEmployee,
+    request_data: CreateOrderWithClientAndDeviceSchema,
+    interactor: FromDishka[CreateOrderWithClientAndDeviceCommandHandler],
+    current_employee: CreatorEmployee,
 ) -> CreateOrderWithClientAndDeviceCommandResponse:
     logger.info("Create aggregate order endpoint called")
     dto = CreateOrderWithClientAndDeviceCommand(
@@ -131,17 +158,14 @@ async def create_order_with_client_and_device(
     status_code=status.HTTP_200_OK,
 )
 async def update_order(
-        order_uuid: UUID,
-        request_data: UpdateOrderSchema,
-        interactor: FromDishka[UpdateOrderCommandHandler],
-        current_employee: CurrentEmployee,
+    order_uuid: UUID,
+    request_data: UpdateOrderSchema,
+    interactor: FromDishka[UpdateOrderCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Update order endpoint called", order_uuid=str(order_uuid))
     update_data = request_data.model_dump(exclude_unset=True)
-    dto = UpdateOrderCommand(
-        uuid=order_uuid,
-        **update_data
-    )
+    dto = UpdateOrderCommand(uuid=order_uuid, **update_data)
     await interactor.run(dto, current_employee)
     logger.info("Order updated successfully", order_uuid=str(order_uuid))
 
@@ -152,9 +176,9 @@ async def update_order(
     responses={200: {"content": {"text/html": {}}}},
 )
 async def get_order_act(
-        order_uuid: UUID,
-        interactor: FromDishka[GenerateActPdfCommandHandler],
-        current_employee: CurrentEmployee,
+    order_uuid: UUID,
+    interactor: FromDishka[GenerateActPdfCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> Response:
     logger.info("Generate act endpoint called", order_uuid=str(order_uuid))
     dto = GenerateActPdfCommand(uuid=order_uuid)
@@ -168,9 +192,9 @@ async def get_order_act(
     responses={200: {"content": {"text/html": {}}}},
 )
 async def get_order_receipt(
-        order_uuid: UUID,
-        interactor: FromDishka[GenerateReceiptHtmlCommandHandler],
-        current_employee: CurrentEmployee,
+    order_uuid: UUID,
+    interactor: FromDishka[GenerateReceiptHtmlCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> Response:
     logger.info("Generate receipt endpoint called", order_uuid=str(order_uuid))
     dto = GenerateReceiptHtmlCommand(uuid=order_uuid)
@@ -183,9 +207,9 @@ async def get_order_receipt(
     status_code=status.HTTP_200_OK,
 )
 async def get_order(
-        order_uuid: UUID,
-        interactor: FromDishka[ReadOrderCommandHandler],
-        current_employee: CurrentEmployee,
+    order_uuid: UUID,
+    interactor: FromDishka[ReadOrderCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> ReadOrderOneResponse:
     logger.info("Read order endpoint called", order_uuid=str(order_uuid))
     dto = ReadOrderCommand(uuid=order_uuid)
@@ -199,9 +223,9 @@ async def get_order(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_order(
-        order_uuid: UUID,
-        interactor: FromDishka[DeleteOrderCommandHandler],
-        current_employee: CurrentEmployee,
+    order_uuid: UUID,
+    interactor: FromDishka[DeleteOrderCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Delete order endpoint called", order_uuid=str(order_uuid))
     dto = DeleteOrderCommand(uuid=order_uuid)

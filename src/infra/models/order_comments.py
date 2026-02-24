@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, BigInteger, ForeignKey, DateTime, func, UUID, Index, TEXT
+from sqlalchemy import TEXT, UUID, BigInteger, Column, DateTime, ForeignKey, Index, Table, func
 from sqlalchemy.orm import relationship
 
 from src.entities.employees.models import Employee
@@ -11,7 +11,9 @@ order_comments_table = Table(
     mapper_registry.metadata,
     Column("order_comment_id", BigInteger, primary_key=True, autoincrement=True),
     Column("order_comment_uuid", UUID(as_uuid=True), nullable=False, unique=True),
-    Column("order_id", BigInteger, ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False),
+    Column(
+        "order_id", BigInteger, ForeignKey("orders.order_id", ondelete="CASCADE"), nullable=False
+    ),
     Column("creator_id", BigInteger, ForeignKey("employees.employee_id"), nullable=False),
     Column("comment", TEXT, nullable=False),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
@@ -31,14 +33,7 @@ def map_order_comments_table() -> None:
             "creator_id": order_comments_table.c.creator_id,
             "comment": order_comments_table.c.comment,
             "created_at": order_comments_table.c.created_at,
-
-            "creator": relationship(
-                Employee,
-                lazy="joined",
-                innerjoin=True
-            ),
-
+            "creator": relationship(Employee, lazy="joined", innerjoin=True),
             "order": relationship(Order, back_populates="comments"),
-
         },
     )

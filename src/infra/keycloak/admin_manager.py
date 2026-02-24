@@ -1,5 +1,4 @@
 import structlog
-
 from keycloak import (
     KeycloakAdmin,
     KeycloakAuthenticationError,
@@ -18,7 +17,9 @@ class KeycloakAdminManager(AdminManager):
 
     def __init__(self, settings: Settings) -> None:
         self._logger = structlog.get_logger("keycloak").bind(service="keycloak")
-        self._logger.info("Initializing KeycloakAdminManager", server=settings.keycloak.keycloak_url)
+        self._logger.info(
+            "Initializing KeycloakAdminManager", server=settings.keycloak.keycloak_url
+        )
 
         self._client = KeycloakAdmin(
             server_url=settings.keycloak.keycloak_url,
@@ -42,7 +43,12 @@ class KeycloakAdminManager(AdminManager):
             user_id = await self._client.a_create_user(payload=new_user)
             self._logger.info("User registered successfully", email=email, user_id=user_id)
             return user_id
-        except (KeycloakConnectionError, KeycloakGetError, KeycloakAuthenticationError, KeycloakPostError) as e:
+        except (
+            KeycloakConnectionError,
+            KeycloakGetError,
+            KeycloakAuthenticationError,
+            KeycloakPostError,
+        ) as e:
             self._logger.exception("Keycloak error during user registration", email=email)
             raise KeyCloakRuntimeError() from e
 
@@ -59,7 +65,9 @@ class KeycloakAdminManager(AdminManager):
     async def update_password(self, user_uuid: str, new_password: str) -> None:
         self._logger.info("Updating user password", user_uuid=user_uuid)
         try:
-            await self._client.a_set_user_password(user_id=user_uuid, password=new_password, temporary=False)
+            await self._client.a_set_user_password(
+                user_id=user_uuid, password=new_password, temporary=False
+            )
             self._logger.info("User password updated", user_uuid=user_uuid)
         except (KeycloakConnectionError, KeycloakGetError) as e:
             self._logger.exception("Keycloak error during password update", user_uuid=user_uuid)
@@ -71,7 +79,9 @@ class KeycloakAdminManager(AdminManager):
             await self._client.a_update_user(user_id=user_uuid, payload={"emailVerified": True})
             self._logger.info("User email verified set", user_uuid=user_uuid)
         except (KeycloakConnectionError, KeycloakGetError) as e:
-            self._logger.exception("Keycloak error during updating email verified status", user_uuid=user_uuid)
+            self._logger.exception(
+                "Keycloak error during updating email verified status", user_uuid=user_uuid
+            )
             raise KeyCloakRuntimeError() from e
 
     async def update_email(self, user_uuid: str, email: str) -> None:
@@ -82,5 +92,7 @@ class KeycloakAdminManager(AdminManager):
             await self._client.a_update_user(user_id=user_uuid, payload=user_data)
             self._logger.info("User email updated", user_uuid=user_uuid, new_email=email)
         except (KeycloakConnectionError, KeycloakGetError) as e:
-            self._logger.exception("Keycloak error during updating email", user_uuid=user_uuid, new_email=email)
+            self._logger.exception(
+                "Keycloak error during updating email", user_uuid=user_uuid, new_email=email
+            )
             raise KeyCloakRuntimeError() from e

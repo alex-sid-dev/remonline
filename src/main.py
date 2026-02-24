@@ -9,11 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+
 from src.config.db_tables import map_tables
-from src.config.rate_limit import limiter
 from src.config.exc_handlers import setup_exc_handlers
 from src.config.ioc.di import get_providers
 from src.config.logging import setup_logging
+from src.config.rate_limit import limiter
 from src.config.settings import Settings
 from src.make_supervisor import make_supervisor
 from src.presentation.api.rest.v1.routers import api_v1_router

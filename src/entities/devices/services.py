@@ -1,10 +1,9 @@
-from typing import Optional
 from uuid import uuid4
 
-from src.entities.clients.models import ClientID
-from src.entities.devices.models import Device, DeviceID, DeviceUUID
-from src.entities.device_types.models import DeviceTypeID
 from src.entities.brands.models import BrandID
+from src.entities.clients.models import ClientID
+from src.entities.device_types.models import DeviceTypeID
+from src.entities.devices.models import Device, DeviceUUID
 
 
 class DeviceService:
@@ -14,8 +13,8 @@ class DeviceService:
         type_id: DeviceTypeID,
         brand_id: BrandID,
         model: str,
-        serial_number: Optional[str] = None,
-        description: Optional[str] = None,
+        serial_number: str | None = None,
+        description: str | None = None,
     ) -> Device:
         return Device(
             id=None,  # type: ignore
@@ -32,11 +31,11 @@ class DeviceService:
     def update_device(
         self,
         device: Device,
-        brand_id: Optional[BrandID] = None,
-        model: Optional[str] = None,
-        serial_number: Optional[str] = None,
-        description: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        brand_id: BrandID | None = None,
+        model: str | None = None,
+        serial_number: str | None = None,
+        description: str | None = None,
+        is_active: bool | None = None,
     ) -> Device:
         if brand_id is not None:
             device.brand_id = brand_id

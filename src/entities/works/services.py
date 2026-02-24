@@ -1,17 +1,18 @@
-from typing import Optional
 from uuid import uuid4
-from src.entities.works.models import Work, WorkID, WorkUUID
-from src.entities.orders.models import OrderID
+
 from src.entities.employees.models import EmployeeID
+from src.entities.orders.models import OrderID
+from src.entities.works.models import Work, WorkUUID
+
 
 class WorkService:
     def create_work(
         self,
         order_id: OrderID,
         title: str,
-        employee_id: Optional[EmployeeID] = None,
-        description: Optional[str] = None,
-        price: Optional[float] = None,
+        employee_id: EmployeeID | None = None,
+        description: str | None = None,
+        price: float | None = None,
         qty: int = 1,
     ) -> Work:
         return Work(
@@ -29,12 +30,12 @@ class WorkService:
     def update_work(
         self,
         work: Work,
-        title: Optional[str] = None,
-        employee_id: Optional[EmployeeID] = None,
-        description: Optional[str] = None,
-        price: Optional[float] = None,
-        qty: Optional[int] = None,
-        is_active: Optional[bool] = None,
+        title: str | None = None,
+        employee_id: EmployeeID | None = None,
+        description: str | None = None,
+        price: float | None = None,
+        qty: int | None = None,
+        is_active: bool | None = None,
     ) -> Work:
         if title is not None:
             work.title = title

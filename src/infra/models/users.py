@@ -1,14 +1,15 @@
 from sqlalchemy import (
     UUID,
     BigInteger,
+    Boolean,
     Column,
     DateTime,
+    Index,
     String,
     Table,
     func,
-    Index, Boolean,
 )
-from sqlalchemy.orm import relationship
+
 from src.entities.users.models import User
 from src.infra.models._base import mapper_registry
 

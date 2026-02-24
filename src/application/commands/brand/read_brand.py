@@ -2,12 +2,11 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.brand_reader import BrandReader
 from src.entities.brands.models import Brand, BrandUUID
 from src.entities.employees.models import Employee
-from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("read_brand").bind(service="brand")
 

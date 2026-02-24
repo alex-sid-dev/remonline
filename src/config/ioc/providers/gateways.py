@@ -1,37 +1,37 @@
 from dishka import Provider, Scope
 
+from src.application.ports.brand_reader import BrandReader
+from src.application.ports.client_reader import ClientReader
+from src.application.ports.device_reader import DeviceReader
+from src.application.ports.device_type_reader import DeviceTypeReader
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.error_log_writer import ErrorLogWriter
-from src.application.ports.transaction import Transaction, EntitySaver
-from src.application.ports.user_reader import UserReader
-from src.application.ports.client_reader import ClientReader
-from src.application.ports.order_reader import OrderReader
-from src.application.ports.device_type_reader import DeviceTypeReader
-from src.application.ports.brand_reader import BrandReader
-from src.application.ports.device_reader import DeviceReader
-from src.application.ports.part_reader import PartReader
-from src.application.ports.work_reader import WorkReader
-from src.application.ports.payment_reader import PaymentReader
-from src.application.ports.order_part_reader import OrderPartReader
 from src.application.ports.order_comment_reader import OrderCommentReader
+from src.application.ports.order_part_reader import OrderPartReader
+from src.application.ports.order_reader import OrderReader
 from src.application.ports.organization_reader import OrganizationReader
+from src.application.ports.part_reader import PartReader
+from src.application.ports.payment_reader import PaymentReader
 from src.application.ports.statistics_reader import StatisticsReader
+from src.application.ports.transaction import EntitySaver, Transaction
+from src.application.ports.user_reader import UserReader
+from src.application.ports.work_reader import WorkReader
+from src.infra.adapters.brand_reader import BrandReaderAdapter
+from src.infra.adapters.client_reader import ClientReaderAdapter
+from src.infra.adapters.device_reader import DeviceReaderAdapter
+from src.infra.adapters.device_type_reader import DeviceTypeReaderAdapter
 from src.infra.adapters.employee_reader_alchemy import EmployeeReaderAdapter
 from src.infra.adapters.error_log_writer import ErrorLogWriterAdapter
+from src.infra.adapters.order_comment_reader import OrderCommentReaderAdapter
+from src.infra.adapters.order_part_reader import OrderPartReaderAdapter
+from src.infra.adapters.order_reader import OrderReaderAdapter
+from src.infra.adapters.organization_reader import OrganizationReaderAdapter
+from src.infra.adapters.part_reader import PartReaderAdapter
+from src.infra.adapters.payment_reader import PaymentReaderAdapter
+from src.infra.adapters.statistics_reader import StatisticsReaderAdapter
 from src.infra.adapters.transaction import EntitySaverAlchemy, TransactionAlchemy
 from src.infra.adapters.user_reader_alchemy import UserReaderAdapter
-from src.infra.adapters.client_reader import ClientReaderAdapter
-from src.infra.adapters.order_reader import OrderReaderAdapter
-from src.infra.adapters.device_type_reader import DeviceTypeReaderAdapter
-from src.infra.adapters.brand_reader import BrandReaderAdapter
-from src.infra.adapters.device_reader import DeviceReaderAdapter
-from src.infra.adapters.part_reader import PartReaderAdapter
 from src.infra.adapters.work_reader import WorkReaderAdapter
-from src.infra.adapters.payment_reader import PaymentReaderAdapter
-from src.infra.adapters.order_part_reader import OrderPartReaderAdapter
-from src.infra.adapters.order_comment_reader import OrderCommentReaderAdapter
-from src.infra.adapters.organization_reader import OrganizationReaderAdapter
-from src.infra.adapters.statistics_reader import StatisticsReaderAdapter
 
 
 def gateways_provider() -> Provider:

@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 from uuid import UUID
 
 from src.entities.employees.enum import EmployeePosition
@@ -7,17 +7,16 @@ from src.entities.users.models import UserID
 
 
 class EmployeeService:
-
     @staticmethod
     def create_employee(
-            user_id: UserID,
-            phone: str,
-            full_name: str,
-            is_active: bool,
-            position: EmployeePosition,
-            uuid: UUID,
-            salary: Optional[float] = None,
-            profit_percent: Optional[float] = None,
+        user_id: UserID,
+        phone: str,
+        full_name: str,
+        is_active: bool,
+        position: EmployeePosition,
+        uuid: UUID,
+        salary: float | None = None,
+        profit_percent: float | None = None,
     ) -> Employee:
         return Employee(
             id=cast("EmployeeID", None),  # noqa: F821
@@ -33,12 +32,12 @@ class EmployeeService:
 
     @staticmethod
     def update_employee(
-            employee: Employee,
-            phone: Optional[str] = None,
-            full_name: Optional[str] = None,
-            position: Optional[EmployeePosition] = None,
-            salary: Optional[float] = None,
-            profit_percent: Optional[float] = None,
+        employee: Employee,
+        phone: str | None = None,
+        full_name: str | None = None,
+        position: EmployeePosition | None = None,
+        salary: float | None = None,
+        profit_percent: float | None = None,
     ) -> Employee:
         if phone is not None:
             employee.phone = phone

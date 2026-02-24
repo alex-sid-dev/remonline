@@ -1,10 +1,9 @@
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.ports.organization_reader import OrganizationReader
-from src.application.ports.transaction import Transaction, EntitySaver
-from src.entities.employees.models import Employee
 from src.application.errors._base import EntityNotFoundError
+from src.application.ports.organization_reader import OrganizationReader
+from src.application.ports.transaction import EntitySaver, Transaction
+from src.entities.employees.models import Employee
 
 logger = structlog.get_logger("delete_organization").bind(service="organization")
 

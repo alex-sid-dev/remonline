@@ -1,7 +1,8 @@
 import structlog
 from dishka import AsyncContainer
 from fastapi import FastAPI
-from sqlalchemy.exc import IntegrityError, OperationalError, DatabaseError, TimeoutError as SATimeoutError
+from sqlalchemy.exc import DatabaseError, IntegrityError, OperationalError
+from sqlalchemy.exc import TimeoutError as SATimeoutError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -9,8 +10,8 @@ from src.application.errors._base import ApplicationError
 from src.application.ports.error_log_writer import ErrorLogWriter
 from src.entities.error_logs.models import ErrorLog
 from src.presentation.api.common.exc_handlers import (
-    resolve_status_code,
     format_traceback,
+    resolve_status_code,
 )
 
 logger = structlog.get_logger(__name__)
@@ -27,15 +28,17 @@ async def _write_error_log(
 ) -> None:
     try:
         writer = await container.get(ErrorLogWriter)
-        await writer.write(ErrorLog(
-            level=level,
-            error_type=error_type,
-            message=message[:4096],
-            status_code=status_code,
-            path=str(request.url),
-            method=request.method,
-            traceback=tb,
-        ))
+        await writer.write(
+            ErrorLog(
+                level=level,
+                error_type=error_type,
+                message=message[:4096],
+                status_code=status_code,
+                path=str(request.url),
+                method=request.method,
+                traceback=tb,
+            )
+        )
     except Exception:
         logger.error("Failed to persist error log to DB", exc_info=True)
 
@@ -53,19 +56,26 @@ def setup_exc_handlers(app: FastAPI, container: AsyncContainer) -> None:
         if status_code >= 500:
             logger.error(
                 "Application error occurred",
-                status_code=status_code, message=exc.message,
-                error_code=exc.error_code, exc_info=True,
+                status_code=status_code,
+                message=exc.message,
+                error_code=exc.error_code,
+                exc_info=True,
             )
         else:
             logger.warning(
                 "Application exception",
-                status_code=status_code, message=exc.message,
+                status_code=status_code,
+                message=exc.message,
                 error_code=exc.error_code,
             )
 
         await _write_error_log(
-            container, request, status_code,
-            type(exc).__name__, exc.message, level,
+            container,
+            request,
+            status_code,
+            type(exc).__name__,
+            exc.message,
+            level,
             tb=format_traceback(exc) if status_code >= 500 else None,
         )
         return JSONResponse(content=error_data, status_code=status_code)
@@ -73,8 +83,12 @@ def setup_exc_handlers(app: FastAPI, container: AsyncContainer) -> None:
     async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
         logger.warning("Database integrity error", detail=str(exc.orig))
         await _write_error_log(
-            container, request, 409,
-            "IntegrityError", str(exc.orig)[:4096], "warning",
+            container,
+            request,
+            409,
+            "IntegrityError",
+            str(exc.orig)[:4096],
+            "warning",
         )
         return JSONResponse(
             content={"detail": "Конфликт данных: запись с такими значениями уже существует"},
@@ -92,8 +106,12 @@ def setup_exc_handlers(app: FastAPI, container: AsyncContainer) -> None:
     async def database_error_handler(request: Request, exc: DatabaseError) -> JSONResponse:
         logger.error("Database error", exc_info=True)
         await _write_error_log(
-            container, request, 500,
-            "DatabaseError", str(exc.orig)[:4096], "error",
+            container,
+            request,
+            500,
+            "DatabaseError",
+            str(exc.orig)[:4096],
+            "error",
             tb=format_traceback(exc),
         )
         return JSONResponse(

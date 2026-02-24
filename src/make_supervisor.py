@@ -1,4 +1,5 @@
 """Bootstrap: создание учётной записи супервизора по умолчанию в Keycloak и БД."""
+
 from uuid import uuid4
 
 import structlog
@@ -6,7 +7,7 @@ from dishka import AsyncContainer
 
 from src.application.keycloak.auth_managers import AdminManager
 from src.application.ports.employee_reader import EmployeeReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.application.ports.user_reader import UserReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.services import EmployeeService

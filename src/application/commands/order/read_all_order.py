@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Optional
 from datetime import datetime
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.order_reader import OrderReader
-from src.entities.orders.models import Order
 from src.entities.employees.models import Employee
+from src.entities.orders.models import Order
 
 logger = structlog.get_logger("read_all_order").bind(service="order")
 
@@ -27,10 +27,10 @@ class ReadOrderResponse:
     creator_name: str
     assigned_employee_name: str
     status: str
-    problem_description: Optional[str]
-    price: Optional[float]
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    problem_description: str | None
+    price: float | None
+    created_at: datetime | None
+    updated_at: datetime | None
 
     @classmethod
     def from_entity(cls, entity: Order) -> "ReadOrderResponse":
@@ -64,7 +64,7 @@ class ReadOrderResponse:
 
 @dataclass
 class PaginatedOrderResponse:
-    items: List[ReadOrderResponse]
+    items: list[ReadOrderResponse]
     total: int
     limit: int
     offset: int
@@ -74,7 +74,9 @@ class ReadAllOrderCommandHandler(BaseCommandHandler):
     def __init__(self, order_reader: OrderReader) -> None:
         self._order_reader = order_reader
 
-    async def run(self, data: ReadAllOrderCommand, current_employee: Employee) -> PaginatedOrderResponse:
+    async def run(
+        self, data: ReadAllOrderCommand, current_employee: Employee
+    ) -> PaginatedOrderResponse:
         orders, total = await self._order_reader.read_all_active(data.limit, data.offset)
         return PaginatedOrderResponse(
             items=[ReadOrderResponse.from_entity(o) for o in orders],

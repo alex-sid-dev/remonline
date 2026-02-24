@@ -2,10 +2,8 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.ports.brand_reader import BrandReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.brands.services import BrandService
 
 logger = structlog.get_logger("create_brand").bind(service="brand")

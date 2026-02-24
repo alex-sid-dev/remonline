@@ -1,9 +1,10 @@
-from typing import Optional
-from uuid import uuid4
 from datetime import datetime
-from src.entities.payments.models import Payment, PaymentID, PaymentUUID
-from src.entities.orders.models import OrderID
+from uuid import uuid4
+
 from src.entities.employees.models import EmployeeID
+from src.entities.orders.models import OrderID
+from src.entities.payments.models import Payment, PaymentUUID
+
 
 class PaymentService:
     def create_payment(
@@ -11,8 +12,8 @@ class PaymentService:
         order_id: OrderID,
         amount: float,
         payment_method: str,
-        employee_id: Optional[EmployeeID] = None,
-        comment: Optional[str] = None,
+        employee_id: EmployeeID | None = None,
+        comment: str | None = None,
     ) -> Payment:
         return Payment(
             id=None,  # type: ignore
@@ -22,16 +23,16 @@ class PaymentService:
             payment_method=payment_method,
             employee_id=employee_id,
             comment=comment,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
 
     def update_payment(
         self,
         payment: Payment,
-        amount: Optional[float] = None,
-        payment_method: Optional[str] = None,
-        employee_id: Optional[EmployeeID] = None,
-        comment: Optional[str] = None,
+        amount: float | None = None,
+        payment_method: str | None = None,
+        employee_id: EmployeeID | None = None,
+        comment: str | None = None,
     ) -> Payment:
         if amount is not None:
             payment.amount = amount

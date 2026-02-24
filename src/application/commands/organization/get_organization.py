@@ -1,13 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.organization_reader import OrganizationReader
 from src.entities.employees.models import Employee
-from src.application.errors._base import EntityNotFoundError
 
 logger = structlog.get_logger("get_organization").bind(service="organization")
 
@@ -18,11 +16,11 @@ class GetOrganizationResponse:
     uuid: UUID
     name: str
     inn: str
-    address: Optional[str]
-    kpp: Optional[str]
-    bank_account: Optional[str]
-    corr_account: Optional[str]
-    bik: Optional[str]
+    address: str | None
+    kpp: str | None
+    bank_account: str | None
+    corr_account: str | None
+    bik: str | None
 
 
 class GetOrganizationCommandHandler(BaseCommandHandler):

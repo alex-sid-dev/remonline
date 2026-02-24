@@ -1,6 +1,7 @@
-from typing import Optional
 from uuid import uuid4
-from src.entities.device_types.models import DeviceType, DeviceTypeID, DeviceTypeUUID
+
+from src.entities.device_types.models import DeviceType, DeviceTypeUUID
+
 
 class DeviceTypeService:
     def create_device_type(
@@ -19,9 +20,9 @@ class DeviceTypeService:
     def update_device_type(
         self,
         device_type: DeviceType,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        name: str | None = None,
+        description: str | None = None,
+        is_active: bool | None = None,
     ) -> DeviceType:
         if name is not None:
             device_type.name = name

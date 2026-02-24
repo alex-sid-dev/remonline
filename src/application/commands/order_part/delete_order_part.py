@@ -1,20 +1,23 @@
 from dataclasses import dataclass
 from uuid import UUID
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.ports.order_part_reader import OrderPartReader
-from src.application.ports.transaction import Transaction, EntitySaver
-from src.application.ports.part_reader import PartReader
-from src.entities.order_parts.models import OrderPartUUID
-from src.entities.employees.models import Employee
 from src.application.errors._base import EntityNotFoundError
+from src.application.ports.order_part_reader import OrderPartReader
+from src.application.ports.part_reader import PartReader
+from src.application.ports.transaction import EntitySaver, Transaction
+from src.entities.employees.models import Employee
+from src.entities.order_parts.models import OrderPartUUID
 
 logger = structlog.get_logger("delete_order_part").bind(service="order_part")
+
 
 @dataclass
 class DeleteOrderPartCommand:
     uuid: UUID
+
 
 class DeleteOrderPartCommandHandler(BaseCommandHandler):
     def __init__(

@@ -1,9 +1,14 @@
+from collections.abc import AsyncIterator
+
 import structlog
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from src.config.settings import Settings
-
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
-from typing import AsyncIterator
 
 logger = structlog.get_logger("db").bind(service="db")
 
@@ -31,7 +36,7 @@ async def get_engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
 
 
 async def get_sessionmaker(
-        engine: AsyncEngine,
+    engine: AsyncEngine,
 ) -> async_sessionmaker[AsyncSession]:
     """Create a session factory bound to the given engine."""
     logger.info("Creating session factory for engine")
@@ -43,7 +48,7 @@ async def get_sessionmaker(
 
 
 async def get_session(
-        session_factory: async_sessionmaker[AsyncSession],
+    session_factory: async_sessionmaker[AsyncSession],
 ) -> AsyncIterator[AsyncSession]:
     """Yield a single database session from the given factory."""
     logger.info("Starting a new database session")

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import NewType, Optional
+from typing import NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
@@ -15,6 +15,5 @@ OrderCommentUUID = NewType("OrderCommentUUID", UUID)
 class OrderComment(BaseEntity[OrderCommentID, OrderCommentUUID]):
     order_id: OrderID
     creator_id: EmployeeID
-    comment: Optional[str]
+    comment: str | None
     created_at: datetime
-

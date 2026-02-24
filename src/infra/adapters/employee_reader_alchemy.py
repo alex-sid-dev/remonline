@@ -1,12 +1,13 @@
+from typing import Final
+
 import structlog
-from typing import Final, List, Optional, Tuple
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.application.ports.employee_reader import EmployeeReader
 from src.entities.employees.models import Employee, EmployeeID, EmployeeUUID
 from src.entities.users.models import UserID
 from src.infra.models.employees import employees_table
-from src.application.ports.employee_reader import EmployeeReader
 
 
 class EmployeeReaderAdapter(EmployeeReader):
@@ -14,7 +15,7 @@ class EmployeeReaderAdapter(EmployeeReader):
         self._session: Final = session
         self._logger = structlog.get_logger("db").bind(service="db", entity="employee")
 
-    async def read_by_id(self, employee_id: EmployeeID) -> Optional[Employee]:
+    async def read_by_id(self, employee_id: EmployeeID) -> Employee | None:
         self._logger.info("Reading employee by ID", employee_id=str(employee_id))
         stmt = select(Employee).where(employees_table.c.employee_id == employee_id)
         result = await self._session.execute(stmt)
@@ -25,7 +26,7 @@ class EmployeeReaderAdapter(EmployeeReader):
             self._logger.info("Employee found", employee_id=str(employee.id))
         return employee
 
-    async def read_by_uuid(self, employee_uuid: EmployeeUUID) -> Optional[Employee]:
+    async def read_by_uuid(self, employee_uuid: EmployeeUUID) -> Employee | None:
         self._logger.info("Reading employee by UUID", employee_uuid=str(employee_uuid))
         stmt = select(Employee).where(employees_table.c.employee_uuid == employee_uuid)
         result = await self._session.execute(stmt)
@@ -36,7 +37,7 @@ class EmployeeReaderAdapter(EmployeeReader):
             self._logger.info("Employee found", employee_id=str(employee.id))
         return employee
 
-    async def read_by_user_id(self, user_id: UserID) -> Optional[Employee]:
+    async def read_by_user_id(self, user_id: UserID) -> Employee | None:
         self._logger.info("Reading employee by User ID", user_id=str(user_id))
         stmt = select(Employee).where(employees_table.c.user_id == user_id)
         result = await self._session.execute(stmt)
@@ -47,9 +48,15 @@ class EmployeeReaderAdapter(EmployeeReader):
             self._logger.info("Employee found", employee_id=str(employee.id))
         return employee
 
-    async def read_all_active(self, limit: int = 200, offset: int = 0) -> Tuple[List[Employee], int]:
+    async def read_all_active(
+        self, limit: int = 200, offset: int = 0
+    ) -> tuple[list[Employee], int]:
         self._logger.info("Reading all active employees")
-        count_stmt = select(func.count()).select_from(employees_table).where(employees_table.c.is_active.is_(True))
+        count_stmt = (
+            select(func.count())
+            .select_from(employees_table)
+            .where(employees_table.c.is_active.is_(True))
+        )
         total = (await self._session.execute(count_stmt)).scalar() or 0
 
         stmt = (

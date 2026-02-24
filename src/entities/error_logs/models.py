@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -11,6 +10,6 @@ class ErrorLog:
     status_code: int
     path: str
     method: str
-    traceback: Optional[str] = None
-    id: Optional[int] = field(default=None)
-    created_at: Optional[datetime] = field(default=None)
+    traceback: str | None = None
+    id: int | None = field(default=None)
+    created_at: datetime | None = field(default=None)

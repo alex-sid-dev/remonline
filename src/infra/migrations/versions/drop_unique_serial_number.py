@@ -7,7 +7,6 @@ Create Date: 2026-02-19
 
 from alembic import op
 
-
 revision = "drop_unique_serial_number"
 down_revision = "add_client_address"
 branch_labels = None

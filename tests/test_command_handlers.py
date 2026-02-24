@@ -1,57 +1,56 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from src.entities.orders.models import Order, OrderID, OrderUUID
-from src.entities.orders.enum import OrderStatus
-from src.entities.employees.models import Employee, EmployeeID, EmployeeUUID
-from src.entities.employees.enum import EmployeePosition
-from src.entities.clients.models import Client, ClientID, ClientUUID
-from src.entities.devices.models import DeviceID
-from src.entities.parts.models import Part, PartID, PartUUID
-from src.entities.users.models import User, UserID, UserUUID
-from src.entities.works.models import Work, WorkID, WorkUUID
-
-from src.application.commands.order.read_all_order import (
-    ReadAllOrderCommand,
-    ReadAllOrderCommandHandler,
-    PaginatedOrderResponse,
-)
+import pytest
 from src.application.commands.client.read_all_client import (
+    PaginatedClientResponse,
     ReadAllClientCommand,
     ReadAllClientCommandHandler,
-    PaginatedClientResponse,
-)
-from src.application.commands.employee.read_all_employee import (
-    ReadAllEmployeeCommand,
-    ReadAllEmployeeCommandHandler,
-    PaginatedEmployeeResponse,
-)
-from src.application.commands.part.read_all_part import (
-    ReadAllPartCommand,
-    ReadAllPartCommandHandler,
-    PaginatedPartResponse,
-)
-from src.application.commands.order.update_order import (
-    UpdateOrderCommand,
-    UpdateOrderCommandHandler,
-)
-from src.application.commands.employee.update_employee import (
-    UpdateEmployeeCommand,
-    UpdateEmployeeCommandHandler,
 )
 from src.application.commands.employee.change_password import (
     ChangePasswordCommand,
     ChangePasswordCommandHandler,
 )
+from src.application.commands.employee.read_all_employee import (
+    PaginatedEmployeeResponse,
+    ReadAllEmployeeCommand,
+    ReadAllEmployeeCommandHandler,
+)
+from src.application.commands.employee.update_employee import (
+    UpdateEmployeeCommand,
+    UpdateEmployeeCommandHandler,
+)
+from src.application.commands.order.read_all_order import (
+    PaginatedOrderResponse,
+    ReadAllOrderCommand,
+    ReadAllOrderCommandHandler,
+)
+from src.application.commands.order.update_order import (
+    UpdateOrderCommand,
+    UpdateOrderCommandHandler,
+)
+from src.application.commands.part.read_all_part import (
+    PaginatedPartResponse,
+    ReadAllPartCommand,
+    ReadAllPartCommandHandler,
+)
 from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
 from src.application.errors.employee import EmployeeNotFoundError
+from src.entities.clients.models import Client, ClientID, ClientUUID
+from src.entities.devices.models import DeviceID
+from src.entities.employees.enum import EmployeePosition
+from src.entities.employees.models import Employee, EmployeeID, EmployeeUUID
+from src.entities.orders.enum import OrderStatus
+from src.entities.orders.models import Order, OrderID, OrderUUID
 from src.entities.orders.services import OrderService
-
+from src.entities.parts.models import Part, PartID, PartUUID
+from src.entities.users.models import User, UserID, UserUUID
+from src.entities.works.models import Work, WorkID, WorkUUID
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_employee(
     position=EmployeePosition.SUPERVISOR,
@@ -333,10 +332,13 @@ class TestUpdateOrderCommandHandler:
     async def test_assign_employee_updates_order(self):
         order = _make_order()
         assigned = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=5,
+            position=EmployeePosition.MASTER,
+            employee_id=5,
         )
         handler, mock_tx, *_ = self._make_handler(
-            order=order, employee=assigned, works=[],
+            order=order,
+            employee=assigned,
+            works=[],
         )
 
         await handler.run(
@@ -351,11 +353,14 @@ class TestUpdateOrderCommandHandler:
     async def test_auto_assigns_engineer_to_unassigned_works(self):
         order = _make_order()
         assigned = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=5,
+            position=EmployeePosition.MASTER,
+            employee_id=5,
         )
         unassigned_work = _make_work(order_id=order.id, employee_id=None)
         already_assigned_work = _make_work(
-            order_id=order.id, work_id=2, employee_id=3,
+            order_id=order.id,
+            work_id=2,
+            employee_id=3,
         )
 
         handler, mock_tx, _, _ = self._make_handler(
@@ -396,9 +401,7 @@ class TestUpdateEmployeePermissions:
         mock_transaction = AsyncMock()
         mock_employee_reader = AsyncMock()
         mock_employee_service = MagicMock()
-        mock_employee_service.update_employee.side_effect = (
-            lambda employee, **kw: employee
-        )
+        mock_employee_service.update_employee.side_effect = lambda employee, **kw: employee
         mock_employee_reader.read_by_uuid.return_value = target_employee
 
         handler = UpdateEmployeeCommandHandler(
@@ -411,7 +414,8 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_admin_cannot_update_supervisor(self):
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=2,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=2,
         )
         handler, *_ = self._make_handler(target_employee=supervisor)
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
@@ -425,7 +429,8 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_admin_cannot_update_other_admin(self):
         other_admin = _make_employee(
-            position=EmployeePosition.ADMIN, employee_id=2,
+            position=EmployeePosition.ADMIN,
+            employee_id=2,
         )
         handler, *_ = self._make_handler(target_employee=other_admin)
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
@@ -439,7 +444,8 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_admin_can_update_master(self):
         master = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=2,
+            position=EmployeePosition.MASTER,
+            employee_id=2,
         )
         handler, mock_tx, mock_service = self._make_handler(
             target_employee=master,
@@ -457,7 +463,8 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_admin_can_update_manager(self):
         manager = _make_employee(
-            position=EmployeePosition.MANAGER, employee_id=3,
+            position=EmployeePosition.MANAGER,
+            employee_id=3,
         )
         handler, mock_tx, mock_service = self._make_handler(
             target_employee=manager,
@@ -475,13 +482,15 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_supervisor_can_update_any_employee(self):
         admin_target = _make_employee(
-            position=EmployeePosition.ADMIN, employee_id=2,
+            position=EmployeePosition.ADMIN,
+            employee_id=2,
         )
         handler, mock_tx, mock_service = self._make_handler(
             target_employee=admin_target,
         )
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=1,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=1,
         )
 
         await handler.run(
@@ -495,7 +504,8 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_only_supervisor_can_change_salary(self):
         master = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=2,
+            position=EmployeePosition.MASTER,
+            employee_id=2,
         )
         handler, *_ = self._make_handler(target_employee=master)
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
@@ -509,18 +519,22 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_supervisor_can_change_salary(self):
         master = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=2,
+            position=EmployeePosition.MASTER,
+            employee_id=2,
         )
         handler, mock_tx, mock_service = self._make_handler(
             target_employee=master,
         )
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=1,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=1,
         )
 
         await handler.run(
             UpdateEmployeeCommand(
-                uuid=master.uuid, salary=80000.0, profit_percent=12.0,
+                uuid=master.uuid,
+                salary=80000.0,
+                profit_percent=12.0,
             ),
             supervisor,
         )
@@ -532,7 +546,8 @@ class TestUpdateEmployeePermissions:
     async def test_employee_not_found(self):
         handler, *_ = self._make_handler(target_employee=None)
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=1,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=1,
         )
 
         with pytest.raises(EmployeeNotFoundError):
@@ -544,7 +559,8 @@ class TestUpdateEmployeePermissions:
     @pytest.mark.asyncio
     async def test_admin_cannot_set_supervisor_position(self):
         master = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=2,
+            position=EmployeePosition.MASTER,
+            employee_id=2,
         )
         handler, *_ = self._make_handler(target_employee=master)
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
@@ -552,7 +568,8 @@ class TestUpdateEmployeePermissions:
         with pytest.raises(PermissionDeniedError):
             await handler.run(
                 UpdateEmployeeCommand(
-                    uuid=master.uuid, position=EmployeePosition.SUPERVISOR,
+                    uuid=master.uuid,
+                    position=EmployeePosition.SUPERVISOR,
                 ),
                 admin,
             )
@@ -582,14 +599,18 @@ class TestChangePasswordCommandHandler:
     @pytest.mark.asyncio
     async def test_supervisor_can_change_any_password(self):
         target = _make_employee(
-            position=EmployeePosition.ADMIN, employee_id=2, user_id=2,
+            position=EmployeePosition.ADMIN,
+            employee_id=2,
+            user_id=2,
         )
         user = _make_user(user_id=2)
         handler, mock_admin = self._make_handler(
-            target_employee=target, user=user,
+            target_employee=target,
+            user=user,
         )
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=1,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=1,
         )
 
         await handler.run(
@@ -598,17 +619,21 @@ class TestChangePasswordCommandHandler:
         )
 
         mock_admin.update_password.assert_awaited_once_with(
-            str(user.uuid), "newpass123",
+            str(user.uuid),
+            "newpass123",
         )
 
     @pytest.mark.asyncio
     async def test_admin_can_change_master_password(self):
         target = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=3, user_id=3,
+            position=EmployeePosition.MASTER,
+            employee_id=3,
+            user_id=3,
         )
         user = _make_user(user_id=3)
         handler, mock_admin = self._make_handler(
-            target_employee=target, user=user,
+            target_employee=target,
+            user=user,
         )
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
 
@@ -618,17 +643,21 @@ class TestChangePasswordCommandHandler:
         )
 
         mock_admin.update_password.assert_awaited_once_with(
-            str(user.uuid), "secret",
+            str(user.uuid),
+            "secret",
         )
 
     @pytest.mark.asyncio
     async def test_admin_can_change_manager_password(self):
         target = _make_employee(
-            position=EmployeePosition.MANAGER, employee_id=4, user_id=4,
+            position=EmployeePosition.MANAGER,
+            employee_id=4,
+            user_id=4,
         )
         user = _make_user(user_id=4)
         handler, mock_admin = self._make_handler(
-            target_employee=target, user=user,
+            target_employee=target,
+            user=user,
         )
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
 
@@ -642,7 +671,9 @@ class TestChangePasswordCommandHandler:
     @pytest.mark.asyncio
     async def test_admin_cannot_change_supervisor_password(self):
         target = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=2, user_id=2,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=2,
+            user_id=2,
         )
         handler, _ = self._make_handler(target_employee=target)
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
@@ -650,7 +681,8 @@ class TestChangePasswordCommandHandler:
         with pytest.raises(PermissionDeniedError):
             await handler.run(
                 ChangePasswordCommand(
-                    employee_uuid=target.uuid, new_password="nope",
+                    employee_uuid=target.uuid,
+                    new_password="nope",
                 ),
                 admin,
             )
@@ -658,7 +690,9 @@ class TestChangePasswordCommandHandler:
     @pytest.mark.asyncio
     async def test_admin_cannot_change_other_admin_password(self):
         target = _make_employee(
-            position=EmployeePosition.ADMIN, employee_id=2, user_id=2,
+            position=EmployeePosition.ADMIN,
+            employee_id=2,
+            user_id=2,
         )
         handler, _ = self._make_handler(target_employee=target)
         admin = _make_employee(position=EmployeePosition.ADMIN, employee_id=1)
@@ -666,7 +700,8 @@ class TestChangePasswordCommandHandler:
         with pytest.raises(PermissionDeniedError):
             await handler.run(
                 ChangePasswordCommand(
-                    employee_uuid=target.uuid, new_password="nope",
+                    employee_uuid=target.uuid,
+                    new_password="nope",
                 ),
                 admin,
             )
@@ -674,17 +709,21 @@ class TestChangePasswordCommandHandler:
     @pytest.mark.asyncio
     async def test_master_cannot_change_password(self):
         target = _make_employee(
-            position=EmployeePosition.MANAGER, employee_id=2, user_id=2,
+            position=EmployeePosition.MANAGER,
+            employee_id=2,
+            user_id=2,
         )
         handler, _ = self._make_handler(target_employee=target)
         master = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=3,
+            position=EmployeePosition.MASTER,
+            employee_id=3,
         )
 
         with pytest.raises(PermissionDeniedError):
             await handler.run(
                 ChangePasswordCommand(
-                    employee_uuid=target.uuid, new_password="nope",
+                    employee_uuid=target.uuid,
+                    new_password="nope",
                 ),
                 master,
             )
@@ -693,7 +732,8 @@ class TestChangePasswordCommandHandler:
     async def test_target_employee_not_found(self):
         handler, _ = self._make_handler(target_employee=None)
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=1,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=1,
         )
 
         with pytest.raises(EntityNotFoundError):
@@ -705,17 +745,21 @@ class TestChangePasswordCommandHandler:
     @pytest.mark.asyncio
     async def test_linked_user_not_found(self):
         target = _make_employee(
-            position=EmployeePosition.MASTER, employee_id=2, user_id=2,
+            position=EmployeePosition.MASTER,
+            employee_id=2,
+            user_id=2,
         )
         handler, _ = self._make_handler(target_employee=target, user=None)
         supervisor = _make_employee(
-            position=EmployeePosition.SUPERVISOR, employee_id=1,
+            position=EmployeePosition.SUPERVISOR,
+            employee_id=1,
         )
 
         with pytest.raises(EntityNotFoundError):
             await handler.run(
                 ChangePasswordCommand(
-                    employee_uuid=target.uuid, new_password="pass",
+                    employee_uuid=target.uuid,
+                    new_password="pass",
                 ),
                 supervisor,
             )
@@ -725,11 +769,11 @@ class TestChangePasswordCommandHandler:
 # Close order permission tests
 # ===================================================================
 
-from src.application.ports.statistics_reader import OrderStatRow
 from src.application.commands.statistics.get_statistics import (
     GetStatisticsCommandHandler,
     StatisticsResponse,
 )
+from src.application.ports.statistics_reader import OrderStatRow
 
 
 class TestCloseOrderPermission:
@@ -851,8 +895,20 @@ class TestGetStatisticsCommandHandler:
     @pytest.mark.asyncio
     async def test_company_totals(self):
         rows = [
-            OrderStatRow(order_id=1, creator_id=10, assigned_employee_id=20, works_revenue=1000.0, parts_expenses=300.0),
-            OrderStatRow(order_id=2, creator_id=10, assigned_employee_id=20, works_revenue=500.0, parts_expenses=100.0),
+            OrderStatRow(
+                order_id=1,
+                creator_id=10,
+                assigned_employee_id=20,
+                works_revenue=1000.0,
+                parts_expenses=300.0,
+            ),
+            OrderStatRow(
+                order_id=2,
+                creator_id=10,
+                assigned_employee_id=20,
+                works_revenue=500.0,
+                parts_expenses=100.0,
+            ),
         ]
         handler = self._make_handler(order_rows=rows, employees=[])
         result = await handler.run(_make_employee())
@@ -865,8 +921,20 @@ class TestGetStatisticsCommandHandler:
     @pytest.mark.asyncio
     async def test_supervisor_sees_all_orders(self):
         rows = [
-            OrderStatRow(order_id=1, creator_id=10, assigned_employee_id=20, works_revenue=1000.0, parts_expenses=200.0),
-            OrderStatRow(order_id=2, creator_id=11, assigned_employee_id=21, works_revenue=500.0, parts_expenses=100.0),
+            OrderStatRow(
+                order_id=1,
+                creator_id=10,
+                assigned_employee_id=20,
+                works_revenue=1000.0,
+                parts_expenses=200.0,
+            ),
+            OrderStatRow(
+                order_id=2,
+                creator_id=11,
+                assigned_employee_id=21,
+                works_revenue=500.0,
+                parts_expenses=100.0,
+            ),
         ]
         sup = _make_employee(position=EmployeePosition.SUPERVISOR, employee_id=99)
         handler = self._make_handler(order_rows=rows, employees=[sup])
@@ -881,8 +949,20 @@ class TestGetStatisticsCommandHandler:
     @pytest.mark.asyncio
     async def test_manager_only_their_orders(self):
         rows = [
-            OrderStatRow(order_id=1, creator_id=10, assigned_employee_id=20, works_revenue=1000.0, parts_expenses=200.0),
-            OrderStatRow(order_id=2, creator_id=11, assigned_employee_id=20, works_revenue=500.0, parts_expenses=100.0),
+            OrderStatRow(
+                order_id=1,
+                creator_id=10,
+                assigned_employee_id=20,
+                works_revenue=1000.0,
+                parts_expenses=200.0,
+            ),
+            OrderStatRow(
+                order_id=2,
+                creator_id=11,
+                assigned_employee_id=20,
+                works_revenue=500.0,
+                parts_expenses=100.0,
+            ),
         ]
         manager = _make_employee(position=EmployeePosition.MANAGER, employee_id=10)
         handler = self._make_handler(order_rows=rows, employees=[manager])
@@ -897,8 +977,20 @@ class TestGetStatisticsCommandHandler:
     @pytest.mark.asyncio
     async def test_master_only_assigned_orders(self):
         rows = [
-            OrderStatRow(order_id=1, creator_id=10, assigned_employee_id=20, works_revenue=1000.0, parts_expenses=200.0),
-            OrderStatRow(order_id=2, creator_id=10, assigned_employee_id=21, works_revenue=500.0, parts_expenses=100.0),
+            OrderStatRow(
+                order_id=1,
+                creator_id=10,
+                assigned_employee_id=20,
+                works_revenue=1000.0,
+                parts_expenses=200.0,
+            ),
+            OrderStatRow(
+                order_id=2,
+                creator_id=10,
+                assigned_employee_id=21,
+                works_revenue=500.0,
+                parts_expenses=100.0,
+            ),
         ]
         master = _make_employee(position=EmployeePosition.MASTER, employee_id=20)
         handler = self._make_handler(order_rows=rows, employees=[master])
@@ -913,7 +1005,13 @@ class TestGetStatisticsCommandHandler:
     @pytest.mark.asyncio
     async def test_salary_calculation(self):
         rows = [
-            OrderStatRow(order_id=1, creator_id=10, assigned_employee_id=20, works_revenue=2000.0, parts_expenses=500.0),
+            OrderStatRow(
+                order_id=1,
+                creator_id=10,
+                assigned_employee_id=20,
+                works_revenue=2000.0,
+                parts_expenses=500.0,
+            ),
         ]
         master = Employee(
             id=EmployeeID(20),

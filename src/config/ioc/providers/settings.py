@@ -1,5 +1,7 @@
 from dishka import Provider, Scope, provide
+
 from src.config.settings import Settings
+
 
 class SettingsProvider(Provider):
     """Provides application settings."""

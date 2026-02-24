@@ -1,20 +1,19 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.brand_reader import BrandReader
-from src.application.ports.device_reader import DeviceReader
 from src.application.ports.client_reader import ClientReader
+from src.application.ports.device_reader import DeviceReader
 from src.application.ports.device_type_reader import DeviceTypeReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.brands.models import BrandUUID
-from src.entities.devices.services import DeviceService
-from src.entities.employees.models import Employee
 from src.entities.clients.models import ClientUUID
 from src.entities.device_types.models import DeviceTypeUUID
-from src.application.errors._base import EntityNotFoundError
+from src.entities.devices.services import DeviceService
 
 logger = structlog.get_logger("create_device").bind(service="device")
 
@@ -30,20 +29,20 @@ class CreateDeviceCommand:
     type_uuid: UUID
     brand_uuid: UUID
     model: str
-    serial_number: Optional[str] = None
-    description: Optional[str] = None
+    serial_number: str | None = None
+    description: str | None = None
 
 
 class CreateDeviceCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            transaction: Transaction,
-            entity_saver: EntitySaver,
-            device_service: DeviceService,
-            device_reader: DeviceReader,
-            client_reader: ClientReader,
-            device_type_reader: DeviceTypeReader,
-            brand_reader: BrandReader,
+        self,
+        transaction: Transaction,
+        entity_saver: EntitySaver,
+        device_service: DeviceService,
+        device_reader: DeviceReader,
+        client_reader: ClientReader,
+        device_type_reader: DeviceTypeReader,
+        brand_reader: BrandReader,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
@@ -72,7 +71,7 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
             brand_id=brand.id,
             model=data.model,
             serial_number=data.serial_number,
-            description=data.description
+            description=data.description,
         )
         self._entity_saver.add_one(device)
         await self._transaction.commit()

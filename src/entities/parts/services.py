@@ -1,14 +1,15 @@
-from typing import Optional
 from uuid import uuid4
-from src.entities.parts.models import Part, PartID, PartUUID
+
+from src.entities.parts.models import Part, PartUUID
+
 
 class PartService:
     def create_part(
         self,
         name: str,
-        sku: Optional[str] = None,
-        price: Optional[float] = None,
-        stock_qty: Optional[int] = None,
+        sku: str | None = None,
+        price: float | None = None,
+        stock_qty: int | None = None,
     ) -> Part:
         return Part(
             id=None,  # type: ignore
@@ -23,11 +24,11 @@ class PartService:
     def update_part(
         self,
         part: Part,
-        name: Optional[str] = None,
-        sku: Optional[str] = None,
-        price: Optional[float] = None,
-        stock_qty: Optional[int] = None,
-        is_active: Optional[bool] = None,
+        name: str | None = None,
+        sku: str | None = None,
+        price: float | None = None,
+        stock_qty: int | None = None,
+        is_active: bool | None = None,
     ) -> Part:
         if name is not None:
             part.name = name

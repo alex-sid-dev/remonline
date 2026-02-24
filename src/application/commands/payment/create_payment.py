@@ -1,17 +1,17 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.ports.payment_reader import PaymentReader
-from src.application.ports.order_reader import OrderReader
-from src.application.ports.employee_reader import EmployeeReader
-from src.application.ports.transaction import Transaction, EntitySaver
-from src.entities.payments.services import PaymentService
-from src.entities.employees.models import Employee, EmployeeUUID
-from src.entities.orders.models import OrderUUID
 from src.application.errors._base import EntityNotFoundError
+from src.application.ports.employee_reader import EmployeeReader
+from src.application.ports.order_reader import OrderReader
+from src.application.ports.payment_reader import PaymentReader
+from src.application.ports.transaction import EntitySaver, Transaction
+from src.entities.employees.models import EmployeeUUID
+from src.entities.orders.models import OrderUUID
+from src.entities.payments.services import PaymentService
 
 logger = structlog.get_logger("create_payment").bind(service="payment")
 
@@ -26,19 +26,19 @@ class CreatePaymentCommand:
     order_uuid: UUID
     amount: float
     payment_method: str
-    employee_uuid: Optional[UUID] = None
-    comment: Optional[str] = None
+    employee_uuid: UUID | None = None
+    comment: str | None = None
 
 
 class CreatePaymentCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            transaction: Transaction,
-            entity_saver: EntitySaver,
-            payment_service: PaymentService,
-            payment_reader: PaymentReader,
-            order_reader: OrderReader,
-            employee_reader: EmployeeReader,
+        self,
+        transaction: Transaction,
+        entity_saver: EntitySaver,
+        payment_service: PaymentService,
+        payment_reader: PaymentReader,
+        order_reader: OrderReader,
+        employee_reader: EmployeeReader,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
@@ -56,7 +56,9 @@ class CreatePaymentCommandHandler(BaseCommandHandler):
         if data.employee_uuid:
             employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.employee_uuid))
             if not employee:
-                raise EntityNotFoundError(message=f"Employee with uuid {data.employee_uuid} not found")
+                raise EntityNotFoundError(
+                    message=f"Employee with uuid {data.employee_uuid} not found"
+                )
             employee_id = employee.id
 
         payment = self._payment_service.create_payment(
@@ -64,7 +66,7 @@ class CreatePaymentCommandHandler(BaseCommandHandler):
             amount=data.amount,
             payment_method=data.payment_method,
             employee_id=employee_id,
-            comment=data.comment
+            comment=data.comment,
         )
         self._entity_saver.add_one(payment)
         await self._transaction.commit()

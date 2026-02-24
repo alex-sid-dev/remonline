@@ -1,17 +1,33 @@
-from typing import List, Annotated
-import structlog
-from fastapi import APIRouter, Depends, status
-from dishka import FromDishka
-from dishka.integrations.fastapi import inject, DishkaRoute
+from typing import Annotated
 from uuid import UUID
 
-from src.application.commands.order_part.create_order_part import CreateOrderPartCommandHandler, CreateOrderPartCommand, \
-    CreateOrderPartCommandResponse
-from src.application.commands.order_part.read_all_order_part import ReadAllOrderPartCommandHandler, \
-    ReadAllOrderPartCommand, ReadOrderPartResponse
-from src.application.commands.order_part.read_order_part import ReadOrderPartCommandHandler, ReadOrderPartCommand
-from src.application.commands.order_part.update_order_part import UpdateOrderPartCommandHandler, UpdateOrderPartCommand
-from src.application.commands.order_part.delete_order_part import DeleteOrderPartCommandHandler, DeleteOrderPartCommand
+import structlog
+from dishka import FromDishka
+from dishka.integrations.fastapi import DishkaRoute, inject
+from fastapi import APIRouter, Depends, status
+
+from src.application.commands.order_part.create_order_part import (
+    CreateOrderPartCommand,
+    CreateOrderPartCommandHandler,
+    CreateOrderPartCommandResponse,
+)
+from src.application.commands.order_part.delete_order_part import (
+    DeleteOrderPartCommand,
+    DeleteOrderPartCommandHandler,
+)
+from src.application.commands.order_part.read_all_order_part import (
+    ReadAllOrderPartCommand,
+    ReadAllOrderPartCommandHandler,
+    ReadOrderPartResponse,
+)
+from src.application.commands.order_part.read_order_part import (
+    ReadOrderPartCommand,
+    ReadOrderPartCommandHandler,
+)
+from src.application.commands.order_part.update_order_part import (
+    UpdateOrderPartCommand,
+    UpdateOrderPartCommandHandler,
+)
 from src.entities.employees.models import Employee, EmployeePosition
 from src.presentation.api.common.schemas.order_part.create_order_part import CreateOrderPartSchema
 from src.presentation.api.common.schemas.order_part.update_order_part import UpdateOrderPartSchema
@@ -22,7 +38,13 @@ router = APIRouter(prefix="/order_part", tags=["Order Part"], route_class=Dishka
 logger = structlog.get_logger("api.order_part").bind(service="order_part")
 
 role_checker = RoleChecker(
-    [EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN, EmployeePosition.MASTER, EmployeePosition.MANAGER])
+    [
+        EmployeePosition.SUPERVISOR,
+        EmployeePosition.ADMIN,
+        EmployeePosition.MASTER,
+        EmployeePosition.MANAGER,
+    ]
+)
 CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
 
 
@@ -31,9 +53,9 @@ CurrentEmployee = Annotated[Employee, Depends(inject(role_checker.__call__))]
     status_code=status.HTTP_200_OK,
 )
 async def get_all_order_parts(
-        interactor: FromDishka[ReadAllOrderPartCommandHandler],
-        current_employee: CurrentEmployee,
-) -> List[ReadOrderPartResponse]:
+    interactor: FromDishka[ReadAllOrderPartCommandHandler],
+    current_employee: CurrentEmployee,
+) -> list[ReadOrderPartResponse]:
     logger.info("ReadAll order parts endpoint called")
     dto = ReadAllOrderPartCommand()
     result = await interactor.run(dto, current_employee)
@@ -46,16 +68,16 @@ async def get_all_order_parts(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_order_part(
-        request_data: CreateOrderPartSchema,
-        interactor: FromDishka[CreateOrderPartCommandHandler],
-        current_employee: CurrentEmployee,
+    request_data: CreateOrderPartSchema,
+    interactor: FromDishka[CreateOrderPartCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> CreateOrderPartCommandResponse:
     logger.info("Create order part endpoint called")
     dto = CreateOrderPartCommand(
         order_uuid=request_data.order_uuid,
         part_uuid=request_data.part_uuid,
         qty=request_data.qty,
-        price=request_data.price
+        price=request_data.price,
     )
     result = await interactor.run(dto)
     logger.info("Order part created successfully")
@@ -67,16 +89,14 @@ async def create_order_part(
     status_code=status.HTTP_200_OK,
 )
 async def update_order_part(
-        order_part_uuid: UUID,
-        request_data: UpdateOrderPartSchema,
-        interactor: FromDishka[UpdateOrderPartCommandHandler],
-        current_employee: CurrentEmployee,
+    order_part_uuid: UUID,
+    request_data: UpdateOrderPartSchema,
+    interactor: FromDishka[UpdateOrderPartCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Update order part endpoint called", order_part_uuid=str(order_part_uuid))
     dto = UpdateOrderPartCommand(
-        uuid=order_part_uuid,
-        qty=request_data.qty,
-        price=request_data.price
+        uuid=order_part_uuid, qty=request_data.qty, price=request_data.price
     )
     await interactor.run(dto, current_employee)
     logger.info("Order part updated successfully", order_part_uuid=str(order_part_uuid))
@@ -87,9 +107,9 @@ async def update_order_part(
     status_code=status.HTTP_200_OK,
 )
 async def get_order_part(
-        order_part_uuid: UUID,
-        interactor: FromDishka[ReadOrderPartCommandHandler],
-        current_employee: CurrentEmployee,
+    order_part_uuid: UUID,
+    interactor: FromDishka[ReadOrderPartCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> ReadOrderPartResponse:
     logger.info("Read order part endpoint called", order_part_uuid=str(order_part_uuid))
     dto = ReadOrderPartCommand(uuid=order_part_uuid)
@@ -103,9 +123,9 @@ async def get_order_part(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_order_part(
-        order_part_uuid: UUID,
-        interactor: FromDishka[DeleteOrderPartCommandHandler],
-        current_employee: CurrentEmployee,
+    order_part_uuid: UUID,
+    interactor: FromDishka[DeleteOrderPartCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Delete order part endpoint called", order_part_uuid=str(order_part_uuid))
     dto = DeleteOrderPartCommand(uuid=order_part_uuid)

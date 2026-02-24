@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, NewType
+from typing import NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
@@ -14,8 +14,8 @@ EmployeeUUID = NewType("EmployeeUUID", UUID)
 class Employee(BaseEntity[EmployeeID, EmployeeUUID]):
     user_id: UserID
     full_name: str
-    phone: Optional[str]
+    phone: str | None
     position: EmployeePosition
     is_active: bool
-    salary: Optional[float] = None
-    profit_percent: Optional[float] = None
+    salary: float | None = None
+    profit_percent: float | None = None

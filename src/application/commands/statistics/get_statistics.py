@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import List
 
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.employee_reader import EmployeeReader
-from src.application.ports.statistics_reader import StatisticsReader, OrderStatRow
+from src.application.ports.statistics_reader import OrderStatRow, StatisticsReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee
 
@@ -33,7 +32,7 @@ class StatisticsResponse:
     total_revenue: float
     total_expenses: float
     net_profit: float
-    employees: List[EmployeeStatisticsResponse]
+    employees: list[EmployeeStatisticsResponse]
 
 
 class GetStatisticsCommandHandler(BaseCommandHandler):
@@ -53,7 +52,7 @@ class GetStatisticsCommandHandler(BaseCommandHandler):
         total_expenses = sum(r.parts_cost for r in order_rows)
         total_profit = total_revenue - total_expenses
 
-        employee_stats: List[EmployeeStatisticsResponse] = []
+        employee_stats: list[EmployeeStatisticsResponse] = []
         for emp in employees:
             emp_rows = self._filter_orders_for_employee(emp, order_rows)
 
@@ -70,7 +69,9 @@ class GetStatisticsCommandHandler(BaseCommandHandler):
                 EmployeeStatisticsResponse(
                     uuid=str(emp.uuid),
                     full_name=emp.full_name,
-                    position=emp.position.value if isinstance(emp.position, EmployeePosition) else str(emp.position),
+                    position=emp.position.value
+                    if isinstance(emp.position, EmployeePosition)
+                    else str(emp.position),
                     orders_count=len(emp_rows),
                     revenue=round(emp_revenue, 2),
                     expenses=round(emp_expenses, 2),
@@ -99,8 +100,8 @@ class GetStatisticsCommandHandler(BaseCommandHandler):
 
     @staticmethod
     def _filter_orders_for_employee(
-        employee: Employee, rows: List[OrderStatRow]
-    ) -> List[OrderStatRow]:
+        employee: Employee, rows: list[OrderStatRow]
+    ) -> list[OrderStatRow]:
         pos = employee.position
         if pos in (EmployeePosition.SUPERVISOR, EmployeePosition.ADMIN):
             return rows

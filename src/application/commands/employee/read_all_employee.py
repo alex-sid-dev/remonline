@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List, Optional
 
 import structlog
 
@@ -21,10 +20,10 @@ class ReadAllEmployeeCommand:
 class ReadEmployeeResponse:
     uuid: str
     full_name: str
-    phone: Optional[str]
+    phone: str | None
     position: EmployeePosition
-    salary: Optional[float] = None
-    profit_percent: Optional[float] = None
+    salary: float | None = None
+    profit_percent: float | None = None
 
     @classmethod
     def from_entity(cls, entity: Employee) -> "ReadEmployeeResponse":
@@ -40,7 +39,7 @@ class ReadEmployeeResponse:
 
 @dataclass
 class PaginatedEmployeeResponse:
-    items: List[ReadEmployeeResponse]
+    items: list[ReadEmployeeResponse]
     total: int
     limit: int
     offset: int
@@ -50,7 +49,9 @@ class ReadAllEmployeeCommandHandler(BaseCommandHandler):
     def __init__(self, employee_reader: EmployeeReader) -> None:
         self._employee_reader = employee_reader
 
-    async def run(self, data: ReadAllEmployeeCommand, current_employee: Employee) -> PaginatedEmployeeResponse:
+    async def run(
+        self, data: ReadAllEmployeeCommand, current_employee: Employee
+    ) -> PaginatedEmployeeResponse:
         employees, total = await self._employee_reader.read_all_active(data.limit, data.offset)
         return PaginatedEmployeeResponse(
             items=[ReadEmployeeResponse.from_entity(emp) for emp in employees if emp is not None],

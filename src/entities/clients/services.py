@@ -1,16 +1,17 @@
-from typing import Optional
-from src.entities.clients.models import Client, ClientID, ClientUUID
 from uuid import uuid4
+
+from src.entities.clients.models import Client, ClientUUID
+
 
 class ClientService:
     def create_client(
         self,
         full_name: str,
         phone: str,
-        email: Optional[str] = None,
-        telegram_nick: Optional[str] = None,
-        comment: Optional[str] = None,
-        address: Optional[str] = None,
+        email: str | None = None,
+        telegram_nick: str | None = None,
+        comment: str | None = None,
+        address: str | None = None,
     ) -> Client:
         return Client(
             id=None,  # type: ignore
@@ -27,13 +28,13 @@ class ClientService:
     def update_client(
         self,
         client: Client,
-        full_name: Optional[str] = None,
-        phone: Optional[str] = None,
-        email: Optional[str] = None,
-        telegram_nick: Optional[str] = None,
-        comment: Optional[str] = None,
-        address: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        full_name: str | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        telegram_nick: str | None = None,
+        comment: str | None = None,
+        address: str | None = None,
+        is_active: bool | None = None,
     ) -> Client:
         if full_name is not None:
             client.full_name = full_name

@@ -3,4 +3,5 @@ from src.presentation.api.common.schemas.employee._base import EmployeeBaseSchem
 
 class UpdateEmployeeSchema(EmployeeBaseSchema):
     """Схема обновления: все поля опциональны"""
+
     pass

@@ -7,7 +7,11 @@ from keycloak import (
     KeycloakPostError,
 )
 
-from src.application.errors.auth import InvalidPasswordError, InvalidRefreshTokenError, InvalidAccessTokenError
+from src.application.errors.auth import (
+    InvalidAccessTokenError,
+    InvalidPasswordError,
+    InvalidRefreshTokenError,
+)
 from src.application.keycloak.auth_managers import OpenIDManager
 from src.application.models.auth_token import AuthToken
 from src.application.models.user_info import UserInfo
@@ -19,7 +23,9 @@ class KeycloakOpenIDManager(OpenIDManager):
 
     def __init__(self, settings: Settings) -> None:
         self._logger = structlog.get_logger("keycloak_openid").bind(service="keycloak_openid")
-        self._logger.info("Initializing KeycloakOpenIDManager", server=settings.keycloak.keycloak_url)
+        self._logger.info(
+            "Initializing KeycloakOpenIDManager", server=settings.keycloak.keycloak_url
+        )
 
         self._client = KeycloakOpenID(
             server_url=settings.keycloak.keycloak_url,

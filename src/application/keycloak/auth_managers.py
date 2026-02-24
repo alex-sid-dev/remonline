@@ -1,4 +1,3 @@
-import uuid
 from abc import ABC, abstractmethod
 
 from src.application.models.auth_token import AuthToken

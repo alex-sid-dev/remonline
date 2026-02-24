@@ -11,4 +11,3 @@ class PartStockNotEnoughError(ConflictError):
 
     message: str = "Недостаточно запчастей на складе"
     error_code: str | None = "part_stock_not_enough"
-

@@ -5,9 +5,10 @@ Revises: add_brands_table
 Create Date: 2026-02-20
 
 """
-from alembic import op
+
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import BIGINT, UUID
+from alembic import op
+from sqlalchemy.dialects.postgresql import BIGINT
 
 revision = "add_devices_brand_id"
 down_revision = "add_brands_table"

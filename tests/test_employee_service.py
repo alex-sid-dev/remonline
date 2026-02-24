@@ -1,7 +1,7 @@
 from uuid import uuid4
 
-from src.entities.employees.services import EmployeeService
 from src.entities.employees.enum import EmployeePosition
+from src.entities.employees.services import EmployeeService
 from src.entities.users.models import UserID
 
 

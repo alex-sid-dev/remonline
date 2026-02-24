@@ -1,7 +1,9 @@
-import structlog
 from dataclasses import dataclass
 from typing import Final
 
+import structlog
+
+from src.application.errors.auth import UserNotFoundError
 from src.application.keycloak.auth_managers import OpenIDManager
 from src.application.ports.user_reader import UserReader
 
@@ -11,6 +13,7 @@ logger = structlog.get_logger("login").bind(service="auth")
 @dataclass(frozen=True, slots=True)
 class LoginResponse:
     """DTO returned from the login use case."""
+
     access_token: str
     refresh_token: str
     expires_in: int
@@ -21,20 +24,18 @@ class LoginResponse:
 @dataclass(frozen=True, slots=True)
 class LoginCommand:
     """Command with credentials required to authenticate a user."""
+
     email: str
     password: str
-
-
-from src.application.errors.auth import UserNotFoundError
 
 
 class LoginCommandHandler:
     """Use case: authenticate seller and issue auth tokens via Keycloak."""
 
     def __init__(
-            self,
-            user_reader: UserReader,
-            open_id_manager: OpenIDManager,
+        self,
+        user_reader: UserReader,
+        open_id_manager: OpenIDManager,
     ) -> None:
         self._user_reader: Final = user_reader
         self._open_id_manager: Final = open_id_manager

@@ -1,6 +1,6 @@
+from src.entities.employees.models import EmployeeID
 from src.entities.order_comments.services import OrderCommentService
 from src.entities.orders.models import OrderID
-from src.entities.employees.models import EmployeeID
 
 
 class TestOrderCommentService:

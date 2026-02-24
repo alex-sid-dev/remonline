@@ -1,17 +1,17 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.ports.work_reader import WorkReader
-from src.application.ports.order_reader import OrderReader
-from src.application.ports.employee_reader import EmployeeReader
-from src.application.ports.transaction import Transaction, EntitySaver
-from src.entities.works.services import WorkService
-from src.entities.employees.models import Employee, EmployeeUUID
-from src.entities.orders.models import OrderUUID
 from src.application.errors._base import EntityNotFoundError
+from src.application.ports.employee_reader import EmployeeReader
+from src.application.ports.order_reader import OrderReader
+from src.application.ports.transaction import EntitySaver, Transaction
+from src.application.ports.work_reader import WorkReader
+from src.entities.employees.models import EmployeeUUID
+from src.entities.orders.models import OrderUUID
+from src.entities.works.services import WorkService
 
 logger = structlog.get_logger("create_work").bind(service="work")
 
@@ -25,21 +25,21 @@ class CreateWorkCommandResponse:
 class CreateWorkCommand:
     order_uuid: UUID
     title: str
-    employee_uuid: Optional[UUID] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
+    employee_uuid: UUID | None = None
+    description: str | None = None
+    price: float | None = None
     qty: int = 1
 
 
 class CreateWorkCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            transaction: Transaction,
-            entity_saver: EntitySaver,
-            work_service: WorkService,
-            work_reader: WorkReader,
-            order_reader: OrderReader,
-            employee_reader: EmployeeReader,
+        self,
+        transaction: Transaction,
+        entity_saver: EntitySaver,
+        work_service: WorkService,
+        work_reader: WorkReader,
+        order_reader: OrderReader,
+        employee_reader: EmployeeReader,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
@@ -57,7 +57,9 @@ class CreateWorkCommandHandler(BaseCommandHandler):
         if data.employee_uuid:
             employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.employee_uuid))
             if not employee:
-                raise EntityNotFoundError(message=f"Employee with uuid {data.employee_uuid} not found")
+                raise EntityNotFoundError(
+                    message=f"Employee with uuid {data.employee_uuid} not found"
+                )
             employee_id = employee.id
 
         work = self._work_service.create_work(

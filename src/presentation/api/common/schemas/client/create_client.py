@@ -1,16 +1,14 @@
-from typing import Optional
-from pydantic import BaseModel, Field,  field_validator
-
+from pydantic import BaseModel, Field, field_validator
 from src.presentation.api.common.validators.phone import validate_phone
 
 
 class CreateClientSchema(BaseModel):
     full_name: str = Field(..., min_length=1, max_length=255)
     phone: str = Field(..., min_length=10, max_length=20)
-    email: Optional[str] = None
-    telegram_nick: Optional[str] = None
-    comment: Optional[str] = None
-    address: Optional[str] = Field(None, max_length=1024)
+    email: str | None = None
+    telegram_nick: str | None = None
+    comment: str | None = None
+    address: str | None = Field(None, max_length=1024)
 
     @field_validator("phone")
     @classmethod

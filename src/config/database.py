@@ -1,17 +1,30 @@
 from typing import final
-from pydantic import Field, BaseModel, AliasChoices
+
+from pydantic import AliasChoices, BaseModel, Field
+
 
 @final
 class DatabaseSettings(BaseModel):
     """
     Database configuration settings.
     """
+
     postgres_user: str = Field(..., validation_alias=AliasChoices("postgres_user", "POSTGRES_USER"))
-    postgres_password: str = Field(..., validation_alias=AliasChoices("postgres_password", "POSTGRES_PASSWORD"))
-    postgres_host: str = Field("127.0.0.1", validation_alias=AliasChoices("postgres_host", "POSTGRES_HOST"))
-    postgres_port: int = Field(5432, validation_alias=AliasChoices("postgres_port", "POSTGRES_PORT"))
-    postgres_db: str = Field("remonline", validation_alias=AliasChoices("postgres_db", "POSTGRES_DB"))
-    postgres_scheme: str = Field("postgresql+psycopg", validation_alias=AliasChoices("postgres_scheme", "POSTGRES_SCHEME"))
+    postgres_password: str = Field(
+        ..., validation_alias=AliasChoices("postgres_password", "POSTGRES_PASSWORD")
+    )
+    postgres_host: str = Field(
+        "127.0.0.1", validation_alias=AliasChoices("postgres_host", "POSTGRES_HOST")
+    )
+    postgres_port: int = Field(
+        5432, validation_alias=AliasChoices("postgres_port", "POSTGRES_PORT")
+    )
+    postgres_db: str = Field(
+        "remonline", validation_alias=AliasChoices("postgres_db", "POSTGRES_DB")
+    )
+    postgres_scheme: str = Field(
+        "postgresql+psycopg", validation_alias=AliasChoices("postgres_scheme", "POSTGRES_SCHEME")
+    )
 
     # Connection pool and logging configuration
     echo: bool = Field(False, validation_alias=AliasChoices("echo", "DB_ECHO"))

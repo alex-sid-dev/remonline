@@ -1,5 +1,4 @@
 from src.entities.clients.services import ClientService
-from src.entities.clients.models import ClientID, ClientUUID
 
 
 class TestClientService:

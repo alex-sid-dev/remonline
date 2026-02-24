@@ -1,16 +1,18 @@
-from typing import Optional
 from uuid import UUID
+
 from pydantic import BaseModel
+
 
 class CreatePaymentSchema(BaseModel):
     order_uuid: UUID
     amount: float
     payment_method: str
-    employee_uuid: Optional[UUID] = None
-    comment: Optional[str] = None
+    employee_uuid: UUID | None = None
+    comment: str | None = None
+
 
 class UpdatePaymentSchema(BaseModel):
-    amount: Optional[float] = None
-    payment_method: Optional[str] = None
-    employee_uuid: Optional[UUID] = None
-    comment: Optional[str] = None
+    amount: float | None = None
+    payment_method: str | None = None
+    employee_uuid: UUID | None = None
+    comment: str | None = None

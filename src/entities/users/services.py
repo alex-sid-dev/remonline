@@ -8,8 +8,8 @@ class UserService:
 
     @staticmethod
     def create_user(
-            user_uuid: str,
-            email: str,
+        user_uuid: str,
+        email: str,
     ) -> User:
         """Create a new user aggregate with DB-assigned id placeholder."""
         return User(

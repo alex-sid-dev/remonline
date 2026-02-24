@@ -1,20 +1,19 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.ports.order_reader import OrderReader
+from src.application.errors._base import EntityNotFoundError
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.device_reader import DeviceReader
 from src.application.ports.employee_reader import EmployeeReader
-from src.application.ports.transaction import Transaction, EntitySaver
-from src.entities.orders.services import OrderService
-from src.entities.orders.models import Order
+from src.application.ports.order_reader import OrderReader
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.clients.models import ClientUUID
 from src.entities.devices.models import DeviceUUID
-from src.entities.employees.models import Employee, EmployeeUUID, EmployeePosition
-from src.application.errors._base import EntityNotFoundError
+from src.entities.employees.models import EmployeePosition, EmployeeUUID
+from src.entities.orders.services import OrderService
 
 logger = structlog.get_logger("create_order").bind(service="order")
 
@@ -28,23 +27,23 @@ class CreateOrderCommandResponse:
 class CreateOrderCommand:
     client_uuid: UUID
     device_uuid: UUID
-    problem_description: Optional[str] = None
-    assigned_employee_uuid: Optional[UUID] = None
-    manager_uuid: Optional[UUID] = None
+    problem_description: str | None = None
+    assigned_employee_uuid: UUID | None = None
+    manager_uuid: UUID | None = None
     status: str = "new"
-    price: Optional[float] = None
+    price: float | None = None
 
 
 class CreateOrderCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            transaction: Transaction,
-            entity_saver: EntitySaver,
-            order_service: OrderService,
-            order_reader: OrderReader,
-            client_reader: ClientReader,
-            device_reader: DeviceReader,
-            employee_reader: EmployeeReader,
+        self,
+        transaction: Transaction,
+        entity_saver: EntitySaver,
+        order_service: OrderService,
+        order_reader: OrderReader,
+        client_reader: ClientReader,
+        device_reader: DeviceReader,
+        employee_reader: EmployeeReader,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
@@ -65,9 +64,13 @@ class CreateOrderCommandHandler(BaseCommandHandler):
 
         assigned_employee_id = None
         if data.assigned_employee_uuid:
-            assigned_employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.assigned_employee_uuid))
+            assigned_employee = await self._employee_reader.read_by_uuid(
+                EmployeeUUID(data.assigned_employee_uuid)
+            )
             if not assigned_employee:
-                raise EntityNotFoundError(message=f"Employee with uuid {data.assigned_employee_uuid} not found")
+                raise EntityNotFoundError(
+                    message=f"Employee with uuid {data.assigned_employee_uuid} not found"
+                )
             assigned_employee_id = assigned_employee.id
 
         # Определяем менеджера (creator_id):
@@ -78,9 +81,13 @@ class CreateOrderCommandHandler(BaseCommandHandler):
         if data.manager_uuid:
             manager = await self._employee_reader.read_by_uuid(EmployeeUUID(data.manager_uuid))
             if not manager:
-                raise EntityNotFoundError(message=f"Employee with uuid {data.manager_uuid} not found")
+                raise EntityNotFoundError(
+                    message=f"Employee with uuid {data.manager_uuid} not found"
+                )
             if manager.position == EmployeePosition.MASTER:
-                raise EntityNotFoundError(message="Назначить менеджером нельзя сотрудника с ролью мастер.")
+                raise EntityNotFoundError(
+                    message="Назначить менеджером нельзя сотрудника с ролью мастер."
+                )
             creator_id = manager.id
         elif getattr(current_employee, "position", None) == EmployeePosition.MANAGER:
             creator_id = current_employee.id

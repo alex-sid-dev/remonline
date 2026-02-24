@@ -1,17 +1,15 @@
 import uuid
+from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-from dataclasses import dataclass
 
 from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.errors.auth import EmailAlreadyExistsError
 from src.application.keycloak.auth_managers import AdminManager, OpenIDManager
 from src.application.ports.employee_reader import EmployeeReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.application.ports.user_reader import UserReader
-from src.entities.employees.enum import EmployeePosition
-from src.entities.users.models import UserUUID
 from src.entities.users.services import UserService
 
 logger = structlog.get_logger("register").bind(service="auth")
@@ -25,6 +23,7 @@ class RegisterCommandResponse:
 @dataclass(frozen=True, slots=True)
 class RegisterCommand:
     """Command with data required to register a new user."""
+
     email: str
     password: str
 
@@ -33,14 +32,14 @@ class RegisterCommandHandler(BaseCommandHandler):
     """Use case: register a new user in Keycloak and local database."""
 
     def __init__(
-            self,
-            transaction: Transaction,
-            entity_saver: EntitySaver,
-            admin_manager: AdminManager,
-            user_reader: UserReader,
-            user_service: UserService,
-            open_id_manager: OpenIDManager,
-            employee_reader: EmployeeReader,
+        self,
+        transaction: Transaction,
+        entity_saver: EntitySaver,
+        admin_manager: AdminManager,
+        user_reader: UserReader,
+        user_service: UserService,
+        open_id_manager: OpenIDManager,
+        employee_reader: EmployeeReader,
     ) -> None:
         self._transaction = transaction
         self._admin_manager = admin_manager
@@ -75,7 +74,9 @@ class RegisterCommandHandler(BaseCommandHandler):
             return RegisterCommandResponse(uuid=uuid.UUID(user_uuid))
 
         except Exception as e:
-            logger.error("Registration failed, attempting rollback", email=str(data.email), error=str(e))
+            logger.error(
+                "Registration failed, attempting rollback", email=str(data.email), error=str(e)
+            )
             if user_uuid:
                 try:
                     await self._admin_manager.delete_user(user_uuid=user_uuid)

@@ -5,9 +5,8 @@ Revises: orders_status_enum_fix
 Create Date: 2026-02-18
 """
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision = "works_add_qty"
 down_revision = "orders_status_enum_fix"
@@ -27,4 +26,3 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("works", "qty")
-

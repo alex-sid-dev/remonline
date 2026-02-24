@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(eq=False)
 class ApplicationError(Exception):
     message: str = "Application error occurred"
-    error_code: Optional[str] = None
+    error_code: str | None = None
 
     def __post_init__(self):
         super().__init__(self.message)

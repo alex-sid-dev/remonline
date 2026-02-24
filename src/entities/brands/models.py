@@ -11,5 +11,6 @@ BrandUUID = NewType("BrandUUID", UUID)
 @dataclass
 class Brand(BaseEntity[BrandID, BrandUUID]):
     """Бренд устройства (Samsung, Apple и т.д.)."""
+
     name: str
     is_active: bool = True

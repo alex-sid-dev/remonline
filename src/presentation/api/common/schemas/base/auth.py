@@ -5,6 +5,7 @@ from src.presentation.api.common.validators.password import validate_password
 
 class RegisterSchema(BaseModel):
     """Request body schema for user registration."""
+
     email: EmailStr
     password: str
 
@@ -16,6 +17,7 @@ class RegisterSchema(BaseModel):
 
 class LoginSchema(BaseModel):
     """Request body schema for user login."""
+
     email: EmailStr
     password: str
 
@@ -27,6 +29,7 @@ class LoginSchema(BaseModel):
 
 class LogoutSchema(BaseModel):
     """Request body schema for user logout."""
+
     refresh_token: str
 
 

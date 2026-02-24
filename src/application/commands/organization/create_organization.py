@@ -1,15 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 import structlog
-
 from src.application.commands.base_command_handler import BaseCommandHandler
+from src.application.errors._base import ConflictError
 from src.application.ports.organization_reader import OrganizationReader
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.employees.models import Employee
 from src.entities.organizations.services import OrganizationService
-from src.application.errors._base import ConflictError
 
 logger = structlog.get_logger("create_organization").bind(service="organization")
 
@@ -18,11 +16,11 @@ logger = structlog.get_logger("create_organization").bind(service="organization"
 class CreateOrganizationCommand:
     name: str
     inn: str
-    address: Optional[str] = None
-    kpp: Optional[str] = None
-    bank_account: Optional[str] = None
-    corr_account: Optional[str] = None
-    bik: Optional[str] = None
+    address: str | None = None
+    kpp: str | None = None
+    bank_account: str | None = None
+    corr_account: str | None = None
+    bik: str | None = None
 
 
 @dataclass

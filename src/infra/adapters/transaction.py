@@ -3,7 +3,7 @@ from typing import Final
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.ports.transaction import Transaction, EntitySaver
+from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.base_entity import BaseEntity, IDType, UUIDType
 
 

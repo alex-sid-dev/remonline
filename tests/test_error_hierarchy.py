@@ -9,8 +9,8 @@ from src.application.errors._base import (
 )
 from src.application.errors.auth import (
     InvalidAccessTokenErrorPerm,
-    TokenInvalidError,
     InvalidTimeZoneError,
+    TokenInvalidError,
 )
 from src.presentation.api.common.exc_handlers import resolve_status_code as _resolve_status_code
 

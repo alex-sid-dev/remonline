@@ -7,6 +7,7 @@ Create Date: 2026-02-16
 So that deleting an employee does not fail when they are referenced
 from works, payments, or orders.creator_id.
 """
+
 from alembic import op
 
 revision = "employees_fk_set_null"

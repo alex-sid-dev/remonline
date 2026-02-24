@@ -1,25 +1,44 @@
+from typing import Annotated
 from uuid import UUID
+
 import structlog
 from dishka import FromDishka
-
 from dishka.integrations.fastapi import DishkaRoute, inject
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 from starlette import status
 
-from src.application.commands.employee.create_employee import CreateEmployeeCommand, CreateEmployeeCommandHandler, \
-    CreateEmployeeCommandResponse
-from src.application.commands.employee.read_all_employee import ReadAllEmployeeCommandHandler, ReadAllEmployeeCommand, \
-    ReadEmployeeResponse, PaginatedEmployeeResponse
-from src.application.commands.employee.read_employee import ReadEmployeeCommandHandler, ReadEmployeeCommand
-from src.application.commands.employee.update_employee import UpdateEmployeeCommand, UpdateEmployeeCommandHandler
-from src.application.commands.employee.delete_employee import DeleteEmployeeCommandHandler, DeleteEmployeeCommand
-from src.application.commands.employee.change_password import ChangePasswordCommandHandler, ChangePasswordCommand
-from typing import List, Annotated
-from pydantic import BaseModel, Field
+from src.application.commands.employee.change_password import (
+    ChangePasswordCommand,
+    ChangePasswordCommandHandler,
+)
+from src.application.commands.employee.create_employee import (
+    CreateEmployeeCommand,
+    CreateEmployeeCommandHandler,
+    CreateEmployeeCommandResponse,
+)
+from src.application.commands.employee.delete_employee import (
+    DeleteEmployeeCommand,
+    DeleteEmployeeCommandHandler,
+)
+from src.application.commands.employee.read_all_employee import (
+    PaginatedEmployeeResponse,
+    ReadAllEmployeeCommand,
+    ReadAllEmployeeCommandHandler,
+    ReadEmployeeResponse,
+)
+from src.application.commands.employee.read_employee import (
+    ReadEmployeeCommand,
+    ReadEmployeeCommandHandler,
+)
+from src.application.commands.employee.update_employee import (
+    UpdateEmployeeCommand,
+    UpdateEmployeeCommandHandler,
+)
 from src.entities.employees.models import Employee, EmployeePosition
-from src.presentation.api.rest.v1.permissions import RoleChecker
 from src.presentation.api.common.schemas.employee.create_employee import CreateEmployeeSchema
 from src.presentation.api.common.schemas.employee.update_employee import UpdateEmployeeSchema
+from src.presentation.api.rest.v1.permissions import RoleChecker
 
 router = APIRouter(prefix="/employee", tags=["Employee"], route_class=DishkaRoute)
 
@@ -38,7 +57,7 @@ AnyEmployee = Annotated[Employee, Depends(inject(any_employee_checker.__call__))
     status_code=status.HTTP_200_OK,
 )
 async def get_current_employee(
-        current_employee: AnyEmployee,
+    current_employee: AnyEmployee,
 ) -> ReadEmployeeResponse:
     """Текущий авторизованный сотрудник (для определения роли на фронте)."""
     logger.info("Get current employee (me) called")
@@ -50,10 +69,10 @@ async def get_current_employee(
     status_code=status.HTTP_200_OK,
 )
 async def get_all_employees(
-        interactor: FromDishka[ReadAllEmployeeCommandHandler],
-        current_employee: CurrentEmployee,
-        limit: int = Query(200, ge=1, le=1000),
-        offset: int = Query(0, ge=0),
+    interactor: FromDishka[ReadAllEmployeeCommandHandler],
+    current_employee: CurrentEmployee,
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
 ) -> PaginatedEmployeeResponse:
     logger.info("ReadAll employees endpoint called", limit=limit, offset=offset)
     dto = ReadAllEmployeeCommand(limit=limit, offset=offset)
@@ -67,9 +86,9 @@ async def get_all_employees(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_employee(
-        request_data: CreateEmployeeSchema,
-        interactor: FromDishka[CreateEmployeeCommandHandler],
-        current_employee: CurrentEmployee,
+    request_data: CreateEmployeeSchema,
+    interactor: FromDishka[CreateEmployeeCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> CreateEmployeeCommandResponse:
     logger.info("Create employee endpoint called", phone=request_data.phone)
     dto = CreateEmployeeCommand(
@@ -90,17 +109,14 @@ async def create_employee(
     status_code=status.HTTP_200_OK,
 )
 async def update_employee(
-        employee_uuid: UUID,
-        request_data: UpdateEmployeeSchema,
-        interactor: FromDishka[UpdateEmployeeCommandHandler],
-        current_employee: CurrentEmployee,
+    employee_uuid: UUID,
+    request_data: UpdateEmployeeSchema,
+    interactor: FromDishka[UpdateEmployeeCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Update employee endpoint called", employee_uuid=str(employee_uuid))
     update_data = request_data.model_dump(exclude_unset=True)
-    dto = UpdateEmployeeCommand(
-        uuid=employee_uuid,
-        **update_data
-    )
+    dto = UpdateEmployeeCommand(uuid=employee_uuid, **update_data)
     await interactor.run(dto, current_employee)
     logger.info("Update employee registered successfully", employee_uuid=str(employee_uuid))
 
@@ -110,9 +126,9 @@ async def update_employee(
     status_code=status.HTTP_200_OK,
 )
 async def get_employee(
-        employee_uuid: UUID,
-        interactor: FromDishka[ReadEmployeeCommandHandler],
-        current_employee: CurrentEmployee,
+    employee_uuid: UUID,
+    interactor: FromDishka[ReadEmployeeCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> ReadEmployeeResponse:
     logger.info("Read employee endpoint called", employee_uuid=str(employee_uuid))
     dto = ReadEmployeeCommand(uuid=employee_uuid)
@@ -130,10 +146,10 @@ class ChangePasswordSchema(BaseModel):
     status_code=status.HTTP_200_OK,
 )
 async def change_employee_password(
-        employee_uuid: UUID,
-        request_data: ChangePasswordSchema,
-        interactor: FromDishka[ChangePasswordCommandHandler],
-        current_employee: CurrentEmployee,
+    employee_uuid: UUID,
+    request_data: ChangePasswordSchema,
+    interactor: FromDishka[ChangePasswordCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Change password endpoint called", employee_uuid=str(employee_uuid))
     dto = ChangePasswordCommand(
@@ -149,9 +165,9 @@ async def change_employee_password(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_employee(
-        employee_uuid: UUID,
-        interactor: FromDishka[DeleteEmployeeCommandHandler],
-        current_employee: CurrentEmployee,
+    employee_uuid: UUID,
+    interactor: FromDishka[DeleteEmployeeCommandHandler],
+    current_employee: CurrentEmployee,
 ) -> None:
     logger.info("Delete employee endpoint called", employee_uuid=str(employee_uuid))
     dto = DeleteEmployeeCommand(uuid=employee_uuid)

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+
 import structlog
 
 from src.application.commands.base_command_handler import BaseCommandHandler
@@ -9,9 +9,11 @@ from src.entities.employees.models import Employee
 
 logger = structlog.get_logger("read_all_device_type").bind(service="device_type")
 
+
 @dataclass
 class ReadAllDeviceTypeCommand:
     pass
+
 
 @dataclass
 class ReadDeviceTypeResponse:
@@ -21,19 +23,18 @@ class ReadDeviceTypeResponse:
 
     @classmethod
     def from_entity(cls, entity: DeviceType) -> "ReadDeviceTypeResponse":
-        return cls(
-            uuid=str(entity.uuid),
-            name=entity.name,
-            description=entity.description
-        )
+        return cls(uuid=str(entity.uuid), name=entity.name, description=entity.description)
+
 
 class ReadAllDeviceTypeCommandHandler(BaseCommandHandler):
     def __init__(
-            self,
-            device_type_reader: DeviceTypeReader,
+        self,
+        device_type_reader: DeviceTypeReader,
     ) -> None:
         self._device_type_reader = device_type_reader
 
-    async def run(self, data: ReadAllDeviceTypeCommand, current_employee: Employee) -> List[ReadDeviceTypeResponse]:
+    async def run(
+        self, data: ReadAllDeviceTypeCommand, current_employee: Employee
+    ) -> list[ReadDeviceTypeResponse]:
         device_types = await self._device_type_reader.read_all_active()
         return [ReadDeviceTypeResponse.from_entity(dt) for dt in device_types]
