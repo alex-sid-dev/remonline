@@ -280,10 +280,12 @@ class TestUpdateOrderCommandHandler:
         mock_order_reader = AsyncMock()
         mock_employee_reader = AsyncMock()
         mock_work_reader = AsyncMock()
+        mock_order_part_reader = AsyncMock()
 
         mock_order_reader.read_by_uuid.return_value = order
         mock_employee_reader.read_by_uuid.return_value = employee
         mock_work_reader.read_by_order_id.return_value = works or []
+        mock_order_part_reader.read_by_order_id.return_value = []
 
         handler = UpdateOrderCommandHandler(
             transaction=mock_transaction,
@@ -291,6 +293,7 @@ class TestUpdateOrderCommandHandler:
             order_service=OrderService(),
             employee_reader=mock_employee_reader,
             work_reader=mock_work_reader,
+            order_part_reader=mock_order_part_reader,
         )
         return handler, mock_transaction, mock_order_reader, mock_employee_reader
 
@@ -378,16 +381,19 @@ class TestUpdateOrderCommandHandler:
         assert already_assigned_work.employee_id == EmployeeID(3)
 
     @pytest.mark.asyncio
-    async def test_update_price(self):
+    async def test_price_recalculated_from_works_and_parts(self):
         order = _make_order()
-        handler, mock_tx, *_ = self._make_handler(order=order)
+        work = _make_work(order_id=order.id)
+        work.price = 500.0
+        work.qty = 2
+        handler, mock_tx, *_ = self._make_handler(order=order, works=[work])
 
         await handler.run(
-            UpdateOrderCommand(uuid=order.uuid, price=999.0),
+            UpdateOrderCommand(uuid=order.uuid, status="accepted"),
             _make_employee(),
         )
 
-        assert order.price == 999.0
+        assert order.price == 1000.0
         mock_tx.commit.assert_awaited_once()
 
 
@@ -782,10 +788,12 @@ class TestCloseOrderPermission:
         mock_order_reader = AsyncMock()
         mock_employee_reader = AsyncMock()
         mock_work_reader = AsyncMock()
+        mock_order_part_reader = AsyncMock()
 
         mock_order_reader.read_by_uuid.return_value = order
         mock_employee_reader.read_by_uuid.return_value = employee
         mock_work_reader.read_by_order_id.return_value = works or []
+        mock_order_part_reader.read_by_order_id.return_value = []
 
         handler = UpdateOrderCommandHandler(
             transaction=mock_transaction,
@@ -793,6 +801,7 @@ class TestCloseOrderPermission:
             order_service=OrderService(),
             employee_reader=mock_employee_reader,
             work_reader=mock_work_reader,
+            order_part_reader=mock_order_part_reader,
         )
         return handler, mock_transaction
 
@@ -900,14 +909,16 @@ class TestGetStatisticsCommandHandler:
                 creator_id=10,
                 assigned_employee_id=20,
                 works_revenue=1000.0,
-                parts_expenses=300.0,
+                parts_revenue=300.0,
+                parts_cost=300.0,
             ),
             OrderStatRow(
                 order_id=2,
                 creator_id=10,
                 assigned_employee_id=20,
                 works_revenue=500.0,
-                parts_expenses=100.0,
+                parts_revenue=100.0,
+                parts_cost=100.0,
             ),
         ]
         handler = self._make_handler(order_rows=rows, employees=[])
@@ -926,14 +937,16 @@ class TestGetStatisticsCommandHandler:
                 creator_id=10,
                 assigned_employee_id=20,
                 works_revenue=1000.0,
-                parts_expenses=200.0,
+                parts_revenue=200.0,
+                parts_cost=200.0,
             ),
             OrderStatRow(
                 order_id=2,
                 creator_id=11,
                 assigned_employee_id=21,
                 works_revenue=500.0,
-                parts_expenses=100.0,
+                parts_revenue=100.0,
+                parts_cost=100.0,
             ),
         ]
         sup = _make_employee(position=EmployeePosition.SUPERVISOR, employee_id=99)
@@ -954,14 +967,16 @@ class TestGetStatisticsCommandHandler:
                 creator_id=10,
                 assigned_employee_id=20,
                 works_revenue=1000.0,
-                parts_expenses=200.0,
+                parts_revenue=200.0,
+                parts_cost=200.0,
             ),
             OrderStatRow(
                 order_id=2,
                 creator_id=11,
                 assigned_employee_id=20,
                 works_revenue=500.0,
-                parts_expenses=100.0,
+                parts_revenue=100.0,
+                parts_cost=100.0,
             ),
         ]
         manager = _make_employee(position=EmployeePosition.MANAGER, employee_id=10)
@@ -982,14 +997,16 @@ class TestGetStatisticsCommandHandler:
                 creator_id=10,
                 assigned_employee_id=20,
                 works_revenue=1000.0,
-                parts_expenses=200.0,
+                parts_revenue=200.0,
+                parts_cost=200.0,
             ),
             OrderStatRow(
                 order_id=2,
                 creator_id=10,
                 assigned_employee_id=21,
                 works_revenue=500.0,
-                parts_expenses=100.0,
+                parts_revenue=100.0,
+                parts_cost=100.0,
             ),
         ]
         master = _make_employee(position=EmployeePosition.MASTER, employee_id=20)
@@ -1010,7 +1027,8 @@ class TestGetStatisticsCommandHandler:
                 creator_id=10,
                 assigned_employee_id=20,
                 works_revenue=2000.0,
-                parts_expenses=500.0,
+                parts_revenue=500.0,
+                parts_cost=500.0,
             ),
         ]
         master = Employee(
