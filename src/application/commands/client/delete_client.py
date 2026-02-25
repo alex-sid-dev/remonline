@@ -34,15 +34,14 @@ class DeleteClientCommandHandler:
 
     async def run(self, data: DeleteClientCommand, current_employee: Employee) -> None:
         client = await ensure_exists(
-            self._client_reader.read_by_uuid, ClientUUID(data.uuid),
+            self._client_reader.read_by_uuid,
+            ClientUUID(data.uuid),
             f"Client with uuid {data.uuid}",
         )
 
         orders = await self._order_reader.read_by_client_id(client.id)
         if orders:
-            raise ConflictError(
-                message="Нельзя удалить клиента: есть связанные заказы"
-            )
+            raise ConflictError(message="Нельзя удалить клиента: есть связанные заказы")
 
         await self._entity_saver.delete(client)
         await self._transaction.commit()

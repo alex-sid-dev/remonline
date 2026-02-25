@@ -44,7 +44,9 @@ class ReadAllEmployeeCommandHandler:
     ) -> PaginatedEmployeeResponse:
         employees, total = await self._employee_reader.read_all_active(data.limit, data.offset)
         return PaginatedEmployeeResponse(
-            items=[ReadEmployeeResponse.model_validate(emp) for emp in employees if emp is not None],
+            items=[
+                ReadEmployeeResponse.model_validate(emp) for emp in employees if emp is not None
+            ],
             total=total,
             limit=data.limit,
             offset=data.offset,

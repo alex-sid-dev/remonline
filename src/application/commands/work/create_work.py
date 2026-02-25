@@ -48,7 +48,8 @@ class CreateWorkCommandHandler:
 
     async def run(self, data: CreateWorkCommand) -> CreateWorkCommandResponse:
         order = await ensure_exists(
-            self._order_reader.read_by_uuid, OrderUUID(data.order_uuid),
+            self._order_reader.read_by_uuid,
+            OrderUUID(data.order_uuid),
             f"Order with uuid {data.order_uuid}",
         )
 

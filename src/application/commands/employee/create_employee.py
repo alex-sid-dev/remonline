@@ -55,7 +55,8 @@ class CreateEmployeeCommandHandler:
             assert_can_assign_supervisor(current_employee)
 
         user = await ensure_exists(
-            self._user_reader.read_by_uuid, UserUUID(data.user_uuid),
+            self._user_reader.read_by_uuid,
+            UserUUID(data.user_uuid),
             f"User with uuid {data.user_uuid}",
         )
 

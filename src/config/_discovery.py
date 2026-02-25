@@ -50,11 +50,7 @@ def discover_functions(
         except Exception:  # noqa: BLE001
             continue
         for name, obj in inspect.getmembers(module, inspect.isfunction):
-            if (
-                obj.__module__ == mod_name
-                and name.startswith(prefix)
-                and name.endswith(suffix)
-            ):
+            if obj.__module__ == mod_name and name.startswith(prefix) and name.endswith(suffix):
                 result.append(obj)
     return result
 

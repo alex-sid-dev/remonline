@@ -48,11 +48,13 @@ class CreateOrderPartCommandHandler:
 
     async def run(self, data: CreateOrderPartCommand) -> CreateOrderPartCommandResponse:
         order = await ensure_exists(
-            self._order_reader.read_by_uuid, OrderUUID(data.order_uuid),
+            self._order_reader.read_by_uuid,
+            OrderUUID(data.order_uuid),
             f"Order with uuid {data.order_uuid}",
         )
         part = await ensure_exists(
-            self._part_reader.read_by_uuid, PartUUID(data.part_uuid),
+            self._part_reader.read_by_uuid,
+            PartUUID(data.part_uuid),
             f"Part with uuid {data.part_uuid}",
         )
 

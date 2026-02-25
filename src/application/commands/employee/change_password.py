@@ -34,7 +34,8 @@ class ChangePasswordCommandHandler:
 
     async def run(self, data: ChangePasswordCommand, current_employee: Employee) -> None:
         target = await ensure_exists(
-            self._employee_reader.read_by_uuid, EmployeeUUID(data.employee_uuid),
+            self._employee_reader.read_by_uuid,
+            EmployeeUUID(data.employee_uuid),
             f"Employee {data.employee_uuid}",
         )
 
@@ -47,7 +48,9 @@ class ChangePasswordCommandHandler:
             raise PermissionDeniedError(message="У вас нет прав на смену пароля.")
 
         user = await ensure_exists(
-            self._user_reader.read_by_id, target.user_id, "Linked user",
+            self._user_reader.read_by_id,
+            target.user_id,
+            "Linked user",
         )
 
         await self._admin_manager.update_password(str(user.uuid), data.new_password)

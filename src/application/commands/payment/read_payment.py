@@ -28,7 +28,8 @@ class ReadPaymentCommandHandler:
         self, data: ReadPaymentCommand, current_employee: Employee
     ) -> ReadPaymentResponse:
         payment = await ensure_exists(
-            self._payment_reader.read_by_uuid, PaymentUUID(data.uuid),
+            self._payment_reader.read_by_uuid,
+            PaymentUUID(data.uuid),
             f"Payment with uuid {data.uuid}",
         )
         return ReadPaymentResponse.model_validate(payment)

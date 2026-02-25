@@ -33,7 +33,8 @@ class GenerateReceiptHtmlCommandHandler:
 
     async def run(self, data: GenerateReceiptHtmlCommand, current_employee: Employee) -> str:
         order = await ensure_exists(
-            self._order_reader.read_by_uuid, OrderUUID(data.uuid),
+            self._order_reader.read_by_uuid,
+            OrderUUID(data.uuid),
             f"Order with uuid {data.uuid}",
         )
 

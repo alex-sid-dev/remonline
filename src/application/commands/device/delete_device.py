@@ -30,7 +30,8 @@ class DeleteDeviceCommandHandler:
 
     async def run(self, data: DeleteDeviceCommand, current_employee: Employee) -> None:
         device = await ensure_exists(
-            self._device_reader.read_by_uuid, DeviceUUID(data.uuid),
+            self._device_reader.read_by_uuid,
+            DeviceUUID(data.uuid),
             f"Device with uuid {data.uuid}",
         )
 

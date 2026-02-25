@@ -34,7 +34,8 @@ class UpdateDeviceTypeCommandHandler:
 
     async def run(self, data: UpdateDeviceTypeCommand, current_employee: Employee) -> None:
         device_type = await ensure_exists(
-            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.uuid),
+            self._device_type_reader.read_by_uuid,
+            DeviceTypeUUID(data.uuid),
             f"Device type with uuid {data.uuid}",
         )
 

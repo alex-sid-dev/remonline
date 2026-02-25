@@ -174,7 +174,8 @@ def setup_exc_handlers(app: FastAPI) -> None:
     # -- Application errors ------------------------------------------------
 
     async def application_error_handler(
-        request: Request, exc: ApplicationError,
+        request: Request,
+        exc: ApplicationError,
     ) -> JSONResponse:
         return await _handle(
             request,
@@ -198,7 +199,12 @@ def setup_exc_handlers(app: FastAPI) -> None:
             _persist: bool = should_persist,
         ) -> JSONResponse:
             return await _handle(
-                request, _code, _msg, type(exc).__name__, exc, persist=_persist,
+                request,
+                _code,
+                _msg,
+                type(exc).__name__,
+                exc,
+                persist=_persist,
             )
 
         app.add_exception_handler(exc_type, _db_handler)
@@ -206,10 +212,15 @@ def setup_exc_handlers(app: FastAPI) -> None:
     # -- Catch-all for truly unexpected errors -----------------------------
 
     async def unhandled_error_handler(
-        request: Request, exc: Exception,
+        request: Request,
+        exc: Exception,
     ) -> JSONResponse:
         return await _handle(
-            request, 500, "Внутренняя ошибка сервера", type(exc).__name__, exc,
+            request,
+            500,
+            "Внутренняя ошибка сервера",
+            type(exc).__name__,
+            exc,
         )
 
     app.add_exception_handler(ApplicationError, application_error_handler)

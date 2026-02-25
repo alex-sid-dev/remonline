@@ -27,7 +27,9 @@ class DeleteBrandCommandHandler:
 
     async def run(self, uuid: UUID, current_employee: Employee) -> None:
         brand = await ensure_exists(
-            self._brand_reader.read_by_uuid, BrandUUID(uuid), f"Brand {uuid}",
+            self._brand_reader.read_by_uuid,
+            BrandUUID(uuid),
+            f"Brand {uuid}",
         )
         if await self._device_reader.exists_by_brand_id(brand.id):
             raise ConflictError(message="Нельзя удалить бренд: есть устройства с этим брендом")

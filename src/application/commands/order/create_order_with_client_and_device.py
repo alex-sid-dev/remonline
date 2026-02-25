@@ -94,7 +94,8 @@ class CreateOrderWithClientAndDeviceCommandHandler:
     async def _resolve_client(self, data: CreateOrderWithClientAndDeviceCommand) -> Client:
         if data.existing_client_uuid:
             return await ensure_exists(
-                self._client_reader.read_by_uuid, ClientUUID(data.existing_client_uuid),
+                self._client_reader.read_by_uuid,
+                ClientUUID(data.existing_client_uuid),
                 f"Client with uuid {data.existing_client_uuid}",
             )
 
@@ -128,11 +129,13 @@ class CreateOrderWithClientAndDeviceCommandHandler:
             )
 
         device_type = await ensure_exists(
-            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.device_type_uuid),
+            self._device_type_reader.read_by_uuid,
+            DeviceTypeUUID(data.device_type_uuid),
             f"Device type with uuid {data.device_type_uuid}",
         )
         brand = await ensure_exists(
-            self._brand_reader.read_by_uuid, BrandUUID(data.device_brand_uuid),
+            self._brand_reader.read_by_uuid,
+            BrandUUID(data.device_brand_uuid),
             f"Brand with uuid {data.device_brand_uuid}",
         )
 

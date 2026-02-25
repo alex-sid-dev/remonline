@@ -26,7 +26,8 @@ class ReadClientCommandHandler:
 
     async def run(self, data: ReadClientCommand, current_employee: Employee) -> ReadClientResponse:
         client = await ensure_exists(
-            self._client_reader.read_by_uuid, ClientUUID(data.uuid),
+            self._client_reader.read_by_uuid,
+            ClientUUID(data.uuid),
             f"Client with uuid {data.uuid}",
         )
         return ReadClientResponse.model_validate(client)

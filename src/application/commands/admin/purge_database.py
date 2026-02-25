@@ -30,9 +30,7 @@ class PurgeDatabaseCommandHandler:
 
     async def run(self, current_employee: Employee) -> dict[str, int]:
         if current_employee.position != EmployeePosition.SUPERVISOR:
-            raise PermissionDeniedError(
-                message="Только супервизор может очищать базу данных."
-            )
+            raise PermissionDeniedError(message="Только супервизор может очищать базу данных.")
 
         deleted: dict[str, int] = {}
 

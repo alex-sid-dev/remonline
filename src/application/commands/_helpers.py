@@ -27,9 +27,7 @@ async def resolve_employee_id(
 ) -> int | None:
     if employee_uuid is None:
         return None
-    emp = await ensure_exists(
-        employee_reader.read_by_uuid, EmployeeUUID(employee_uuid), "Employee"
-    )
+    emp = await ensure_exists(employee_reader.read_by_uuid, EmployeeUUID(employee_uuid), "Employee")
     return emp.id
 
 
@@ -44,9 +42,7 @@ async def resolve_order_creator_id(
             employee_reader.read_by_uuid, EmployeeUUID(manager_uuid), "Employee"
         )
         if manager.position == EmployeePosition.MASTER:
-            raise FieldError(
-                message="Назначить менеджером нельзя сотрудника с ролью мастер."
-            )
+            raise FieldError(message="Назначить менеджером нельзя сотрудника с ролью мастер.")
         creator_id = manager.id
     elif current_employee.position == EmployeePosition.MANAGER:
         creator_id = current_employee.id

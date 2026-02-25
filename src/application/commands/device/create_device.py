@@ -53,15 +53,18 @@ class CreateDeviceCommandHandler:
 
     async def run(self, data: CreateDeviceCommand) -> CreateDeviceCommandResponse:
         client = await ensure_exists(
-            self._client_reader.read_by_uuid, ClientUUID(data.client_uuid),
+            self._client_reader.read_by_uuid,
+            ClientUUID(data.client_uuid),
             f"Client with uuid {data.client_uuid}",
         )
         device_type = await ensure_exists(
-            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.type_uuid),
+            self._device_type_reader.read_by_uuid,
+            DeviceTypeUUID(data.type_uuid),
             f"Device type with uuid {data.type_uuid}",
         )
         brand = await ensure_exists(
-            self._brand_reader.read_by_uuid, BrandUUID(data.brand_uuid),
+            self._brand_reader.read_by_uuid,
+            BrandUUID(data.brand_uuid),
             f"Brand with uuid {data.brand_uuid}",
         )
 

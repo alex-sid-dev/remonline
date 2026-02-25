@@ -39,14 +39,16 @@ class UpdateDeviceCommandHandler:
 
     async def run(self, data: UpdateDeviceCommand, current_employee: Employee) -> None:
         device = await ensure_exists(
-            self._device_reader.read_by_uuid, DeviceUUID(data.uuid),
+            self._device_reader.read_by_uuid,
+            DeviceUUID(data.uuid),
             f"Device with uuid {data.uuid}",
         )
 
         brand_id = None
         if data.brand_uuid is not None:
             brand = await ensure_exists(
-                self._brand_reader.read_by_uuid, BrandUUID(data.brand_uuid),
+                self._brand_reader.read_by_uuid,
+                BrandUUID(data.brand_uuid),
                 f"Brand with uuid {data.brand_uuid}",
             )
             brand_id = brand.id

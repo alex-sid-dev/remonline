@@ -57,11 +57,13 @@ class CreateOrderCommandHandler:
 
     async def run(self, data: CreateOrderCommand, current_employee) -> CreateOrderCommandResponse:
         client = await ensure_exists(
-            self._client_reader.read_by_uuid, ClientUUID(data.client_uuid),
+            self._client_reader.read_by_uuid,
+            ClientUUID(data.client_uuid),
             f"Client with uuid {data.client_uuid}",
         )
         device = await ensure_exists(
-            self._device_reader.read_by_uuid, DeviceUUID(data.device_uuid),
+            self._device_reader.read_by_uuid,
+            DeviceUUID(data.device_uuid),
             f"Device with uuid {data.device_uuid}",
         )
 

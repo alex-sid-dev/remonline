@@ -40,7 +40,8 @@ class UpdateWorkCommandHandler:
 
     async def run(self, data: UpdateWorkCommand, current_employee: Employee) -> None:
         work = await ensure_exists(
-            self._work_reader.read_by_uuid, WorkUUID(data.uuid),
+            self._work_reader.read_by_uuid,
+            WorkUUID(data.uuid),
             f"Work with uuid {data.uuid}",
         )
 

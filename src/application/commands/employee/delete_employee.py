@@ -30,7 +30,8 @@ class DeleteEmployeeCommandHandler:
 
     async def run(self, data: DeleteEmployeeCommand, current_employee: Employee) -> None:
         employee = await ensure_exists(
-            self._employee_reader.read_by_uuid, EmployeeUUID(data.uuid),
+            self._employee_reader.read_by_uuid,
+            EmployeeUUID(data.uuid),
             f"Employee with uuid {data.uuid}",
         )
 

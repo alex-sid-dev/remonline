@@ -28,7 +28,8 @@ class ReadDeviceTypeCommandHandler:
         self, data: ReadDeviceTypeCommand, current_employee: Employee
     ) -> ReadDeviceTypeResponse:
         device_type = await ensure_exists(
-            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.uuid),
+            self._device_type_reader.read_by_uuid,
+            DeviceTypeUUID(data.uuid),
             f"DeviceType with uuid {data.uuid}",
         )
         return ReadDeviceTypeResponse.model_validate(device_type)

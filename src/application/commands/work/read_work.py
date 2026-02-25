@@ -26,7 +26,8 @@ class ReadWorkCommandHandler:
 
     async def run(self, data: ReadWorkCommand, current_employee: Employee) -> ReadWorkResponse:
         work = await ensure_exists(
-            self._work_reader.read_by_uuid, WorkUUID(data.uuid),
+            self._work_reader.read_by_uuid,
+            WorkUUID(data.uuid),
             f"Work with uuid {data.uuid}",
         )
         return ReadWorkResponse.model_validate(work)

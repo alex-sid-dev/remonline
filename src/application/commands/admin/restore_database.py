@@ -40,7 +40,10 @@ class RestoreDatabaseCommandHandler:
             "CREATE SCHEMA public;\n"
         )
         reset_process = await asyncio.create_subprocess_exec(
-            "psql", dsn, "-c", reset_sql,
+            "psql",
+            dsn,
+            "-c",
+            reset_sql,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -52,18 +55,22 @@ class RestoreDatabaseCommandHandler:
 
         logger.info("Restoring database from backup", size=len(sql_data))
         restore_process = await asyncio.create_subprocess_exec(
-            "psql", dsn,
+            "psql",
+            dsn,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         _, restore_err = await asyncio.wait_for(
-            restore_process.communicate(input=sql_data), timeout=120,
+            restore_process.communicate(input=sql_data),
+            timeout=120,
         )
 
         if restore_process.returncode != 0:
             err_msg = restore_err.decode(errors="replace")
-            logger.error("psql restore failed", returncode=restore_process.returncode, stderr=err_msg)
+            logger.error(
+                "psql restore failed", returncode=restore_process.returncode, stderr=err_msg
+            )
             raise RuntimeError(f"Database restore failed: {err_msg}")
 
         logger.info("Database restored successfully")

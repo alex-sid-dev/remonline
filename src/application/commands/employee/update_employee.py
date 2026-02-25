@@ -47,7 +47,9 @@ class UpdateEmployeeCommandHandler:
             assert_can_change_salary(current_employee)
 
         employee_to_update = await ensure_exists(
-            self._employee_reader.read_by_uuid, EmployeeUUID(data.uuid), "Employee",
+            self._employee_reader.read_by_uuid,
+            EmployeeUUID(data.uuid),
+            "Employee",
         )
 
         assert_can_modify_target(current_employee, employee_to_update)

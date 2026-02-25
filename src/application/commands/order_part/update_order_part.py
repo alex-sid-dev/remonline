@@ -38,7 +38,8 @@ class UpdateOrderPartCommandHandler:
 
     async def run(self, data: UpdateOrderPartCommand, current_employee: Employee) -> None:
         order_part = await ensure_exists(
-            self._order_part_reader.read_by_uuid, OrderPartUUID(data.uuid),
+            self._order_part_reader.read_by_uuid,
+            OrderPartUUID(data.uuid),
             f"OrderPart with uuid {data.uuid}",
         )
 

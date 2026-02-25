@@ -30,7 +30,8 @@ class DeletePaymentCommandHandler:
 
     async def run(self, data: DeletePaymentCommand, current_employee: Employee) -> None:
         payment = await ensure_exists(
-            self._payment_reader.read_by_uuid, PaymentUUID(data.uuid),
+            self._payment_reader.read_by_uuid,
+            PaymentUUID(data.uuid),
             f"Payment with uuid {data.uuid}",
         )
 

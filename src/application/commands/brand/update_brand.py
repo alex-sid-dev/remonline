@@ -32,7 +32,9 @@ class UpdateBrandCommandHandler:
 
     async def run(self, data: UpdateBrandCommand, current_employee: Employee) -> None:
         brand = await ensure_exists(
-            self._brand_reader.read_by_uuid, BrandUUID(data.uuid), f"Brand {data.uuid}",
+            self._brand_reader.read_by_uuid,
+            BrandUUID(data.uuid),
+            f"Brand {data.uuid}",
         )
         self._brand_service.update_brand(brand, name=data.name, is_active=data.is_active)
         await self._transaction.commit()

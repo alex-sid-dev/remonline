@@ -26,7 +26,8 @@ class ReadDeviceCommandHandler:
 
     async def run(self, data: ReadDeviceCommand, current_employee: Employee) -> ReadDeviceResponse:
         device = await ensure_exists(
-            self._device_reader.read_by_uuid, DeviceUUID(data.uuid),
+            self._device_reader.read_by_uuid,
+            DeviceUUID(data.uuid),
             f"Device with uuid {data.uuid}",
         )
         return ReadDeviceResponse.from_entity(device)

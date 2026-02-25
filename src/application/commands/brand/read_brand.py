@@ -24,6 +24,8 @@ class ReadBrandCommandHandler:
 
     async def run(self, data: ReadBrandCommand, current_employee: Employee) -> ReadBrandResponse:
         brand = await ensure_exists(
-            self._brand_reader.read_by_uuid, BrandUUID(data.uuid), f"Brand {data.uuid}",
+            self._brand_reader.read_by_uuid,
+            BrandUUID(data.uuid),
+            f"Brand {data.uuid}",
         )
         return ReadBrandResponse.model_validate(brand)

@@ -26,7 +26,8 @@ class ReadPartCommandHandler:
 
     async def run(self, data: ReadPartCommand, current_employee: Employee) -> ReadPartResponse:
         part = await ensure_exists(
-            self._part_reader.read_by_uuid, PartUUID(data.uuid),
+            self._part_reader.read_by_uuid,
+            PartUUID(data.uuid),
             f"Part with uuid {data.uuid}",
         )
         return ReadPartResponse.model_validate(part)

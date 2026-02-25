@@ -129,7 +129,8 @@ class ReadOrderCommandHandler:
 
     async def run(self, data: ReadOrderCommand, current_employee: Employee) -> ReadOrderOneResponse:
         order = await ensure_exists(
-            self._order_reader.read_by_uuid, OrderUUID(data.uuid),
+            self._order_reader.read_by_uuid,
+            OrderUUID(data.uuid),
             f"Order with uuid {data.uuid}",
         )
 

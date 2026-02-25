@@ -31,7 +31,10 @@ class BackupDatabaseCommandHandler:
         )
 
         process = await asyncio.create_subprocess_exec(
-            "pg_dump", "--no-owner", "--no-acl", dsn,
+            "pg_dump",
+            "--no-owner",
+            "--no-acl",
+            dsn,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
