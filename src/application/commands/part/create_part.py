@@ -3,7 +3,6 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.part_reader import PartReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.parts.services import PartService
@@ -11,12 +10,12 @@ from src.entities.parts.services import PartService
 logger = structlog.get_logger("create_part").bind(service="part")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreatePartCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreatePartCommand:
     name: str
     sku: str | None = None
@@ -24,7 +23,7 @@ class CreatePartCommand:
     stock_qty: int | None = None
 
 
-class CreatePartCommandHandler(BaseCommandHandler):
+class CreatePartCommandHandler:
     def __init__(
         self,
         transaction: Transaction,

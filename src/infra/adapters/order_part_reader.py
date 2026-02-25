@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from src.application.ports.order_part_reader import OrderPartReader
 from src.entities.order_parts.models import OrderPart, OrderPartID, OrderPartUUID
 from src.entities.orders.models import OrderID
+from src.entities.parts.models import PartID
 
 
 class OrderPartReaderAdapter(OrderPartReader):
@@ -34,3 +35,12 @@ class OrderPartReaderAdapter(OrderPartReader):
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all())
+
+    async def read_by_order_and_part(
+        self, order_id: OrderID, part_id: PartID
+    ) -> OrderPart | None:
+        stmt = select(OrderPart).where(
+            OrderPart.order_id == order_id, OrderPart.part_id == part_id
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()

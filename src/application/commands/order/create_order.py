@@ -3,8 +3,11 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import (
+    ensure_exists,
+    resolve_employee_id,
+    resolve_order_creator_id,
+)
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.device_reader import DeviceReader
 from src.application.ports.employee_reader import EmployeeReader
@@ -12,18 +15,17 @@ from src.application.ports.order_reader import OrderReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.clients.models import ClientUUID
 from src.entities.devices.models import DeviceUUID
-from src.entities.employees.models import EmployeePosition, EmployeeUUID
 from src.entities.orders.services import OrderService
 
 logger = structlog.get_logger("create_order").bind(service="order")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderCommand:
     client_uuid: UUID
     device_uuid: UUID
@@ -34,7 +36,7 @@ class CreateOrderCommand:
     price: float | None = None
 
 
-class CreateOrderCommandHandler(BaseCommandHandler):
+class CreateOrderCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -54,43 +56,21 @@ class CreateOrderCommandHandler(BaseCommandHandler):
         self._employee_reader = employee_reader
 
     async def run(self, data: CreateOrderCommand, current_employee) -> CreateOrderCommandResponse:
-        client = await self._client_reader.read_by_uuid(ClientUUID(data.client_uuid))
-        if not client:
-            raise EntityNotFoundError(message=f"Client with uuid {data.client_uuid} not found")
+        client = await ensure_exists(
+            self._client_reader.read_by_uuid, ClientUUID(data.client_uuid),
+            f"Client with uuid {data.client_uuid}",
+        )
+        device = await ensure_exists(
+            self._device_reader.read_by_uuid, DeviceUUID(data.device_uuid),
+            f"Device with uuid {data.device_uuid}",
+        )
 
-        device = await self._device_reader.read_by_uuid(DeviceUUID(data.device_uuid))
-        if not device:
-            raise EntityNotFoundError(message=f"Device with uuid {data.device_uuid} not found")
-
-        assigned_employee_id = None
-        if data.assigned_employee_uuid:
-            assigned_employee = await self._employee_reader.read_by_uuid(
-                EmployeeUUID(data.assigned_employee_uuid)
-            )
-            if not assigned_employee:
-                raise EntityNotFoundError(
-                    message=f"Employee with uuid {data.assigned_employee_uuid} not found"
-                )
-            assigned_employee_id = assigned_employee.id
-
-        # Определяем менеджера (creator_id):
-        # - если передан manager_uuid — используем его; назначить менеджером заказа нельзя только мастера;
-        # - если заказ создаёт менеджер — он сам становится менеджером заказа;
-        # - иначе (админ/супервизор/мастер) — creator_id = current_employee.id.
-        creator_id = current_employee.id
-        if data.manager_uuid:
-            manager = await self._employee_reader.read_by_uuid(EmployeeUUID(data.manager_uuid))
-            if not manager:
-                raise EntityNotFoundError(
-                    message=f"Employee with uuid {data.manager_uuid} not found"
-                )
-            if manager.position == EmployeePosition.MASTER:
-                raise EntityNotFoundError(
-                    message="Назначить менеджером нельзя сотрудника с ролью мастер."
-                )
-            creator_id = manager.id
-        elif getattr(current_employee, "position", None) == EmployeePosition.MANAGER:
-            creator_id = current_employee.id
+        assigned_employee_id = await resolve_employee_id(
+            self._employee_reader, data.assigned_employee_uuid
+        )
+        creator_id = await resolve_order_creator_id(
+            self._employee_reader, data.manager_uuid, current_employee
+        )
 
         order = self._order_service.create_order(
             client_id=client.id,

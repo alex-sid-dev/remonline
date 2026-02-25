@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.statistics_reader import OrderStatRow, StatisticsReader
 from src.entities.employees.enum import EmployeePosition
@@ -11,9 +11,8 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("get_statistics").bind(service="statistics")
 
 
-@dataclass
-class EmployeeStatisticsResponse:
-    uuid: str
+class EmployeeStatisticsResponse(BaseModel):
+    uuid: UUID
     full_name: str
     position: str
     orders_count: int
@@ -26,8 +25,7 @@ class EmployeeStatisticsResponse:
     total_salary: float
 
 
-@dataclass
-class StatisticsResponse:
+class StatisticsResponse(BaseModel):
     total_orders: int
     total_revenue: float
     total_expenses: float
@@ -35,7 +33,7 @@ class StatisticsResponse:
     employees: list[EmployeeStatisticsResponse]
 
 
-class GetStatisticsCommandHandler(BaseCommandHandler):
+class GetStatisticsCommandHandler:
     def __init__(
         self,
         statistics_reader: StatisticsReader,
@@ -67,7 +65,7 @@ class GetStatisticsCommandHandler(BaseCommandHandler):
 
             employee_stats.append(
                 EmployeeStatisticsResponse(
-                    uuid=str(emp.uuid),
+                    uuid=emp.uuid,
                     full_name=emp.full_name,
                     position=emp.position.value
                     if isinstance(emp.position, EmployeePosition)

@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.transaction import Transaction
 from src.entities.clients.models import ClientUUID
@@ -14,7 +13,7 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("update_client").bind(service="client")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UpdateClientCommand:
     uuid: UUID
     full_name: str | None = None
@@ -26,7 +25,7 @@ class UpdateClientCommand:
     is_active: bool | None = None
 
 
-class UpdateClientCommandHandler(BaseCommandHandler):
+class UpdateClientCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -38,9 +37,10 @@ class UpdateClientCommandHandler(BaseCommandHandler):
         self._client_service = client_service
 
     async def run(self, data: UpdateClientCommand, current_employee: Employee) -> None:
-        client = await self._client_reader.read_by_uuid(ClientUUID(data.uuid))
-        if not client:
-            raise EntityNotFoundError(f"Client with uuid {data.uuid} not found")
+        client = await ensure_exists(
+            self._client_reader.read_by_uuid, ClientUUID(data.uuid),
+            f"Client with uuid {data.uuid}",
+        )
 
         self._client_service.update_client(
             client=client,

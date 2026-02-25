@@ -11,26 +11,33 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from src.config.db_tables import map_tables
-from src.config.exc_handlers import setup_exc_handlers
+from src.config.exc_handlers import ERROR_LOG_WRITER_STATE_KEY, setup_exc_handlers
 from src.config.ioc.di import get_providers
 from src.config.logging import setup_logging
-from src.config.rate_limit import limiter
+from src.config.rate_limit import create_limiter
 from src.config.settings import Settings
+from src.application.ports.error_log_writer import ErrorLogWriter
 from src.make_supervisor import make_supervisor
 from src.presentation.api.rest.v1.routers import api_v1_router
 
-setup_logging()
+settings = Settings()
+setup_logging(level=settings.app.log_level, debug=settings.app.debug)
 logger = structlog.get_logger(__name__)
 
-settings = Settings()
 container: AsyncContainer = make_async_container(*get_providers(settings))
+limiter = create_limiter(settings.app.rate_limit_default)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(fast_app: FastAPI) -> AsyncIterator[None]:
     """
     Asynchronous context manager for managing the lifespan of the FastAPI application.
     """
+    setattr(
+        fast_app.state,
+        ERROR_LOG_WRITER_STATE_KEY,
+        await container.get(ErrorLogWriter),
+    )
     await make_supervisor(container)
     logger.info("Starting application...")
     yield
@@ -70,7 +77,7 @@ def create_app() -> FastAPI:
     fast_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     setup_dishka(container, fast_app)
-    setup_exc_handlers(fast_app, container)
+    setup_exc_handlers(fast_app)
     fast_app.include_router(api_v1_router, prefix="/api")
 
     return fast_app

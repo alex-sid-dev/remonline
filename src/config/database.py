@@ -34,7 +34,16 @@ class DatabaseSettings(BaseModel):
 
     @property
     def database_url(self) -> str:
-        """
-        Constructs the PostgreSQL database URL.
-        """
-        return f"{self.postgres_scheme}://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        """Constructs the PostgreSQL database URL."""
+        return (
+            f"{self.postgres_scheme}://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
+    @property
+    def database_url_safe(self) -> str:
+        """Database URL with the password masked (safe for logging)."""
+        return (
+            f"{self.postgres_scheme}://{self.postgres_user}:***"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )

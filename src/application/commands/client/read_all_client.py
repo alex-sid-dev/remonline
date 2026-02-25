@@ -1,53 +1,41 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel, ConfigDict
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.client_reader import ClientReader
-from src.entities.clients.models import Client
 from src.entities.employees.models import Employee
 
 logger = structlog.get_logger("read_all_client").bind(service="client")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllClientCommand:
     limit: int = 200
     offset: int = 0
 
 
-@dataclass
-class ReadClientResponse:
-    uuid: str
+class ReadClientResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: UUID
     full_name: str
     phone: str
-    email: str | None
-    telegram_nick: str | None
-    comment: str | None
-    address: str | None
-
-    @classmethod
-    def from_entity(cls, entity: Client) -> "ReadClientResponse":
-        return cls(
-            uuid=str(entity.uuid),
-            full_name=entity.full_name,
-            phone=entity.phone,
-            email=entity.email,
-            telegram_nick=entity.telegram_nick,
-            comment=entity.comment,
-            address=entity.address,
-        )
+    email: str | None = None
+    telegram_nick: str | None = None
+    comment: str | None = None
+    address: str | None = None
 
 
-@dataclass
-class PaginatedClientResponse:
+class PaginatedClientResponse(BaseModel):
     items: list[ReadClientResponse]
     total: int
     limit: int
     offset: int
 
 
-class ReadAllClientCommandHandler(BaseCommandHandler):
+class ReadAllClientCommandHandler:
     def __init__(self, client_reader: ClientReader) -> None:
         self._client_reader = client_reader
 
@@ -56,7 +44,7 @@ class ReadAllClientCommandHandler(BaseCommandHandler):
     ) -> PaginatedClientResponse:
         clients, total = await self._client_reader.read_all_active(data.limit, data.offset)
         return PaginatedClientResponse(
-            items=[ReadClientResponse.from_entity(c) for c in clients],
+            items=[ReadClientResponse.model_validate(c) for c in clients],
             total=total,
             limit=data.limit,
             offset=data.offset,

@@ -1,5 +1,6 @@
 from dishka import Provider, Scope, provide
 
+from src.config.database import DatabaseSettings
 from src.config.settings import Settings
 
 
@@ -13,3 +14,7 @@ class SettingsProvider(Provider):
     @provide(scope=Scope.APP)
     def get_settings(self) -> Settings:
         return self._settings
+
+    @provide(scope=Scope.APP)
+    def get_database_settings(self) -> DatabaseSettings:
+        return self._settings.database

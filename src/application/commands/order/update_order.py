@@ -3,15 +3,15 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
+from src.application.commands._helpers import ensure_exists, resolve_employee_id
+from src.application.errors._base import PermissionDeniedError
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.order_part_reader import OrderPartReader
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.transaction import Transaction
 from src.application.ports.work_reader import WorkReader
 from src.entities.employees.enum import EmployeePosition
-from src.entities.employees.models import Employee, EmployeeID, EmployeeUUID
+from src.entities.employees.models import Employee, EmployeeID
 from src.entities.orders.enum import OrderStatus
 from src.entities.orders.models import OrderUUID
 from src.entities.orders.services import OrderService
@@ -19,18 +19,17 @@ from src.entities.orders.services import OrderService
 logger = structlog.get_logger("update_order").bind(service="order")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UpdateOrderCommand:
     uuid: UUID
     assigned_employee_uuid: UUID | None = None
     creator_uuid: UUID | None = None
     status: str | None = None
     problem_description: str | None = None
-    price: float | None = None
     is_active: bool | None = None
 
 
-class UpdateOrderCommandHandler(BaseCommandHandler):
+class UpdateOrderCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -48,9 +47,10 @@ class UpdateOrderCommandHandler(BaseCommandHandler):
         self._order_part_reader = order_part_reader
 
     async def run(self, data: UpdateOrderCommand, current_employee: Employee) -> None:
-        order = await self._order_reader.read_by_uuid(OrderUUID(data.uuid))
-        if not order:
-            raise EntityNotFoundError(message=f"Order with uuid {data.uuid} not found")
+        order = await ensure_exists(
+            self._order_reader.read_by_uuid, OrderUUID(data.uuid),
+            f"Order with uuid {data.uuid}",
+        )
 
         if (
             data.status == OrderStatus.CLOSED.value
@@ -58,27 +58,11 @@ class UpdateOrderCommandHandler(BaseCommandHandler):
         ):
             raise PermissionDeniedError(message="Только супервайзер может закрывать заказы")
 
-        assigned_employee_id = None
-        if data.assigned_employee_uuid is not None:
-            emp = await self._employee_reader.read_by_uuid(
-                EmployeeUUID(data.assigned_employee_uuid)
-            )
-            if not emp:
-                raise EntityNotFoundError(
-                    message=f"Employee with uuid {data.assigned_employee_uuid} not found"
-                )
-            assigned_employee_id = emp.id
+        assigned_employee_id = await resolve_employee_id(
+            self._employee_reader, data.assigned_employee_uuid
+        )
+        creator_id = await resolve_employee_id(self._employee_reader, data.creator_uuid)
 
-        creator_id = None
-        if data.creator_uuid is not None:
-            emp = await self._employee_reader.read_by_uuid(EmployeeUUID(data.creator_uuid))
-            if not emp:
-                raise EntityNotFoundError(
-                    message=f"Employee with uuid {data.creator_uuid} not found"
-                )
-            creator_id = emp.id
-
-        # Цена всегда пересчитывается на бэкенде по работам и запчастям
         works = await self._work_reader.read_by_order_id(order.id)
         parts = await self._order_part_reader.read_by_order_id(order.id)
         calculated_price = self._order_service.calculate_total_price_from_works_parts(works, parts)
@@ -96,7 +80,6 @@ class UpdateOrderCommandHandler(BaseCommandHandler):
         )
 
         if assigned_employee_id is not None:
-            works = await self._work_reader.read_by_order_id(order.id)
             updated_works = self._order_service.assign_engineer_to_unassigned_works(
                 works, EmployeeID(assigned_employee_id)
             )

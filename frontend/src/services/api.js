@@ -352,5 +352,25 @@ export async function getStatistics() {
   return response.data;
 }
 
+// Admin (supervisor only)
+export async function purgeDatabase() {
+  const response = await api.delete('/admin/purge');
+  return response.data;
+}
+
+export async function backupDatabase() {
+  const response = await api.get('/admin/backup', { responseType: 'blob' });
+  return response.data;
+}
+
+export async function restoreDatabase(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/admin/restore', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+}
+
 export default api;
 

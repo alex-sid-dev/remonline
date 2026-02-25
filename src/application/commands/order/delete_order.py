@@ -3,23 +3,24 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
+from src.application.commands._stock_helpers import increase_stock
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.part_reader import PartReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.employees.models import Employee
 from src.entities.orders.models import OrderUUID
+from src.entities.parts.models import PartID
 
 logger = structlog.get_logger("delete_order").bind(service="order")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class DeleteOrderCommand:
     uuid: UUID
 
 
-class DeleteOrderCommandHandler(BaseCommandHandler):
+class DeleteOrderCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -33,25 +34,20 @@ class DeleteOrderCommandHandler(BaseCommandHandler):
         self._part_reader = part_reader
 
     async def run(self, data: DeleteOrderCommand, current_employee: Employee) -> None:
-        order = await self._order_reader.read_by_uuid(OrderUUID(data.uuid))
-        if not order:
-            raise EntityNotFoundError(f"Order with uuid {data.uuid} not found")
+        order = await ensure_exists(
+            self._order_reader.read_by_uuid, OrderUUID(data.uuid),
+            f"Order with uuid {data.uuid}",
+        )
 
-        # Сохраняем связаное устройство, чтобы удалить его после удаления заказа.
         device = getattr(order, "device", None)
-
-        # Вернуть на склад все запчасти, использованные в заказе.
-        from src.entities.parts.models import PartID
 
         for order_part in getattr(order, "parts", []) or []:
             part = await self._part_reader.read_by_id(PartID(order_part.part_id))  # type: ignore[arg-type]
-            if part and part.stock_qty is not None:
-                part.stock_qty = (part.stock_qty or 0) + (order_part.qty or 0)
+            if part:
+                increase_stock(part, order_part.qty or 0)
 
-        # Удалить сам заказ (каскадом удалятся работы, платежи и привязки запчастей).
         await self._entity_saver.delete(order)
 
-        # Удалить устройство, привязанное к заказу.
         if device is not None:
             await self._entity_saver.delete(device)
 

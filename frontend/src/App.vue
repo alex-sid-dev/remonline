@@ -107,6 +107,15 @@
           >
             <button class="btn btn-ghost" type="button" @click="closeEmployeeForm">← Назад</button>
             <button
+              v-if="userRole === ROLES.SUPERVISOR && editingEmployee.uuid && editingEmployee.position === ROLES.SUPERVISOR"
+              class="btn btn-secondary"
+              type="button"
+              :disabled="backupInProgress"
+              @click="handleBackupDatabase"
+            >
+              {{ backupInProgress ? 'Архивация…' : 'Архивация' }}
+            </button>
+            <button
               v-if="userRole === ROLES.SUPERVISOR"
               class="btn btn-secondary"
               type="button"
@@ -117,6 +126,31 @@
             <h1 class="order-detail-title">
               {{ editingEmployee.uuid ? editingEmployee.full_name : 'Новый сотрудник' }}
             </h1>
+            <button
+              v-if="userRole === ROLES.SUPERVISOR && editingEmployee.uuid && editingEmployee.position === ROLES.SUPERVISOR"
+              class="btn btn-secondary"
+              type="button"
+              :disabled="restoreInProgress"
+              @click="$refs.restoreFileInput.click()"
+            >
+              {{ restoreInProgress ? 'Восстановление…' : 'Загрузить БД из архива' }}
+            </button>
+            <input
+              ref="restoreFileInput"
+              type="file"
+              accept=".sql,.gz,.sql.gz"
+              style="display: none"
+              @change="handleRestoreDatabase"
+            >
+            <button
+              v-if="userRole === ROLES.SUPERVISOR && editingEmployee.uuid && editingEmployee.position === ROLES.SUPERVISOR"
+              class="btn btn-primary btn-danger"
+              type="button"
+              :disabled="purgeInProgress"
+              @click="handlePurgeDatabase"
+            >
+              {{ purgeInProgress ? 'Очистка…' : 'Очистить БД' }}
+            </button>
           </header>
 
       <div class="table-wrapper">
@@ -304,6 +338,9 @@ import {
   deleteDeviceType,
   updateOrder,
   updatePart,
+  purgeDatabase,
+  backupDatabase,
+  restoreDatabase,
 } from './services/api';
 
 const {
@@ -375,6 +412,10 @@ const brandModalOpen = ref(false);
 const editingBrand = ref(null);
 const deviceTypeModalOpen = ref(false);
 const editingDeviceType = ref(null);
+const purgeInProgress = ref(false);
+const backupInProgress = ref(false);
+const restoreInProgress = ref(false);
+const restoreFileInput = ref(null);
 
 const currentCount = computed(() => {
   switch (activeTab.value) {
@@ -494,6 +535,60 @@ function handleEmployeeSaved(updated) {
 function handleEmployeeDeleted(updated) {
   employees.value = updated;
   editingEmployee.value = null;
+}
+
+async function handlePurgeDatabase() {
+  if (!window.confirm('Вы уверены? Все данные кроме учётной записи супервизора будут удалены. Это действие невозможно отменить!')) return;
+  purgeInProgress.value = true;
+  try {
+    await purgeDatabase();
+    window.alert('База данных успешно очищена.');
+    await loadData();
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Ошибка очистки базы данных.');
+  } finally {
+    purgeInProgress.value = false;
+  }
+}
+
+async function handleBackupDatabase() {
+  backupInProgress.value = true;
+  try {
+    const blob = await backupDatabase();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `remonline_backup_${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.sql.gz`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Ошибка создания резервной копии.');
+  } finally {
+    backupInProgress.value = false;
+  }
+}
+
+async function handleRestoreDatabase(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  event.target.value = '';
+
+  if (!window.confirm(
+    'Вы уверены? Текущая база данных будет полностью заменена данными из архива. Это действие невозможно отменить!'
+  )) return;
+
+  restoreInProgress.value = true;
+  try {
+    await restoreDatabase(file);
+    window.alert('База данных успешно восстановлена из архива.');
+    await loadData();
+  } catch (e) {
+    loadError.value = extractErrorMessage(e, 'Ошибка восстановления базы данных из архива.');
+  } finally {
+    restoreInProgress.value = false;
+  }
 }
 
 function handlePartsUpdate(updated) {

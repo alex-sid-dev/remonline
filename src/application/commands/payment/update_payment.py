@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.payment_reader import PaymentReader
 from src.application.ports.transaction import Transaction
 from src.entities.employees.models import Employee, EmployeeID
@@ -14,7 +13,7 @@ from src.entities.payments.services import PaymentService
 logger = structlog.get_logger("update_payment").bind(service="payment")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UpdatePaymentCommand:
     uuid: UUID
     amount: float | None = None
@@ -23,7 +22,7 @@ class UpdatePaymentCommand:
     employee_id: int | None = None
 
 
-class UpdatePaymentCommandHandler(BaseCommandHandler):
+class UpdatePaymentCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -35,9 +34,10 @@ class UpdatePaymentCommandHandler(BaseCommandHandler):
         self._payment_service = payment_service
 
     async def run(self, data: UpdatePaymentCommand, current_employee: Employee) -> None:
-        payment = await self._payment_reader.read_by_uuid(PaymentUUID(data.uuid))
-        if not payment:
-            raise EntityNotFoundError(f"Payment with uuid {data.uuid} not found")
+        payment = await ensure_exists(
+            self._payment_reader.read_by_uuid, PaymentUUID(data.uuid),
+            f"Payment with uuid {data.uuid}",
+        )
 
         self._payment_service.update_payment(
             payment=payment,

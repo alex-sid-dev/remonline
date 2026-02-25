@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.employees.models import Employee, EmployeeID
@@ -14,18 +13,18 @@ from src.entities.orders.models import OrderID, OrderUUID
 logger = structlog.get_logger("create_order_comment").bind(service="order_comment")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderCommentCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderCommentCommand:
     order_uuid: UUID
     text: str
 
 
-class CreateOrderCommentCommandHandler(BaseCommandHandler):
+class CreateOrderCommentCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -41,9 +40,10 @@ class CreateOrderCommentCommandHandler(BaseCommandHandler):
     async def run(
         self, data: CreateOrderCommentCommand, current_employee: Employee
     ) -> CreateOrderCommentCommandResponse:
-        order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
-        if not order:
-            raise EntityNotFoundError(message=f"Order with uuid {data.order_uuid} not found")
+        order = await ensure_exists(
+            self._order_reader.read_by_uuid, OrderUUID(data.order_uuid),
+            f"Order with uuid {data.order_uuid}",
+        )
 
         comment = self._order_comment_service.create_order_comment(
             order_id=OrderID(order.id),

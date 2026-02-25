@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.order_reader import OrderReader
 from src.entities.employees.models import Employee
 from src.entities.orders.models import Order
@@ -11,26 +12,25 @@ from src.entities.orders.models import Order
 logger = structlog.get_logger("read_all_order").bind(service="order")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllOrderCommand:
     limit: int = 200
     offset: int = 0
 
 
-@dataclass
-class ReadOrderResponse:
+class ReadOrderResponse(BaseModel):
     id: int
-    uuid: str
+    uuid: UUID
     client_name: str
     client_phone: str
     device_label: str
     creator_name: str
     assigned_employee_name: str
     status: str
-    problem_description: str | None
-    price: float | None
-    created_at: datetime | None
-    updated_at: datetime | None
+    problem_description: str | None = None
+    price: float | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     @classmethod
     def from_entity(cls, entity: Order) -> "ReadOrderResponse":
@@ -48,7 +48,7 @@ class ReadOrderResponse:
 
         return cls(
             id=entity.id,
-            uuid=str(entity.uuid),
+            uuid=entity.uuid,
             client_name=client.full_name if client else "—",
             client_phone=client.phone if client else "—",
             device_label=device_label,
@@ -62,15 +62,14 @@ class ReadOrderResponse:
         )
 
 
-@dataclass
-class PaginatedOrderResponse:
+class PaginatedOrderResponse(BaseModel):
     items: list[ReadOrderResponse]
     total: int
     limit: int
     offset: int
 
 
-class ReadAllOrderCommandHandler(BaseCommandHandler):
+class ReadAllOrderCommandHandler:
     def __init__(self, order_reader: OrderReader) -> None:
         self._order_reader = order_reader
 

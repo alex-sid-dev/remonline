@@ -6,8 +6,12 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import ConflictError, EntityNotFoundError, FieldError
+from src.application.commands._helpers import (
+    ensure_exists,
+    resolve_employee_id,
+    resolve_order_creator_id,
+)
+from src.application.errors._base import ConflictError, FieldError
 from src.application.ports.brand_reader import BrandReader
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.device_type_reader import DeviceTypeReader
@@ -18,8 +22,7 @@ from src.entities.clients.models import ClientUUID
 from src.entities.clients.services import ClientService
 from src.entities.device_types.models import DeviceTypeUUID
 from src.entities.devices.services import DeviceService
-from src.entities.employees.enum import EmployeePosition
-from src.entities.employees.models import Employee, EmployeeUUID
+from src.entities.employees.models import Employee
 from src.entities.orders.models import Order
 from src.entities.orders.services import OrderService
 
@@ -30,14 +33,14 @@ if TYPE_CHECKING:
 logger = structlog.get_logger("create_order_with_client_and_device").bind(service="order")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderWithClientAndDeviceCommandResponse:
     order_uuid: UUID
     client_uuid: UUID
     device_uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderWithClientAndDeviceCommand:
     # Существующий клиент (если выбран по поиску)
     existing_client_uuid: UUID | None = None
@@ -51,7 +54,7 @@ class CreateOrderWithClientAndDeviceCommand:
     client_address: str | None = None
 
     # Данные устройства (всегда создаём новое устройство для заказа)
-    device_type_uuid: UUID = None  # type: ignore[assignment]
+    device_type_uuid: UUID | None = None
     device_brand_uuid: UUID | None = None
     device_model: str = ""
     device_serial_number: str | None = None
@@ -65,7 +68,7 @@ class CreateOrderWithClientAndDeviceCommand:
     price: float | None = None
 
 
-class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
+class CreateOrderWithClientAndDeviceCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -89,22 +92,17 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
         self._employee_reader = employee_reader
 
     async def _resolve_client(self, data: CreateOrderWithClientAndDeviceCommand) -> Client:
-        # 1) Если пришёл existing_client_uuid — просто валидируем его наличие и используем
         if data.existing_client_uuid:
-            client = await self._client_reader.read_by_uuid(ClientUUID(data.existing_client_uuid))
-            if not client:
-                raise EntityNotFoundError(
-                    message=f"Client with uuid {data.existing_client_uuid} not found"
-                )
-            return client
+            return await ensure_exists(
+                self._client_reader.read_by_uuid, ClientUUID(data.existing_client_uuid),
+                f"Client with uuid {data.existing_client_uuid}",
+            )
 
-        # 2) Иначе создаём нового клиента. Требуем минимум ФИО и телефон.
         if not data.client_full_name or not data.client_phone:
             raise FieldError(message="Для создания нового клиента необходимы full_name и phone.")
 
         existing_by_phone = await self._client_reader.read_by_phone(data.client_phone)
         if existing_by_phone:
-            # Поведение совместимо с CreateClientCommand: не создаём дубликат по телефону
             raise ConflictError(message=f"Client with phone {data.client_phone} already exists")
 
         client = self._client_service.create_client(
@@ -116,7 +114,7 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
             address=data.client_address,
         )
         self._entity_saver.add_one(client)
-        await self._transaction.flush()  # чтобы client.id был присвоен до создания устройства
+        await self._transaction.flush()
         return client
 
     async def _resolve_device(
@@ -129,17 +127,14 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
                 message="device_brand_uuid and device_model are required for new device."
             )
 
-        device_type = await self._device_type_reader.read_by_uuid(
-            DeviceTypeUUID(data.device_type_uuid)
+        device_type = await ensure_exists(
+            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.device_type_uuid),
+            f"Device type with uuid {data.device_type_uuid}",
         )
-        if not device_type:
-            raise EntityNotFoundError(
-                message=f"Device type with uuid {data.device_type_uuid} not found"
-            )
-
-        brand = await self._brand_reader.read_by_uuid(BrandUUID(data.device_brand_uuid))
-        if not brand:
-            raise EntityNotFoundError(message=f"Brand with uuid {data.device_brand_uuid} not found")
+        brand = await ensure_exists(
+            self._brand_reader.read_by_uuid, BrandUUID(data.device_brand_uuid),
+            f"Brand with uuid {data.device_brand_uuid}",
+        )
 
         device = self._device_service.create_device(
             client_id=client.id,
@@ -152,66 +147,22 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
         self._entity_saver.add_one(device)
         return device
 
-    async def _resolve_assigned_employee_id(
-        self, data: CreateOrderWithClientAndDeviceCommand
-    ) -> int | None:
-        if not data.assigned_employee_uuid:
-            return None
-        employee = await self._employee_reader.read_by_uuid(
-            EmployeeUUID(data.assigned_employee_uuid)
-        )
-        if not employee:
-            raise EntityNotFoundError(
-                message=f"Employee with uuid {data.assigned_employee_uuid} not found"
-            )
-        return employee.id
-
-    async def _resolve_creator_id(
-        self, data: CreateOrderWithClientAndDeviceCommand, current_employee: Employee
-    ) -> int:
-        """
-        Логика полностью повторяет CreateOrderCommand:
-        - если передан manager_uuid — используем его; назначить менеджером заказа нельзя только мастера;
-        - если заказ создаёт менеджер — он сам становится менеджером заказа;
-        - иначе (админ/супервизор/мастер) — creator_id = current_employee.id.
-        """
-        creator_id = current_employee.id
-        if data.manager_uuid:
-            manager = await self._employee_reader.read_by_uuid(EmployeeUUID(data.manager_uuid))
-            if not manager:
-                raise EntityNotFoundError(
-                    message=f"Employee with uuid {data.manager_uuid} not found"
-                )
-            if manager.position == EmployeePosition.MASTER:
-                raise EntityNotFoundError(
-                    message="Назначить менеджером нельзя сотрудника с ролью мастер."
-                )
-            creator_id = manager.id
-        elif getattr(current_employee, "position", None) == EmployeePosition.MANAGER:
-            creator_id = current_employee.id
-        return creator_id
-
     async def run(
         self,
         data: CreateOrderWithClientAndDeviceCommand,
         current_employee: Employee,
     ) -> CreateOrderWithClientAndDeviceCommandResponse:
-        # 1) Разруливаем клиента (существующий или новый)
         client = await self._resolve_client(data)
-
-        # 2) Создаём устройство для клиента
         device = await self._resolve_device(data, client)
-
-        # Flush, чтобы клиенту и устройству присвоились id до вставки заказа
         await self._transaction.flush()
 
-        # 3) Назначенный инженер
-        assigned_employee_id = await self._resolve_assigned_employee_id(data)
+        assigned_employee_id = await resolve_employee_id(
+            self._employee_reader, data.assigned_employee_uuid
+        )
+        creator_id = await resolve_order_creator_id(
+            self._employee_reader, data.manager_uuid, current_employee
+        )
 
-        # 4) Менеджер / creator_id
-        creator_id = await self._resolve_creator_id(data, current_employee)
-
-        # 5) Создаём заказ
         order: Order = self._order_service.create_order(
             client_id=client.id,
             device_id=device.id,
@@ -222,8 +173,6 @@ class CreateOrderWithClientAndDeviceCommandHandler(BaseCommandHandler):
             price=data.price,
         )
         self._entity_saver.add_one(order)
-
-        # 6) Коммитим все три сущности одним транзакционным контекстом
         await self._transaction.commit()
 
         logger.info(

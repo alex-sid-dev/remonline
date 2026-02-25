@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.part_reader import PartReader
 from src.application.ports.transaction import Transaction
 from src.entities.employees.models import Employee
@@ -14,7 +13,7 @@ from src.entities.parts.services import PartService
 logger = structlog.get_logger("update_part").bind(service="part")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UpdatePartCommand:
     uuid: UUID
     name: str | None = None
@@ -24,7 +23,7 @@ class UpdatePartCommand:
     is_active: bool | None = None
 
 
-class UpdatePartCommandHandler(BaseCommandHandler):
+class UpdatePartCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -36,9 +35,10 @@ class UpdatePartCommandHandler(BaseCommandHandler):
         self._part_service = part_service
 
     async def run(self, data: UpdatePartCommand, current_employee: Employee) -> None:
-        part = await self._part_reader.read_by_uuid(PartUUID(data.uuid))
-        if not part:
-            raise EntityNotFoundError(f"Part with uuid {data.uuid} not found")
+        part = await ensure_exists(
+            self._part_reader.read_by_uuid, PartUUID(data.uuid),
+            f"Part with uuid {data.uuid}",
+        )
 
         self._part_service.update_part(
             part=part,

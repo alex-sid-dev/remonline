@@ -4,8 +4,9 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import ConflictError, EntityNotFoundError, PermissionDeniedError
+from src.application.commands._helpers import ensure_exists
+from src.application.commands._permissions import assert_can_assign_supervisor
+from src.application.errors._base import ConflictError
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.application.ports.user_reader import UserReader
@@ -17,12 +18,12 @@ from src.entities.users.models import UserUUID
 logger = structlog.get_logger("create_employee").bind(service="employee")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateEmployeeCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateEmployeeCommand:
     user_uuid: UUID
     full_name: str
@@ -32,7 +33,7 @@ class CreateEmployeeCommand:
     profit_percent: float | None = None
 
 
-class CreateEmployeeCommandHandler(BaseCommandHandler):
+class CreateEmployeeCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -50,17 +51,13 @@ class CreateEmployeeCommandHandler(BaseCommandHandler):
     async def run(
         self, data: CreateEmployeeCommand, current_employee: Employee
     ) -> CreateEmployeeCommandResponse:
-        # Только супервизор может создавать сотрудника с ролью supervisor.
-        if (
-            current_employee.position != EmployeePosition.SUPERVISOR
-            and data.position == EmployeePosition.SUPERVISOR
-        ):
-            raise PermissionDeniedError(
-                message="Только супервизор может назначать роль «супервизор»."
-            )
-        user = await self._user_reader.read_by_uuid(UserUUID(data.user_uuid))
-        if not user:
-            raise EntityNotFoundError(message=f"User with uuid {data.user_uuid} not found")
+        if data.position == EmployeePosition.SUPERVISOR:
+            assert_can_assign_supervisor(current_employee)
+
+        user = await ensure_exists(
+            self._user_reader.read_by_uuid, UserUUID(data.user_uuid),
+            f"User with uuid {data.user_uuid}",
+        )
 
         existing_employee = await self._employee_reader.read_by_user_id(user.id)
         if existing_employee:

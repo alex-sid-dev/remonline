@@ -4,7 +4,6 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.errors.auth import EmailAlreadyExistsError
 from src.application.keycloak.auth_managers import AdminManager, OpenIDManager
 from src.application.ports.employee_reader import EmployeeReader
@@ -28,7 +27,7 @@ class RegisterCommand:
     password: str
 
 
-class RegisterCommandHandler(BaseCommandHandler):
+class RegisterCommandHandler:
     """Use case: register a new user in Keycloak and local database."""
 
     def __init__(

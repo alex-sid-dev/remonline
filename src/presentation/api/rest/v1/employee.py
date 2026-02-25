@@ -61,7 +61,7 @@ async def get_current_employee(
 ) -> ReadEmployeeResponse:
     """Текущий авторизованный сотрудник (для определения роли на фронте)."""
     logger.info("Get current employee (me) called")
-    return ReadEmployeeResponse.from_entity(current_employee)
+    return ReadEmployeeResponse.model_validate(current_employee)
 
 
 @router.get(

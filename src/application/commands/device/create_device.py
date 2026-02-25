@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.brand_reader import BrandReader
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.device_reader import DeviceReader
@@ -18,12 +17,12 @@ from src.entities.devices.services import DeviceService
 logger = structlog.get_logger("create_device").bind(service="device")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateDeviceCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateDeviceCommand:
     client_uuid: UUID
     type_uuid: UUID
@@ -33,7 +32,7 @@ class CreateDeviceCommand:
     description: str | None = None
 
 
-class CreateDeviceCommandHandler(BaseCommandHandler):
+class CreateDeviceCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -53,17 +52,18 @@ class CreateDeviceCommandHandler(BaseCommandHandler):
         self._brand_reader = brand_reader
 
     async def run(self, data: CreateDeviceCommand) -> CreateDeviceCommandResponse:
-        client = await self._client_reader.read_by_uuid(ClientUUID(data.client_uuid))
-        if not client:
-            raise EntityNotFoundError(message=f"Client with uuid {data.client_uuid} not found")
-
-        device_type = await self._device_type_reader.read_by_uuid(DeviceTypeUUID(data.type_uuid))
-        if not device_type:
-            raise EntityNotFoundError(message=f"Device type with uuid {data.type_uuid} not found")
-
-        brand = await self._brand_reader.read_by_uuid(BrandUUID(data.brand_uuid))
-        if not brand:
-            raise EntityNotFoundError(message=f"Brand with uuid {data.brand_uuid} not found")
+        client = await ensure_exists(
+            self._client_reader.read_by_uuid, ClientUUID(data.client_uuid),
+            f"Client with uuid {data.client_uuid}",
+        )
+        device_type = await ensure_exists(
+            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.type_uuid),
+            f"Device type with uuid {data.type_uuid}",
+        )
+        brand = await ensure_exists(
+            self._brand_reader.read_by_uuid, BrandUUID(data.brand_uuid),
+            f"Brand with uuid {data.brand_uuid}",
+        )
 
         device = self._device_service.create_device(
             client_id=client.id,

@@ -1,42 +1,32 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel, ConfigDict
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.work_reader import WorkReader
 from src.entities.employees.models import Employee
-from src.entities.works.models import Work
 
 logger = structlog.get_logger("read_all_work").bind(service="work")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllWorkCommand:
     pass
 
 
-@dataclass
-class ReadWorkResponse:
-    uuid: str
+class ReadWorkResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: UUID
     order_id: int
     title: str
-    employee_id: int | None
-    description: str | None
-    price: float | None
-
-    @classmethod
-    def from_entity(cls, entity: Work) -> "ReadWorkResponse":
-        return cls(
-            uuid=str(entity.uuid),
-            order_id=entity.order_id,
-            title=entity.title,
-            employee_id=entity.employee_id,
-            description=entity.description,
-            price=entity.price,
-        )
+    employee_id: int | None = None
+    description: str | None = None
+    price: float | None = None
 
 
-class ReadAllWorkCommandHandler(BaseCommandHandler):
+class ReadAllWorkCommandHandler:
     def __init__(
         self,
         work_reader: WorkReader,
@@ -47,4 +37,4 @@ class ReadAllWorkCommandHandler(BaseCommandHandler):
         self, data: ReadAllWorkCommand, current_employee: Employee
     ) -> list[ReadWorkResponse]:
         works = await self._work_reader.read_all_active()
-        return [ReadWorkResponse.from_entity(w) for w in works]
+        return [ReadWorkResponse.model_validate(w) for w in works]

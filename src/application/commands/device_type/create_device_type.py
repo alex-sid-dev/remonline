@@ -3,7 +3,6 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.device_type_reader import DeviceTypeReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.device_types.services import DeviceTypeService
@@ -11,18 +10,18 @@ from src.entities.device_types.services import DeviceTypeService
 logger = structlog.get_logger("create_device_type").bind(service="device_type")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateDeviceTypeCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateDeviceTypeCommand:
     name: str
     description: str = ""
 
 
-class CreateDeviceTypeCommandHandler(BaseCommandHandler):
+class CreateDeviceTypeCommandHandler:
     def __init__(
         self,
         transaction: Transaction,

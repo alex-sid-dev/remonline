@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.device_type_reader import DeviceTypeReader
 from src.application.ports.transaction import Transaction
 from src.entities.device_types.models import DeviceTypeUUID
@@ -14,7 +13,7 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("update_device_type").bind(service="device_type")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UpdateDeviceTypeCommand:
     uuid: UUID
     name: str | None = None
@@ -22,7 +21,7 @@ class UpdateDeviceTypeCommand:
     is_active: bool | None = None
 
 
-class UpdateDeviceTypeCommandHandler(BaseCommandHandler):
+class UpdateDeviceTypeCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -34,9 +33,10 @@ class UpdateDeviceTypeCommandHandler(BaseCommandHandler):
         self._device_type_service = device_type_service
 
     async def run(self, data: UpdateDeviceTypeCommand, current_employee: Employee) -> None:
-        device_type = await self._device_type_reader.read_by_uuid(DeviceTypeUUID(data.uuid))
-        if not device_type:
-            raise EntityNotFoundError(f"Device type with uuid {data.uuid} not found")
+        device_type = await ensure_exists(
+            self._device_type_reader.read_by_uuid, DeviceTypeUUID(data.uuid),
+            f"Device type with uuid {data.uuid}",
+        )
 
         self._device_type_service.update_device_type(
             device_type=device_type,

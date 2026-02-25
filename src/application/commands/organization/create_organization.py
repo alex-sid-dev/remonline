@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.errors._base import ConflictError
 from src.application.ports.organization_reader import OrganizationReader
 from src.application.ports.transaction import EntitySaver, Transaction
@@ -12,7 +11,7 @@ from src.entities.organizations.services import OrganizationService
 logger = structlog.get_logger("create_organization").bind(service="organization")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrganizationCommand:
     name: str
     inn: str
@@ -23,12 +22,12 @@ class CreateOrganizationCommand:
     bik: str | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrganizationCommandResponse:
     uuid: UUID
 
 
-class CreateOrganizationCommandHandler(BaseCommandHandler):
+class CreateOrganizationCommandHandler:
     def __init__(
         self,
         transaction: Transaction,

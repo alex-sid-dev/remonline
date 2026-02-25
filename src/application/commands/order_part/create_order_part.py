@@ -3,9 +3,8 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
-from src.application.errors.part import PartStockNotEnoughError
+from src.application.commands._helpers import ensure_exists
+from src.application.commands._stock_helpers import decrease_stock
 from src.application.ports.order_part_reader import OrderPartReader
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.part_reader import PartReader
@@ -17,12 +16,12 @@ from src.entities.parts.models import PartUUID
 logger = structlog.get_logger("create_order_part").bind(service="order_part")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderPartCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateOrderPartCommand:
     order_uuid: UUID
     part_uuid: UUID
@@ -30,7 +29,7 @@ class CreateOrderPartCommand:
     price: float | None = None
 
 
-class CreateOrderPartCommandHandler(BaseCommandHandler):
+class CreateOrderPartCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -48,37 +47,18 @@ class CreateOrderPartCommandHandler(BaseCommandHandler):
         self._part_reader = part_reader
 
     async def run(self, data: CreateOrderPartCommand) -> CreateOrderPartCommandResponse:
-        order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
-        if not order:
-            raise EntityNotFoundError(message=f"Order with uuid {data.order_uuid} not found")
-
-        part = await self._part_reader.read_by_uuid(PartUUID(data.part_uuid))
-        if not part:
-            raise EntityNotFoundError(message=f"Part with uuid {data.part_uuid} not found")
-
-        # Если для запчасти ведётся учёт остатков, уменьшаем склад на количество,
-        # которое добавляем в заказ.
-        if part.stock_qty is not None:
-            if data.qty <= 0:
-                raise PartStockNotEnoughError(
-                    message="Количество запчасти в заказе должно быть положительным"
-                )
-
-            current_stock = part.stock_qty or 0
-            if current_stock < data.qty:
-                raise PartStockNotEnoughError(
-                    message=f"Недостаточно запчастей на складе. Доступно: {current_stock}, запрошено: {data.qty}",
-                )
-
-            part.stock_qty = current_stock - data.qty
-
-        # Пытаемся найти существующую запись по этому же заказу и запчасти —
-        # тогда просто увеличиваем qty вместо создания второй строки.
-        existing_parts = await self._order_part_reader.read_all()
-        existing = next(
-            (op for op in existing_parts if op.order_id == order.id and op.part_id == part.id),
-            None,
+        order = await ensure_exists(
+            self._order_reader.read_by_uuid, OrderUUID(data.order_uuid),
+            f"Order with uuid {data.order_uuid}",
         )
+        part = await ensure_exists(
+            self._part_reader.read_by_uuid, PartUUID(data.part_uuid),
+            f"Part with uuid {data.part_uuid}",
+        )
+
+        decrease_stock(part, data.qty)
+
+        existing = await self._order_part_reader.read_by_order_and_part(order.id, part.id)
 
         if existing:
             self._order_part_service.update_order_part(

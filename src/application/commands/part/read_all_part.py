@@ -1,49 +1,39 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel, ConfigDict
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.part_reader import PartReader
 from src.entities.employees.models import Employee
-from src.entities.parts.models import Part
 
 logger = structlog.get_logger("read_all_part").bind(service="part")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllPartCommand:
     limit: int = 200
     offset: int = 0
 
 
-@dataclass
-class ReadPartResponse:
-    uuid: str
+class ReadPartResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: UUID
     name: str
-    sku: str | None
-    price: float | None
-    stock_qty: int | None
-
-    @classmethod
-    def from_entity(cls, entity: Part) -> "ReadPartResponse":
-        return cls(
-            uuid=str(entity.uuid),
-            name=entity.name,
-            sku=entity.sku,
-            price=entity.price,
-            stock_qty=entity.stock_qty,
-        )
+    sku: str | None = None
+    price: float | None = None
+    stock_qty: int | None = None
 
 
-@dataclass
-class PaginatedPartResponse:
+class PaginatedPartResponse(BaseModel):
     items: list[ReadPartResponse]
     total: int
     limit: int
     offset: int
 
 
-class ReadAllPartCommandHandler(BaseCommandHandler):
+class ReadAllPartCommandHandler:
     def __init__(self, part_reader: PartReader) -> None:
         self._part_reader = part_reader
 
@@ -52,7 +42,7 @@ class ReadAllPartCommandHandler(BaseCommandHandler):
     ) -> PaginatedPartResponse:
         parts, total = await self._part_reader.read_all_active(data.limit, data.offset)
         return PaginatedPartResponse(
-            items=[ReadPartResponse.from_entity(p) for p in parts],
+            items=[ReadPartResponse.model_validate(p) for p in parts],
             total=total,
             limit=data.limit,
             offset=data.offset,

@@ -1,10 +1,13 @@
-from pydantic import AliasChoices, BaseModel, Field
+import warnings
+
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
     TomlConfigSettingsSource,
 )
+from typing_extensions import Self
 
 from src.config.database import DatabaseSettings
 from src.config.keycloak import KeyCloakSettings
@@ -16,6 +19,8 @@ class AppSettings(BaseModel):
     title: str = "Remonline API"
     version: str = "1.0.0"
     debug: bool = False
+    log_level: str = "INFO"
+    rate_limit_default: str = "200/minute"
     uvicorn_host: str = Field(
         "0.0.0.0", validation_alias=AliasChoices("uvicorn_host", "UVICORN_HOST")
     )
@@ -26,6 +31,19 @@ class AppSettings(BaseModel):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
+
+    @model_validator(mode="after")
+    def _warn_cors_localhost_in_production(self) -> Self:
+        if not self.debug:
+            suspects = [o for o in self.cors_origins if "localhost" in o or "127.0.0.1" in o]
+            if suspects:
+                warnings.warn(
+                    f"CORS origins contain localhost entries in non-debug mode: {suspects}. "
+                    "Consider removing them for production deployments.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        return self
 
 
 class Settings(BaseSettings):

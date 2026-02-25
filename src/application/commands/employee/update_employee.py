@@ -3,9 +3,12 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import PermissionDeniedError
-from src.application.errors.employee import EmployeeNotFoundError
+from src.application.commands._helpers import ensure_exists
+from src.application.commands._permissions import (
+    assert_can_assign_supervisor,
+    assert_can_change_salary,
+    assert_can_modify_target,
+)
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.transaction import Transaction
 from src.entities.employees.enum import EmployeePosition
@@ -15,7 +18,7 @@ from src.entities.employees.services import EmployeeService
 logger = structlog.get_logger("update_employee").bind(service="employee")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UpdateEmployeeCommand:
     uuid: UUID
     full_name: str | None = None
@@ -25,7 +28,7 @@ class UpdateEmployeeCommand:
     profit_percent: float | None = None
 
 
-class UpdateEmployeeCommandHandler(BaseCommandHandler):
+class UpdateEmployeeCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -37,33 +40,17 @@ class UpdateEmployeeCommandHandler(BaseCommandHandler):
         self._employee_service = employee_service
 
     async def run(self, data: UpdateEmployeeCommand, current_employee: Employee) -> None:
-        if (
-            data.position == EmployeePosition.SUPERVISOR
-            and current_employee.position != EmployeePosition.SUPERVISOR
-        ):
-            raise PermissionDeniedError(
-                message="Только супервизор может назначать роль «супервизор»."
-            )
+        if data.position == EmployeePosition.SUPERVISOR:
+            assert_can_assign_supervisor(current_employee)
 
-        if (
-            data.salary is not None or data.profit_percent is not None
-        ) and current_employee.position != EmployeePosition.SUPERVISOR:
-            raise PermissionDeniedError(
-                message="Только супервизор может менять зарплату и процент от прибыли."
-            )
+        if data.salary is not None or data.profit_percent is not None:
+            assert_can_change_salary(current_employee)
 
-        employee_to_update = await self._employee_reader.read_by_uuid(EmployeeUUID(data.uuid))
-        if not employee_to_update:
-            raise EmployeeNotFoundError()
+        employee_to_update = await ensure_exists(
+            self._employee_reader.read_by_uuid, EmployeeUUID(data.uuid), "Employee",
+        )
 
-        if (
-            current_employee.position == EmployeePosition.ADMIN
-            and employee_to_update.position
-            not in (EmployeePosition.MASTER, EmployeePosition.MANAGER)
-        ):
-            raise PermissionDeniedError(
-                message="Админ может редактировать только мастеров и менеджеров."
-            )
+        assert_can_modify_target(current_employee, employee_to_update)
 
         self._employee_service.update_employee(
             employee=employee_to_update,

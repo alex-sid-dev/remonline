@@ -3,25 +3,23 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists, resolve_employee_id
 from src.application.ports.employee_reader import EmployeeReader
 from src.application.ports.order_reader import OrderReader
 from src.application.ports.payment_reader import PaymentReader
 from src.application.ports.transaction import EntitySaver, Transaction
-from src.entities.employees.models import EmployeeUUID
 from src.entities.orders.models import OrderUUID
 from src.entities.payments.services import PaymentService
 
 logger = structlog.get_logger("create_payment").bind(service="payment")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreatePaymentCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreatePaymentCommand:
     order_uuid: UUID
     amount: float
@@ -30,7 +28,7 @@ class CreatePaymentCommand:
     comment: str | None = None
 
 
-class CreatePaymentCommandHandler(BaseCommandHandler):
+class CreatePaymentCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -48,18 +46,12 @@ class CreatePaymentCommandHandler(BaseCommandHandler):
         self._employee_reader = employee_reader
 
     async def run(self, data: CreatePaymentCommand) -> CreatePaymentCommandResponse:
-        order = await self._order_reader.read_by_uuid(OrderUUID(data.order_uuid))
-        if not order:
-            raise EntityNotFoundError(message=f"Order with uuid {data.order_uuid} not found")
+        order = await ensure_exists(
+            self._order_reader.read_by_uuid, OrderUUID(data.order_uuid),
+            f"Order with uuid {data.order_uuid}",
+        )
 
-        employee_id = None
-        if data.employee_uuid:
-            employee = await self._employee_reader.read_by_uuid(EmployeeUUID(data.employee_uuid))
-            if not employee:
-                raise EntityNotFoundError(
-                    message=f"Employee with uuid {data.employee_uuid} not found"
-                )
-            employee_id = employee.id
+        employee_id = await resolve_employee_id(self._employee_reader, data.employee_uuid)
 
         payment = self._payment_service.create_payment(
             order_id=order.id,

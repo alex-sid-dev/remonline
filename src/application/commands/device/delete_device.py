@@ -3,8 +3,7 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.device_reader import DeviceReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.devices.models import DeviceUUID
@@ -13,12 +12,12 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("delete_device").bind(service="device")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class DeleteDeviceCommand:
     uuid: UUID
 
 
-class DeleteDeviceCommandHandler(BaseCommandHandler):
+class DeleteDeviceCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -30,9 +29,10 @@ class DeleteDeviceCommandHandler(BaseCommandHandler):
         self._device_reader = device_reader
 
     async def run(self, data: DeleteDeviceCommand, current_employee: Employee) -> None:
-        device = await self._device_reader.read_by_uuid(DeviceUUID(data.uuid))
-        if not device:
-            raise EntityNotFoundError(f"Device with uuid {data.uuid} not found")
+        device = await ensure_exists(
+            self._device_reader.read_by_uuid, DeviceUUID(data.uuid),
+            f"Device with uuid {data.uuid}",
+        )
 
         await self._entity_saver.delete(device)
         await self._transaction.commit()

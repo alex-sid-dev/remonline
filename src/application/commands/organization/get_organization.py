@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-from src.application.commands.base_command_handler import BaseCommandHandler
+from pydantic import BaseModel, ConfigDict
+
 from src.application.errors._base import EntityNotFoundError
 from src.application.ports.organization_reader import OrganizationReader
 from src.entities.employees.models import Employee
@@ -10,20 +10,21 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("get_organization").bind(service="organization")
 
 
-@dataclass
-class GetOrganizationResponse:
+class GetOrganizationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     uuid: UUID
     name: str
     inn: str
-    address: str | None
-    kpp: str | None
-    bank_account: str | None
-    corr_account: str | None
-    bik: str | None
+    address: str | None = None
+    kpp: str | None = None
+    bank_account: str | None = None
+    corr_account: str | None = None
+    bik: str | None = None
 
 
-class GetOrganizationCommandHandler(BaseCommandHandler):
+class GetOrganizationCommandHandler:
     def __init__(self, organization_reader: OrganizationReader) -> None:
         self._organization_reader = organization_reader
 
@@ -31,14 +32,4 @@ class GetOrganizationCommandHandler(BaseCommandHandler):
         org = await self._organization_reader.get_single()
         if not org:
             raise EntityNotFoundError(message="Реквизиты организации не заданы")
-        return GetOrganizationResponse(
-            id=org.id,
-            uuid=org.uuid,
-            name=org.name,
-            inn=org.inn,
-            address=org.address,
-            kpp=org.kpp,
-            bank_account=org.bank_account,
-            corr_account=org.corr_account,
-            bik=org.bik,
-        )
+        return GetOrganizationResponse.model_validate(org)

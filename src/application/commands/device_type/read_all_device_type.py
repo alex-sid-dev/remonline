@@ -1,32 +1,29 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel, ConfigDict
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.device_type_reader import DeviceTypeReader
-from src.entities.device_types.models import DeviceType
 from src.entities.employees.models import Employee
 
 logger = structlog.get_logger("read_all_device_type").bind(service="device_type")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllDeviceTypeCommand:
     pass
 
 
-@dataclass
-class ReadDeviceTypeResponse:
-    uuid: str
+class ReadDeviceTypeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: UUID
     name: str
     description: str
 
-    @classmethod
-    def from_entity(cls, entity: DeviceType) -> "ReadDeviceTypeResponse":
-        return cls(uuid=str(entity.uuid), name=entity.name, description=entity.description)
 
-
-class ReadAllDeviceTypeCommandHandler(BaseCommandHandler):
+class ReadAllDeviceTypeCommandHandler:
     def __init__(
         self,
         device_type_reader: DeviceTypeReader,
@@ -37,4 +34,4 @@ class ReadAllDeviceTypeCommandHandler(BaseCommandHandler):
         self, data: ReadAllDeviceTypeCommand, current_employee: Employee
     ) -> list[ReadDeviceTypeResponse]:
         device_types = await self._device_type_reader.read_all_active()
-        return [ReadDeviceTypeResponse.from_entity(dt) for dt in device_types]
+        return [ReadDeviceTypeResponse.model_validate(dt) for dt in device_types]

@@ -35,7 +35,6 @@ from src.application.commands.part.read_all_part import (
     ReadAllPartCommandHandler,
 )
 from src.application.errors._base import EntityNotFoundError, PermissionDeniedError
-from src.application.errors.employee import EmployeeNotFoundError
 from src.entities.clients.models import Client, ClientID, ClientUUID
 from src.entities.devices.models import DeviceID
 from src.entities.employees.enum import EmployeePosition
@@ -556,7 +555,7 @@ class TestUpdateEmployeePermissions:
             employee_id=1,
         )
 
-        with pytest.raises(EmployeeNotFoundError):
+        with pytest.raises(EntityNotFoundError):
             await handler.run(
                 UpdateEmployeeCommand(uuid=uuid4(), full_name="X"),
                 supervisor,

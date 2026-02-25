@@ -1,7 +1,8 @@
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.ports.device_reader import DeviceReader
+from src.entities.brands.models import BrandID
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import Device, DeviceID, DeviceUUID
 
@@ -29,3 +30,8 @@ class DeviceReaderAdapter(DeviceReader):
         stmt = select(Device).where(Device.client_id == client_id)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def exists_by_brand_id(self, brand_id: BrandID) -> bool:
+        stmt = select(exists().where(Device.brand_id == brand_id, Device.is_active == True))
+        result = await self._session.execute(stmt)
+        return result.scalar() or False

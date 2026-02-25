@@ -1,45 +1,34 @@
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel, ConfigDict
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.payment_reader import PaymentReader
 from src.entities.employees.models import Employee
-from src.entities.payments.models import Payment
 
 logger = structlog.get_logger("read_all_payment").bind(service="payment")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllPaymentCommand:
     pass
 
 
-@dataclass
-class ReadPaymentResponse:
-    uuid: str
+class ReadPaymentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: UUID
     order_id: int
     amount: float
     payment_method: str
-    employee_id: int | None
-    comment: str | None
-    created_at: datetime | None
-
-    @classmethod
-    def from_entity(cls, entity: Payment) -> "ReadPaymentResponse":
-        return cls(
-            uuid=str(entity.uuid),
-            order_id=entity.order_id,
-            amount=entity.amount,
-            payment_method=entity.payment_method,
-            employee_id=entity.employee_id,
-            comment=entity.comment,
-            created_at=entity.created_at,
-        )
+    employee_id: int | None = None
+    comment: str | None = None
+    created_at: datetime | None = None
 
 
-class ReadAllPaymentCommandHandler(BaseCommandHandler):
+class ReadAllPaymentCommandHandler:
     def __init__(
         self,
         payment_reader: PaymentReader,
@@ -50,4 +39,4 @@ class ReadAllPaymentCommandHandler(BaseCommandHandler):
         self, data: ReadAllPaymentCommand, current_employee: Employee
     ) -> list[ReadPaymentResponse]:
         payments = await self._payment_reader.read_all()
-        return [ReadPaymentResponse.from_entity(p) for p in payments]
+        return [ReadPaymentResponse.model_validate(p) for p in payments]

@@ -2,24 +2,23 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.brands.services import BrandService
 
 logger = structlog.get_logger("create_brand").bind(service="brand")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateBrandCommand:
     name: str
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateBrandCommandResponse:
     uuid: UUID
 
 
-class CreateBrandCommandHandler(BaseCommandHandler):
+class CreateBrandCommandHandler:
     def __init__(
         self,
         transaction: Transaction,

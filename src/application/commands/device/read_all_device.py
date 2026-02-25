@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 import structlog
+from pydantic import BaseModel, ConfigDict
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.ports.device_reader import DeviceReader
 from src.entities.devices.models import Device
 from src.entities.employees.models import Employee
@@ -10,29 +11,30 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("read_all_device").bind(service="device")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadAllDeviceCommand:
     pass
 
 
-@dataclass
-class ReadDeviceResponse:
-    uuid: str
+class ReadDeviceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: UUID
     client_id: int
     type_id: int
-    brand_uuid: str | None
-    brand: str
+    brand_uuid: UUID | None = None
+    brand: str = "—"
     model: str
-    serial_number: str | None
-    description: str | None
+    serial_number: str | None = None
+    description: str | None = None
 
     @classmethod
     def from_entity(cls, entity: Device) -> "ReadDeviceResponse":
         brand_obj = getattr(entity, "brand", None)
         brand_name = brand_obj.name if brand_obj else "—"
-        brand_uuid = str(brand_obj.uuid) if brand_obj else None
+        brand_uuid = brand_obj.uuid if brand_obj else None
         return cls(
-            uuid=str(entity.uuid),
+            uuid=entity.uuid,
             client_id=entity.client_id,
             type_id=entity.type_id,
             brand_uuid=brand_uuid,
@@ -43,7 +45,7 @@ class ReadDeviceResponse:
         )
 
 
-class ReadAllDeviceCommandHandler(BaseCommandHandler):
+class ReadAllDeviceCommandHandler:
     def __init__(
         self,
         device_reader: DeviceReader,

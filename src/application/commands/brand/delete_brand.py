@@ -1,8 +1,8 @@
 from uuid import UUID
 
 import structlog
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import ConflictError, EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
+from src.application.errors._base import ConflictError
 from src.application.ports.brand_reader import BrandReader
 from src.application.ports.device_reader import DeviceReader
 from src.application.ports.transaction import EntitySaver, Transaction
@@ -12,7 +12,7 @@ from src.entities.employees.models import Employee
 logger = structlog.get_logger("delete_brand").bind(service="brand")
 
 
-class DeleteBrandCommandHandler(BaseCommandHandler):
+class DeleteBrandCommandHandler:
     def __init__(
         self,
         transaction: Transaction,
@@ -26,11 +26,10 @@ class DeleteBrandCommandHandler(BaseCommandHandler):
         self._device_reader = device_reader
 
     async def run(self, uuid: UUID, current_employee: Employee) -> None:
-        brand = await self._brand_reader.read_by_uuid(BrandUUID(uuid))
-        if not brand:
-            raise EntityNotFoundError(message=f"Brand {uuid} not found")
-        devices = await self._device_reader.read_all_active()
-        if any(getattr(d, "brand_id", None) == brand.id for d in devices):
+        brand = await ensure_exists(
+            self._brand_reader.read_by_uuid, BrandUUID(uuid), f"Brand {uuid}",
+        )
+        if await self._device_reader.exists_by_brand_id(brand.id):
             raise ConflictError(message="Нельзя удалить бренд: есть устройства с этим брендом")
         await self._entity_saver.delete(brand)
         await self._transaction.commit()

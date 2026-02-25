@@ -15,7 +15,7 @@ class InvalidPasswordError(AuthenticationError):
 
 
 @dataclass(eq=False)
-class HashesDoestNotMatchError(AuthenticationError):
+class HashesDoNotMatchError(AuthenticationError):
     message: str = "Calculated hash does not match the received hash"
 
 

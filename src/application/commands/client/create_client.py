@@ -3,7 +3,6 @@ from uuid import UUID
 
 import structlog
 
-from src.application.commands.base_command_handler import BaseCommandHandler
 from src.application.errors._base import ConflictError
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.transaction import EntitySaver, Transaction
@@ -12,12 +11,12 @@ from src.entities.clients.services import ClientService
 logger = structlog.get_logger("create_client").bind(service="client")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateClientCommandResponse:
     uuid: UUID
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class CreateClientCommand:
     full_name: str
     phone: str
@@ -27,7 +26,7 @@ class CreateClientCommand:
     address: str | None = None
 
 
-class CreateClientCommandHandler(BaseCommandHandler):
+class CreateClientCommandHandler:
     def __init__(
         self,
         transaction: Transaction,

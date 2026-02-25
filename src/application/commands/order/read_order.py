@@ -5,8 +5,7 @@ from uuid import UUID
 import structlog
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-from src.application.commands.base_command_handler import BaseCommandHandler
-from src.application.errors._base import EntityNotFoundError
+from src.application.commands._helpers import ensure_exists
 from src.application.ports.order_reader import OrderReader
 from src.entities.employees.models import Employee
 from src.entities.orders.enum import OrderStatus
@@ -114,12 +113,12 @@ class ReadOrderOneResponse(BaseResponse):
     allowed_statuses: list[str] = []
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ReadOrderCommand:
     uuid: UUID
 
 
-class ReadOrderCommandHandler(BaseCommandHandler):
+class ReadOrderCommandHandler:
     def __init__(
         self,
         order_reader: OrderReader,
@@ -129,9 +128,10 @@ class ReadOrderCommandHandler(BaseCommandHandler):
         self._order_service = order_service
 
     async def run(self, data: ReadOrderCommand, current_employee: Employee) -> ReadOrderOneResponse:
-        order = await self._order_reader.read_by_uuid(OrderUUID(data.uuid))
-        if not order:
-            raise EntityNotFoundError(message=f"Order with uuid {data.uuid} not found")
+        order = await ensure_exists(
+            self._order_reader.read_by_uuid, OrderUUID(data.uuid),
+            f"Order with uuid {data.uuid}",
+        )
 
         response = ReadOrderOneResponse.model_validate(order)
 
