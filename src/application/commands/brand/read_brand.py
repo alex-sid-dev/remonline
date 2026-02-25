@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
-
 from src.application.commands._helpers import ensure_exists
 from src.application.commands.brand.read_all_brand import ReadBrandResponse
 from src.application.ports.brand_reader import BrandReader

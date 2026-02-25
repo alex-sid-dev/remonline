@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import structlog
-
 from src.application.errors._base import EntityNotFoundError
 from src.application.ports.organization_reader import OrganizationReader
 from src.application.ports.transaction import Transaction

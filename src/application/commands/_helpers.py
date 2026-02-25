@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Awaitable, Callable, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import Any
 from uuid import UUID
 
 from src.application.errors._base import EntityNotFoundError, FieldError
@@ -8,10 +9,8 @@ from src.application.ports.employee_reader import EmployeeReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee, EmployeeUUID
 
-T = TypeVar("T")
 
-
-async def ensure_exists(
+async def ensure_exists[T](
     reader_method: Callable[..., Awaitable[T | None]],
     identifier: Any,
     entity_name: str,

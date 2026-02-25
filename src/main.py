@@ -10,13 +10,13 @@ from fastapi.responses import ORJSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
+from src.application.ports.error_log_writer import ErrorLogWriter
 from src.config.db_tables import map_tables
 from src.config.exc_handlers import ERROR_LOG_WRITER_STATE_KEY, setup_exc_handlers
 from src.config.ioc.di import get_providers
 from src.config.logging import setup_logging
 from src.config.rate_limit import create_limiter
 from src.config.settings import Settings
-from src.application.ports.error_log_writer import ErrorLogWriter
 from src.make_supervisor import make_supervisor
 from src.presentation.api.rest.v1.routers import api_v1_router
 

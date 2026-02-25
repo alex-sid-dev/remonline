@@ -2,7 +2,6 @@ from uuid import UUID
 
 import structlog
 from pydantic import BaseModel, ConfigDict
-
 from src.application.errors._base import EntityNotFoundError
 from src.application.ports.organization_reader import OrganizationReader
 from src.entities.employees.models import Employee

@@ -2,7 +2,6 @@ from uuid import UUID
 
 import structlog
 from pydantic import BaseModel, ConfigDict
-
 from src.application.ports.brand_reader import BrandReader
 from src.entities.employees.models import Employee
 

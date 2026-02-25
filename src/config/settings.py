@@ -1,4 +1,5 @@
 import warnings
+from typing import Self
 
 from pydantic import AliasChoices, BaseModel, Field, model_validator
 from pydantic_settings import (
@@ -7,7 +8,6 @@ from pydantic_settings import (
     SettingsConfigDict,
     TomlConfigSettingsSource,
 )
-from typing_extensions import Self
 
 from src.config.database import DatabaseSettings
 from src.config.keycloak import KeyCloakSettings
