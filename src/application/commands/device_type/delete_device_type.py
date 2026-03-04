@@ -40,7 +40,9 @@ class DeleteDeviceTypeCommandHandler:
         )
 
         if await self._device_reader.exists_by_type_id(device_type.id):
-            raise ConflictError(message="Нельзя удалить тип устройства: есть устройства с этим типом")
+            raise ConflictError(
+                message="Нельзя удалить тип устройства: есть устройства с этим типом"
+            )
 
         await self._entity_saver.delete(device_type)
         await self._transaction.commit()
