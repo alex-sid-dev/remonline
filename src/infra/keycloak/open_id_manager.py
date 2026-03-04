@@ -1,4 +1,5 @@
 import structlog
+from jwcrypto.jwt import JWTExpired
 from keycloak import (
     KeycloakAuthenticationError,
     KeycloakConnectionError,
@@ -11,6 +12,7 @@ from src.application.errors.auth import (
     InvalidAccessTokenError,
     InvalidPasswordError,
     InvalidRefreshTokenError,
+    TokenInvalidError,
 )
 from src.application.keycloak.auth_managers import OpenIDManager
 from src.application.models.auth_token import AuthToken
@@ -70,6 +72,9 @@ class KeycloakOpenIDManager(OpenIDManager):
         self._logger.info("Verifying access token")
         try:
             return self._client.decode_token(access_token)
+        except JWTExpired as e:
+            self._logger.warning("Access token expired", error=str(e))
+            raise TokenInvalidError() from e
         except (
             KeycloakAuthenticationError,
             KeycloakConnectionError,

@@ -19,36 +19,19 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error?.response?.status;
 
-    // Try to refresh access token on 401 once
-    if (status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = window.localStorage.getItem('refresh_token');
+    // Автовыход: на любой 401 считаем сессию недействительной и выкидываем пользователя.
+    if (status === 401 && typeof window !== 'undefined') {
+      window.localStorage.removeItem('access_token');
+      window.localStorage.removeItem('refresh_token');
+      window.localStorage.removeItem('user_role');
 
-      if (!refreshToken) {
-        window.localStorage.removeItem('access_token');
-        return Promise.reject(error);
+      // Защита от многократных перезагрузок при пачке параллельных запросов.
+      if (!window.__remonlineLoggedOut) {
+        window.__remonlineLoggedOut = true;
+        window.location.reload();
       }
 
-      try {
-        const refreshResponse = await axios.post('/api/auth/refresh', {
-          refresh_token: refreshToken,
-        });
-        const data = refreshResponse.data;
-
-        window.localStorage.setItem('access_token', data.access_token);
-        window.localStorage.setItem('refresh_token', data.refresh_token);
-
-        originalRequest.headers = {
-          ...(originalRequest.headers || {}),
-          Authorization: `Bearer ${data.access_token}`,
-        };
-
-        return api.request(originalRequest);
-      } catch (refreshError) {
-        window.localStorage.removeItem('access_token');
-        window.localStorage.removeItem('refresh_token');
-        return Promise.reject(refreshError);
-      }
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
