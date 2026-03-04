@@ -306,6 +306,34 @@
               Сбросить
             </button>
           </div>
+          <div class="table-status-filters mt-8">
+            <select
+              v-model="managerFilter"
+              class="field-input field-input--inline"
+            >
+              <option value="">Все менеджеры</option>
+              <option
+                v-for="m in managerEmployees"
+                :key="m.uuid"
+                :value="m.full_name"
+              >
+                {{ m.full_name }}
+              </option>
+            </select>
+            <select
+              v-model="masterFilter"
+              class="field-input field-input--inline"
+            >
+              <option value="">Все мастера</option>
+              <option
+                v-for="m in masters"
+                :key="m.uuid"
+                :value="m.full_name"
+              >
+                {{ m.full_name }}
+              </option>
+            </select>
+          </div>
         </div>
         <button
           v-if="canCreateOrders(props.userRole)"
@@ -322,6 +350,7 @@
             <th>№</th>
             <th>Клиент</th>
             <th>Устройство</th>
+            <th>Тип</th>
             <th>Менеджер</th>
             <th>Инженер</th>
             <th>Статус</th>
@@ -340,6 +369,7 @@
             <td>{{ order.id }}</td>
             <td>{{ order.client_name }}</td>
             <td>{{ order.device_label }}</td>
+            <td>{{ order.device_type_name || '—' }}</td>
             <td>{{ order.creator_name }}</td>
             <td>{{ order.assigned_employee_name }}</td>
             <td>
@@ -482,10 +512,16 @@ defineEmits([
 ]);
 
 const orderStatusFilter = ref([]);
+const managerFilter = ref('');
+const masterFilter = ref('');
 
 const filteredOrders = computed(() => {
-  if (!orderStatusFilter.value.length) return props.orders;
-  return props.orders.filter((o) => orderStatusFilter.value.includes(o.status));
+  return props.orders.filter((o) => {
+    const statusOk = !orderStatusFilter.value.length || orderStatusFilter.value.includes(o.status);
+    const managerOk = !managerFilter.value || o.creator_name === managerFilter.value;
+    const masterOk = !masterFilter.value || o.assigned_employee_name === masterFilter.value;
+    return statusOk && managerOk && masterOk;
+  });
 });
 
 const availableStatuses = computed(() => {
@@ -493,8 +529,10 @@ const availableStatuses = computed(() => {
   return ORDER_STATUS_OPTIONS.filter((s) => s.value !== 'closed');
 });
 
-const masters = computed(() => {
-  return props.employees.filter((e) => e.position === 'master');
+const masters = computed(() => props.employees.filter((e) => e.position === 'master'));
+
+const managerEmployees = computed(() => {
+  return props.employees.filter((e) => ['manager', 'admin', 'supervisor'].includes(e.position));
 });
 
 const phoneMatches = computed(() => {

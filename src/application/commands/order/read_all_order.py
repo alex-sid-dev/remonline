@@ -24,6 +24,7 @@ class ReadOrderResponse(BaseModel):
     client_name: str
     client_phone: str
     device_label: str
+    device_type_name: str | None = None
     creator_name: str
     assigned_employee_name: str
     status: str
@@ -40,7 +41,9 @@ class ReadOrderResponse(BaseModel):
         assigned = getattr(entity, "assigned_employee", None)
 
         device_label = "—"
+        device_type_name: str | None = None
         if device:
+            device_type_name = device.type_name
             brand_name = device.brand.name if getattr(device, "brand", None) else "—"
             device_label = f"{brand_name} {device.model}".strip()
             if device.serial_number:
@@ -52,6 +55,7 @@ class ReadOrderResponse(BaseModel):
             client_name=client.full_name if client else "—",
             client_phone=client.phone if client else "—",
             device_label=device_label,
+            device_type_name=device_type_name,
             creator_name=creator.full_name if creator else "—",
             assigned_employee_name=assigned.full_name if assigned else "—",
             status=entity.status,

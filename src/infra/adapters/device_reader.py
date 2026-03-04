@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.ports.device_reader import DeviceReader
 from src.entities.brands.models import BrandID
 from src.entities.clients.models import ClientID
+from src.entities.device_types.models import DeviceTypeID
 from src.entities.devices.models import Device, DeviceID, DeviceUUID
 
 
@@ -33,5 +34,10 @@ class DeviceReaderAdapter(DeviceReader):
 
     async def exists_by_brand_id(self, brand_id: BrandID) -> bool:
         stmt = select(exists().where(Device.brand_id == brand_id, Device.is_active == True))
+        result = await self._session.execute(stmt)
+        return result.scalar() or False
+
+    async def exists_by_type_id(self, type_id: DeviceTypeID) -> bool:
+        stmt = select(exists().where(Device.type_id == type_id, Device.is_active == True))
         result = await self._session.execute(stmt)
         return result.scalar() or False

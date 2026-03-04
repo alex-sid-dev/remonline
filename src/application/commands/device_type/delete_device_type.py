@@ -4,6 +4,8 @@ from uuid import UUID
 import structlog
 
 from src.application.commands._helpers import ensure_exists
+from src.application.errors._base import ConflictError
+from src.application.ports.device_reader import DeviceReader
 from src.application.ports.device_type_reader import DeviceTypeReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.device_types.models import DeviceTypeUUID
@@ -23,10 +25,12 @@ class DeleteDeviceTypeCommandHandler:
         transaction: Transaction,
         entity_saver: EntitySaver,
         device_type_reader: DeviceTypeReader,
+        device_reader: DeviceReader,
     ) -> None:
         self._transaction = transaction
         self._entity_saver = entity_saver
         self._device_type_reader = device_type_reader
+        self._device_reader = device_reader
 
     async def run(self, data: DeleteDeviceTypeCommand, current_employee: Employee) -> None:
         device_type = await ensure_exists(
@@ -34,6 +38,9 @@ class DeleteDeviceTypeCommandHandler:
             DeviceTypeUUID(data.uuid),
             f"DeviceType with uuid {data.uuid}",
         )
+
+        if await self._device_reader.exists_by_type_id(device_type.id):
+            raise ConflictError(message="Нельзя удалить тип устройства: есть устройства с этим типом")
 
         await self._entity_saver.delete(device_type)
         await self._transaction.commit()
