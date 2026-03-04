@@ -281,58 +281,121 @@
 
     <!-- Orders list + edit form -->
     <div v-else>
-      <div class="table-header">
-        <div class="table-meta">
-          <div class="table-status-filters">
+      <div
+        ref="filterBarRef"
+        class="table-header"
+      >
+        <div class="table-meta table-filter-bar">
+          <div class="filter-dropdown-wrap">
             <button
-              v-for="s in ORDER_STATUS_OPTIONS"
-              :key="s.value"
-              class="btn btn-ghost table-status-filter-pill"
-              :class="[
-                tableStatusFilterClass(s.value),
-                { 'table-status-filter-pill--active': orderStatusFilter.includes(s.value) },
-              ]"
               type="button"
-              @click.stop="toggleOrderStatusFilter(s.value)"
+              class="btn btn-ghost filter-trigger"
+              :class="{ 'filter-trigger--active': openFilter === 'status' || orderStatusFilter.length }"
+              @click.stop="toggleFilterDropdown('status')"
             >
-              {{ s.label }}
+              Статусы
+              <span v-if="orderStatusFilter.length" class="filter-count">{{ orderStatusFilter.length }}</span>
+              <span class="filter-chevron">▾</span>
             </button>
-            <button
-              v-if="orderStatusFilter.length"
-              class="btn btn-ghost table-status-filter-clear"
-              type="button"
-              @click.stop="clearOrderStatusFilter"
+            <div
+              v-show="openFilter === 'status'"
+              class="filter-panel"
+              @click.stop
             >
-              Сбросить
-            </button>
+              <button
+                type="button"
+                class="filter-panel-all"
+                @click="toggleAllStatuses"
+              >
+                {{ orderStatusFilter.length === statusOptionsForFilter.length ? 'Снять все' : 'Выбрать все' }}
+              </button>
+              <label
+                v-for="s in statusOptionsForFilter"
+                :key="s.value"
+                class="filter-panel-item"
+              >
+                <input
+                  v-model="orderStatusFilter"
+                  type="checkbox"
+                  :value="s.value"
+                >
+                <span>{{ s.label }}</span>
+              </label>
+            </div>
           </div>
-          <div class="table-status-filters mt-8">
-            <select
-              v-model="managerFilter"
-              class="field-input field-input--inline"
+          <div class="filter-dropdown-wrap">
+            <button
+              type="button"
+              class="btn btn-ghost filter-trigger"
+              :class="{ 'filter-trigger--active': openFilter === 'manager' || managerFilter.length }"
+              @click.stop="toggleFilterDropdown('manager')"
             >
-              <option value="">Все менеджеры</option>
-              <option
+              Менеджеры
+              <span v-if="managerFilter.length" class="filter-count">{{ managerFilter.length }}</span>
+              <span class="filter-chevron">▾</span>
+            </button>
+            <div
+              v-show="openFilter === 'manager'"
+              class="filter-panel"
+              @click.stop
+            >
+              <button
+                type="button"
+                class="filter-panel-all"
+                @click="toggleAllManagers"
+              >
+                {{ managerFilter.length === managerEmployees.length ? 'Снять все' : 'Выбрать все' }}
+              </button>
+              <label
                 v-for="m in managerEmployees"
                 :key="m.uuid"
-                :value="m.full_name"
+                class="filter-panel-item"
               >
-                {{ m.full_name }}
-              </option>
-            </select>
-            <select
-              v-model="masterFilter"
-              class="field-input field-input--inline"
+                <input
+                  v-model="managerFilter"
+                  type="checkbox"
+                  :value="m.full_name"
+                >
+                <span>{{ m.full_name }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="filter-dropdown-wrap">
+            <button
+              type="button"
+              class="btn btn-ghost filter-trigger"
+              :class="{ 'filter-trigger--active': openFilter === 'master' || masterFilter.length }"
+              @click.stop="toggleFilterDropdown('master')"
             >
-              <option value="">Все мастера</option>
-              <option
+              Мастера
+              <span v-if="masterFilter.length" class="filter-count">{{ masterFilter.length }}</span>
+              <span class="filter-chevron">▾</span>
+            </button>
+            <div
+              v-show="openFilter === 'master'"
+              class="filter-panel"
+              @click.stop
+            >
+              <button
+                type="button"
+                class="filter-panel-all"
+                @click="toggleAllMasters"
+              >
+                {{ masterFilter.length === masters.length ? 'Снять все' : 'Выбрать все' }}
+              </button>
+              <label
                 v-for="m in masters"
                 :key="m.uuid"
-                :value="m.full_name"
+                class="filter-panel-item"
               >
-                {{ m.full_name }}
-              </option>
-            </select>
+                <input
+                  v-model="masterFilter"
+                  type="checkbox"
+                  :value="m.full_name"
+                >
+                <span>{{ m.full_name }}</span>
+              </label>
+            </div>
           </div>
         </div>
         <button
@@ -481,12 +544,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   ORDER_STATUS_OPTIONS,
   orderStatusLabel,
   orderStatusClass,
-  tableStatusFilterClass,
   formatDate,
 } from '../utils/orderHelpers';
 import { blockNonNumeric } from '../utils/inputHelpers';
@@ -511,15 +573,26 @@ defineEmits([
   'cancel-order-form',
 ]);
 
+const filterBarRef = ref(null);
+const openFilter = ref(null);
+
 const orderStatusFilter = ref([]);
-const managerFilter = ref('');
-const masterFilter = ref('');
+const managerFilter = ref([]);
+const masterFilter = ref([]);
+
+const statusOptionsForFilter = computed(() => {
+  if (props.userRole === 'supervisor') return ORDER_STATUS_OPTIONS;
+  return ORDER_STATUS_OPTIONS.filter((s) => s.value !== 'closed');
+});
 
 const filteredOrders = computed(() => {
   return props.orders.filter((o) => {
-    const statusOk = !orderStatusFilter.value.length || orderStatusFilter.value.includes(o.status);
-    const managerOk = !managerFilter.value || o.creator_name === managerFilter.value;
-    const masterOk = !masterFilter.value || o.assigned_employee_name === masterFilter.value;
+    const statusOk =
+      !orderStatusFilter.value.length || orderStatusFilter.value.includes(o.status);
+    const managerOk =
+      !managerFilter.value.length || managerFilter.value.includes(o.creator_name);
+    const masterOk =
+      !masterFilter.value.length || masterFilter.value.includes(o.assigned_employee_name);
     return statusOk && managerOk && masterOk;
   });
 });
@@ -532,7 +605,50 @@ const availableStatuses = computed(() => {
 const masters = computed(() => props.employees.filter((e) => e.position === 'master'));
 
 const managerEmployees = computed(() => {
-  return props.employees.filter((e) => ['manager', 'admin', 'supervisor'].includes(e.position));
+  return props.employees.filter((e) =>
+    ['manager', 'admin', 'supervisor'].includes(e.position),
+  );
+});
+
+function toggleFilterDropdown(name) {
+  openFilter.value = openFilter.value === name ? null : name;
+}
+
+function toggleAllStatuses() {
+  if (orderStatusFilter.value.length === statusOptionsForFilter.value.length) {
+    orderStatusFilter.value = [];
+  } else {
+    orderStatusFilter.value = statusOptionsForFilter.value.map((s) => s.value);
+  }
+}
+
+function toggleAllManagers() {
+  if (managerFilter.value.length === managerEmployees.value.length) {
+    managerFilter.value = [];
+  } else {
+    managerFilter.value = managerEmployees.value.map((m) => m.full_name);
+  }
+}
+
+function toggleAllMasters() {
+  if (masterFilter.value.length === masters.value.length) {
+    masterFilter.value = [];
+  } else {
+    masterFilter.value = masters.value.map((m) => m.full_name);
+  }
+}
+
+function closeFilterOnClickOutside(e) {
+  if (filterBarRef.value && !filterBarRef.value.contains(e.target)) {
+    openFilter.value = null;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeFilterOnClickOutside);
+});
+onUnmounted(() => {
+  document.removeEventListener('click', closeFilterOnClickOutside);
 });
 
 const phoneMatches = computed(() => {
@@ -584,16 +700,4 @@ function pickDeviceFromSearch(device) {
   props.orderForm.newDevice.description = device.description || '';
 }
 
-function toggleOrderStatusFilter(value) {
-  const idx = orderStatusFilter.value.indexOf(value);
-  if (idx === -1) {
-    orderStatusFilter.value = [...orderStatusFilter.value, value];
-  } else {
-    orderStatusFilter.value = orderStatusFilter.value.filter((v) => v !== value);
-  }
-}
-
-function clearOrderStatusFilter() {
-  orderStatusFilter.value = [];
-}
 </script>
