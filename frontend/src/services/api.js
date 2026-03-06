@@ -20,7 +20,18 @@ api.interceptors.response.use(
     const status = error?.response?.status;
 
     // Автовыход: на любой 401 считаем сессию недействительной и выкидываем пользователя.
+    // Важно: не применяем к логину/рефрешу и запросам без сохранённого токена,
+    // иначе вместо отображения "неверный пароль" будет перезагрузка страницы.
     if (status === 401 && typeof window !== 'undefined') {
+      const savedToken = window.localStorage.getItem('access_token');
+      const url = originalRequest?.url || '';
+      const isAuthEndpoint =
+        url.includes('/auth/login') || url.includes('/auth/refresh') || url.includes('/auth/logout');
+
+      if (!savedToken || isAuthEndpoint) {
+        return Promise.reject(error);
+      }
+
       window.localStorage.removeItem('access_token');
       window.localStorage.removeItem('refresh_token');
       window.localStorage.removeItem('user_role');
