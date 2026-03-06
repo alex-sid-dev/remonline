@@ -3,7 +3,7 @@ from typing import Final
 
 import structlog
 
-from src.application.errors.auth import UserNotFoundError
+from src.application.errors.auth import InvalidPasswordError
 from src.application.keycloak.auth_managers import OpenIDManager
 from src.application.ports.user_reader import UserReader
 
@@ -46,7 +46,7 @@ class LoginCommandHandler:
         user = await self._user_reader.read_by_email(email=data.email)
         if user is None:
             logger.warning("Login failed: user not found", email=data.email)
-            raise UserNotFoundError()
+            raise InvalidPasswordError()
 
         try:
             refresh_and_access_token = await self._open_id_manager.login(

@@ -11,7 +11,7 @@ from src.application.errors._base import (
 
 @dataclass(eq=False)
 class InvalidPasswordError(AuthenticationError):
-    message: str = "Invalid password"
+    message: str = "Неверный пароль"
 
 
 @dataclass(eq=False)

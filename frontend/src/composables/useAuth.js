@@ -29,8 +29,7 @@ async function handleLogin() {
     loginModalOpen.value = false;
     return true;
   } catch (e) {
-    const message = e?.response?.data?.detail || e?.message || 'Ошибка авторизации.';
-    loginError.value = typeof message === 'string' ? message : 'Ошибка авторизации.';
+    loginError.value = 'Неверный пароль';
     return false;
   } finally {
     isLoggingIn.value = false;

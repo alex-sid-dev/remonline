@@ -5,6 +5,8 @@ import uuid
 
 import structlog
 from fastapi import FastAPI
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import DatabaseError, IntegrityError, OperationalError
 from sqlalchemy.exc import TimeoutError as SATimeoutError
 from starlette.requests import Request
@@ -223,5 +225,18 @@ def setup_exc_handlers(app: FastAPI) -> None:
             exc,
         )
 
+    # При ошибке валидации на логине возвращаем 401 "Неверный пароль", чтобы не раскрывать причину.
+    async def login_validation_handler(
+        request: Request,
+        exc: RequestValidationError,
+    ) -> JSONResponse:
+        if request.method == "POST" and "auth/login" in request.url.path:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Неверный пароль"},
+            )
+        return await request_validation_exception_handler(request, exc)
+
+    app.add_exception_handler(RequestValidationError, login_validation_handler)
     app.add_exception_handler(ApplicationError, application_error_handler)
     app.add_exception_handler(Exception, unhandled_error_handler)
