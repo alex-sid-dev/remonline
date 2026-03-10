@@ -83,7 +83,23 @@
       </aside>
 
       <main class="main-panel">
-        <section class="table-shell">
+        <section
+          v-if="!isAuthenticated"
+          class="table-shell"
+        >
+          <div class="table-wrapper">
+            <div class="empty-state">
+              <div class="empty-state-title">Добро пожаловать в CRM</div>
+              <div class="empty-state-subtitle">
+                Войдите или зарегистрируйтесь, чтобы начать работу с заказами и справочниками.
+              </div>
+            </div>
+          </div>
+        </section>
+        <section
+          v-else
+          class="table-shell"
+        >
           <header
             v-if="!(activeTab === 'orders' && orderDetails.data) && !(activeTab === 'employees' && editingEmployee) && activeTab !== 'statistics' && activeTab !== 'info'"
             class="table-header"
@@ -96,8 +112,7 @@
               <span v-else-if="activeTab === 'deviceTypes'">Типы устройств</span>
             </div>
             <div class="table-meta">
-              <span v-if="!isAuthenticated">Чтобы работать с API, авторизуйтесь.</span>
-              <span v-else-if="isLoading">Загрузка данных…</span>
+              <span v-if="isLoading">Загрузка данных…</span>
               <span v-else-if="loadError">Ошибка: {{ loadError }}</span>
               <span v-else>{{ currentCount }} записей</span>
             </div>
@@ -170,8 +185,7 @@
           </header>
 
       <div class="table-wrapper">
-            <div v-if="!isAuthenticated" class="empty-state">Войдите, чтобы получить доступ к REST API.</div>
-            <div v-else-if="isLoading" class="empty-state">
+            <div v-if="isLoading" class="empty-state">
               <span class="loader">
                 <span class="loader-dot" />
                 <span class="loader-dot" />
