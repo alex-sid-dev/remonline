@@ -53,6 +53,12 @@ employees_table = Table(
     ),
     Index("ix_employees_employee_uuid", "employee_uuid", unique=True),
     Index("ix_employees_is_active", "is_active"),
+    Index(
+        "uq_employees_organization_id_phone",
+        "organization_id",
+        "phone",
+        unique=True,
+    ),
 )
 
 
