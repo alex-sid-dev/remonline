@@ -7,8 +7,8 @@ from src.entities.base_entity import BaseEntity
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
 from src.entities.employees.models import EmployeeID
-from src.entities.organizations.models import OrganizationID
 from src.entities.orders.enum import OrderStatus
+from src.entities.organizations.models import OrganizationID
 
 OrderID = NewType("OrderID", int)
 OrderUUID = NewType("OrderUUID", UUID)
