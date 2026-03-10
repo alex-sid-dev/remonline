@@ -42,8 +42,8 @@ from src.entities.employees.models import Employee, EmployeeID, EmployeeUUID
 from src.entities.orders.enum import OrderStatus
 from src.entities.orders.models import Order, OrderID, OrderUUID
 from src.entities.orders.services import OrderService
-from src.entities.parts.models import Part, PartID, PartUUID
 from src.entities.organizations.models import OrganizationID
+from src.entities.parts.models import Part, PartID, PartUUID
 from src.entities.users.models import User, UserID, UserUUID
 from src.entities.works.models import Work, WorkID, WorkUUID
 

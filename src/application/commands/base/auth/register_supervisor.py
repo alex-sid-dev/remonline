@@ -14,7 +14,7 @@ from src.application.ports.user_reader import UserReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee
 from src.entities.employees.services import EmployeeService
-from src.entities.organizations.models import Organization, OrganizationID
+from src.entities.organizations.models import OrganizationID
 from src.entities.organizations.services import OrganizationService
 from src.entities.users.services import UserService
 

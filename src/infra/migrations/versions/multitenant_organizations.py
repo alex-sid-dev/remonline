@@ -13,7 +13,6 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
-
 revision = "multitenant_organizations"
 down_revision = "add_devices_brand_id"
 branch_labels = None

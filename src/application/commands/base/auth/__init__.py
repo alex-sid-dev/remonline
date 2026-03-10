@@ -1,11 +1,11 @@
 from .login import LoginCommand, LoginCommandHandler, LoginResponse
 from .logout import LogoutCommand, LogoutCommandHandler
-from .registration import RegisterCommand, RegisterCommandHandler
 from .register_supervisor import (
     RegisterSupervisorCommand,
     RegisterSupervisorCommandHandler,
     RegisterSupervisorResponse,
 )
+from .registration import RegisterCommand, RegisterCommandHandler
 from .update_access_token import (
     UpdateAccessTokenCommand,
     UpdateAccessTokenCommandHandler,
