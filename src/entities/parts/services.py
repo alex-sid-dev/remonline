@@ -44,4 +44,3 @@ class PartService:
         if is_active is not None:
             part.is_active = is_active
         return part
-

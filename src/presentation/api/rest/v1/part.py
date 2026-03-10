@@ -130,4 +130,3 @@ async def delete_part(
     dto = DeletePartCommand(uuid=part_uuid)
     await interactor.run(dto, current_employee)
     logger.info("Part deleted successfully", part_uuid=str(part_uuid))
-

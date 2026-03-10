@@ -168,7 +168,9 @@ class RegisterSupervisorCommandHandler:
                     )
             raise
 
-        tokens: AuthToken = await self._open_id_manager.login(email=data.email, password=data.password)
+        tokens: AuthToken = await self._open_id_manager.login(
+            email=data.email, password=data.password
+        )
         logger.info("Supervisor logged in after registration", email=data.email)
 
         return RegisterSupervisorResponse(
@@ -205,4 +207,3 @@ class RegisterSupervisorCommandHandler:
             uuid=uuid_obj,
             organization_id=organization_id,
         )
-

@@ -28,13 +28,17 @@ class TestPartService:
         assert part.stock_qty == 10
 
     def test_update_part_price(self):
-        part = self.service.create_part(name="Resistor", price=10.0, organization_id=OrganizationID(1))
+        part = self.service.create_part(
+            name="Resistor", price=10.0, organization_id=OrganizationID(1)
+        )
         updated = self.service.update_part(part, price=15.0)
         assert updated.price == 15.0
         assert updated.name == "Resistor"
 
     def test_update_part_stock(self):
-        part = self.service.create_part(name="Resistor", stock_qty=5, organization_id=OrganizationID(1))
+        part = self.service.create_part(
+            name="Resistor", stock_qty=5, organization_id=OrganizationID(1)
+        )
         updated = self.service.update_part(part, stock_qty=3)
         assert updated.stock_qty == 3
 
@@ -42,4 +46,3 @@ class TestPartService:
         part = self.service.create_part(name="Resistor", organization_id=OrganizationID(1))
         updated = self.service.update_part(part, is_active=False)
         assert updated.is_active is False
-
