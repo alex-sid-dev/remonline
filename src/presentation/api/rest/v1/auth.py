@@ -1,7 +1,7 @@
 import structlog
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from starlette import status
 
 from src.application.commands.base.auth import (
@@ -103,15 +103,18 @@ async def register_supervisor(
 )
 async def login_seller(
     request_data: LoginSchema,
+    request: Request,
     interactor: FromDishka[LoginCommandHandler],
 ) -> LoginResponse:
-    logger.info("Login endpoint called", email=str(request_data.email))
+    client_ip = request.client.host if request.client else None
+    logger.info("Login endpoint called", email=str(request_data.email), client_ip=client_ip)
     dto = LoginCommand(
         email=request_data.email,
         password=request_data.password,
+        client_ip=client_ip,
     )
     result = await interactor.run(dto)
-    logger.info("User logged in successfully", email=str(request_data.email))
+    logger.info("User logged in successfully", email=str(request_data.email), client_ip=client_ip)
     return result
 
 
