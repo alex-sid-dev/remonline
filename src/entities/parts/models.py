@@ -3,6 +3,7 @@ from typing import NewType
 from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
+from src.entities.organizations.models import OrganizationID
 
 PartID = NewType("PartID", int)
 PartUUID = NewType("PartUUID", UUID)
@@ -11,6 +12,7 @@ PartUUID = NewType("PartUUID", UUID)
 @dataclass
 class Part(BaseEntity[PartID, PartUUID]):
     name: str
+    organization_id: OrganizationID
     sku: str | None = None
     price: float | None = None
     stock_qty: int | None = None

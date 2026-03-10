@@ -71,6 +71,7 @@ class CreateEmployeeCommandHandler:
             phone=data.phone,
             is_active=True,
             position=data.position,
+            organization_id=current_employee.organization_id,
             salary=data.salary,
             profit_percent=data.profit_percent,
         )

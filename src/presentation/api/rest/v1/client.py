@@ -81,7 +81,7 @@ async def create_client(
         comment=request_data.comment,
         address=request_data.address,
     )
-    result = await interactor.run(dto)
+    result = await interactor.run(dto, current_employee)
     logger.info("Client created successfully")
     return result
 

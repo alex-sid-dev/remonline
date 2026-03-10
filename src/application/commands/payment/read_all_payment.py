@@ -36,7 +36,11 @@ class ReadAllPaymentCommandHandler:
         self._payment_reader = payment_reader
 
     async def run(
-        self, data: ReadAllPaymentCommand, current_employee: Employee
+        self,
+        data: ReadAllPaymentCommand,
+        current_employee: Employee,
     ) -> list[ReadPaymentResponse]:
-        payments = await self._payment_reader.read_all()
+        payments = await self._payment_reader.read_all(
+            organization_id=current_employee.organization_id,
+        )
         return [ReadPaymentResponse.model_validate(p) for p in payments]

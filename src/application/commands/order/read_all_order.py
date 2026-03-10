@@ -78,9 +78,15 @@ class ReadAllOrderCommandHandler:
         self._order_reader = order_reader
 
     async def run(
-        self, data: ReadAllOrderCommand, current_employee: Employee
+        self,
+        data: ReadAllOrderCommand,
+        current_employee: Employee,
     ) -> PaginatedOrderResponse:
-        orders, total = await self._order_reader.read_all_active(data.limit, data.offset)
+        orders, total = await self._order_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+            limit=data.limit,
+            offset=data.offset,
+        )
         return PaginatedOrderResponse(
             items=[ReadOrderResponse.from_entity(o) for o in orders],
             total=total,

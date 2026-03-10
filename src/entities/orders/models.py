@@ -7,6 +7,7 @@ from src.entities.base_entity import BaseEntity
 from src.entities.clients.models import ClientID
 from src.entities.devices.models import DeviceID
 from src.entities.employees.models import EmployeeID
+from src.entities.organizations.models import OrganizationID
 from src.entities.orders.enum import OrderStatus
 
 OrderID = NewType("OrderID", int)
@@ -17,6 +18,7 @@ OrderUUID = NewType("OrderUUID", UUID)
 class Order(BaseEntity[OrderID, OrderUUID]):
     client_id: ClientID
     device_id: DeviceID
+    organization_id: OrganizationID
     creator_id: EmployeeID | None = None
     assigned_employee_id: EmployeeID | None = None
     status: OrderStatus = OrderStatus.NEW

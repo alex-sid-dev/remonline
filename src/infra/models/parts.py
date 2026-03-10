@@ -23,6 +23,7 @@ parts_table = Table(
     Column("sku", String(100), nullable=True),
     Column("price", Float, nullable=True),
     Column("stock_qty", BigInteger, nullable=True),
+    Column("organization_id", BigInteger, nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
@@ -35,6 +36,7 @@ parts_table = Table(
     ),
     Index("ix_parts_sku", "sku", unique=True),
     Index("ix_parts_part_uuid", "part_uuid", unique=True),
+    Index("ix_parts_organization_id", "organization_id"),
 )
 
 

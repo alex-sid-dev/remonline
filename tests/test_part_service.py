@@ -1,3 +1,4 @@
+from src.entities.organizations.models import OrganizationID
 from src.entities.parts.services import PartService
 
 
@@ -6,7 +7,7 @@ class TestPartService:
         self.service = PartService()
 
     def test_create_part_minimal(self):
-        part = self.service.create_part(name="Resistor 100Ω")
+        part = self.service.create_part(name="Resistor 100Ω", organization_id=OrganizationID(1))
         assert part.name == "Resistor 100Ω"
         assert part.is_active is True
         assert part.uuid is not None
@@ -20,23 +21,25 @@ class TestPartService:
             sku="SCR-001",
             price=1500.0,
             stock_qty=10,
+            organization_id=OrganizationID(1),
         )
         assert part.sku == "SCR-001"
         assert part.price == 1500.0
         assert part.stock_qty == 10
 
     def test_update_part_price(self):
-        part = self.service.create_part(name="Resistor", price=10.0)
+        part = self.service.create_part(name="Resistor", price=10.0, organization_id=OrganizationID(1))
         updated = self.service.update_part(part, price=15.0)
         assert updated.price == 15.0
         assert updated.name == "Resistor"
 
     def test_update_part_stock(self):
-        part = self.service.create_part(name="Resistor", stock_qty=5)
+        part = self.service.create_part(name="Resistor", stock_qty=5, organization_id=OrganizationID(1))
         updated = self.service.update_part(part, stock_qty=3)
         assert updated.stock_qty == 3
 
     def test_update_part_deactivate(self):
-        part = self.service.create_part(name="Resistor")
+        part = self.service.create_part(name="Resistor", organization_id=OrganizationID(1))
         updated = self.service.update_part(part, is_active=False)
         assert updated.is_active is False
+

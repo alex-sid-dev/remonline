@@ -4,6 +4,7 @@ from uuid import UUID
 
 from src.entities.base_entity import BaseEntity
 from src.entities.employees.enum import EmployeePosition
+from src.entities.organizations.models import OrganizationID
 from src.entities.users.models import UserID
 
 EmployeeID = NewType("EmployeeID", int)
@@ -17,5 +18,6 @@ class Employee(BaseEntity[EmployeeID, EmployeeUUID]):
     phone: str | None
     position: EmployeePosition
     is_active: bool
+    organization_id: OrganizationID
     salary: float | None = None
     profit_percent: float | None = None

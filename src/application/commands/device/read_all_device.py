@@ -53,7 +53,11 @@ class ReadAllDeviceCommandHandler:
         self._device_reader = device_reader
 
     async def run(
-        self, data: ReadAllDeviceCommand, current_employee: Employee
+        self,
+        data: ReadAllDeviceCommand,
+        current_employee: Employee,
     ) -> list[ReadDeviceResponse]:
-        devices = await self._device_reader.read_all_active()
+        devices = await self._device_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+        )
         return [ReadDeviceResponse.from_entity(d) for d in devices]

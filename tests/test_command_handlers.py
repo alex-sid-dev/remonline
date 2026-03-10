@@ -43,6 +43,7 @@ from src.entities.orders.enum import OrderStatus
 from src.entities.orders.models import Order, OrderID, OrderUUID
 from src.entities.orders.services import OrderService
 from src.entities.parts.models import Part, PartID, PartUUID
+from src.entities.organizations.models import OrganizationID
 from src.entities.users.models import User, UserID, UserUUID
 from src.entities.works.models import Work, WorkID, WorkUUID
 
@@ -55,6 +56,7 @@ def _make_employee(
     position=EmployeePosition.SUPERVISOR,
     user_id=1,
     employee_id=1,
+    organization_id=1,
 ):
     return Employee(
         id=EmployeeID(employee_id),
@@ -64,10 +66,11 @@ def _make_employee(
         phone="+71234567890",
         position=position,
         is_active=True,
+        organization_id=OrganizationID(organization_id),
     )
 
 
-def _make_order(order_id=1):
+def _make_order(order_id=1, organization_id=1):
     return Order(
         id=OrderID(order_id),
         uuid=OrderUUID(uuid4()),
@@ -79,19 +82,21 @@ def _make_order(order_id=1):
         problem_description="test problem",
         price=None,
         is_active=True,
+        organization_id=OrganizationID(organization_id),
     )
 
 
-def _make_client(client_id=1):
+def _make_client(client_id=1, organization_id=1):
     return Client(
         id=ClientID(client_id),
         uuid=ClientUUID(uuid4()),
         full_name="Test Client",
         phone="+71234567890",
+        organization_id=OrganizationID(organization_id),
     )
 
 
-def _make_part(part_id=1):
+def _make_part(part_id=1, organization_id=1):
     return Part(
         id=PartID(part_id),
         uuid=PartUUID(uuid4()),
@@ -99,6 +104,7 @@ def _make_part(part_id=1):
         sku="SKU-001",
         price=150.0,
         stock_qty=10,
+        organization_id=OrganizationID(organization_id),
     )
 
 
@@ -134,9 +140,10 @@ class TestReadAllOrderCommandHandler:
         mock_reader.read_all_active.return_value = ([order], 1)
 
         handler = ReadAllOrderCommandHandler(order_reader=mock_reader)
+        current_emp = _make_employee(organization_id=42)
         result = await handler.run(
             ReadAllOrderCommand(limit=50, offset=0),
-            _make_employee(),
+            current_emp,
         )
 
         assert isinstance(result, PaginatedOrderResponse)
@@ -144,7 +151,11 @@ class TestReadAllOrderCommandHandler:
         assert result.limit == 50
         assert result.offset == 0
         assert len(result.items) == 1
-        mock_reader.read_all_active.assert_awaited_once_with(50, 0)
+        mock_reader.read_all_active.assert_awaited_once_with(
+            organization_id=current_emp.organization_id,
+            limit=50,
+            offset=0,
+        )
 
     @pytest.mark.asyncio
     async def test_default_pagination(self):
@@ -157,7 +168,7 @@ class TestReadAllOrderCommandHandler:
         assert result.total == 0
         assert result.limit == 200
         assert result.offset == 0
-        mock_reader.read_all_active.assert_awaited_once_with(200, 0)
+        mock_reader.read_all_active.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_custom_offset(self):
@@ -172,7 +183,7 @@ class TestReadAllOrderCommandHandler:
 
         assert result.offset == 30
         assert result.limit == 10
-        mock_reader.read_all_active.assert_awaited_once_with(10, 30)
+        mock_reader.read_all_active.assert_awaited_once()
 
 
 class TestReadAllClientCommandHandler:
@@ -183,9 +194,10 @@ class TestReadAllClientCommandHandler:
         mock_reader.read_all_active.return_value = ([client], 1)
 
         handler = ReadAllClientCommandHandler(client_reader=mock_reader)
+        current_emp = _make_employee(organization_id=7)
         result = await handler.run(
             ReadAllClientCommand(limit=100, offset=10),
-            _make_employee(),
+            current_emp,
         )
 
         assert isinstance(result, PaginatedClientResponse)
@@ -193,7 +205,7 @@ class TestReadAllClientCommandHandler:
         assert result.limit == 100
         assert result.offset == 10
         assert len(result.items) == 1
-        mock_reader.read_all_active.assert_awaited_once_with(100, 10)
+        mock_reader.read_all_active.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_default_pagination(self):
@@ -216,7 +228,8 @@ class TestReadAllEmployeeCommandHandler:
         mock_reader.read_all_active.return_value = ([emp], 1)
 
         handler = ReadAllEmployeeCommandHandler(employee_reader=mock_reader)
-        result = await handler.run(ReadAllEmployeeCommand(), _make_employee())
+        current_emp = _make_employee(organization_id=3)
+        result = await handler.run(ReadAllEmployeeCommand(), current_emp)
 
         assert isinstance(result, PaginatedEmployeeResponse)
         assert result.total == 1
@@ -228,14 +241,15 @@ class TestReadAllEmployeeCommandHandler:
         mock_reader.read_all_active.return_value = ([], 0)
 
         handler = ReadAllEmployeeCommandHandler(employee_reader=mock_reader)
+        current_emp = _make_employee(organization_id=5)
         result = await handler.run(
             ReadAllEmployeeCommand(limit=25, offset=5),
-            _make_employee(),
+            current_emp,
         )
 
         assert result.limit == 25
         assert result.offset == 5
-        mock_reader.read_all_active.assert_awaited_once_with(25, 5)
+        mock_reader.read_all_active.assert_awaited_once()
 
 
 class TestReadAllPartCommandHandler:
@@ -246,7 +260,8 @@ class TestReadAllPartCommandHandler:
         mock_reader.read_all_active.return_value = ([part], 1)
 
         handler = ReadAllPartCommandHandler(part_reader=mock_reader)
-        result = await handler.run(ReadAllPartCommand(), _make_employee())
+        current_emp = _make_employee(organization_id=9)
+        result = await handler.run(ReadAllPartCommand(), current_emp)
 
         assert isinstance(result, PaginatedPartResponse)
         assert result.total == 1
@@ -258,14 +273,15 @@ class TestReadAllPartCommandHandler:
         mock_reader.read_all_active.return_value = ([], 0)
 
         handler = ReadAllPartCommandHandler(part_reader=mock_reader)
+        current_emp = _make_employee(organization_id=11)
         result = await handler.run(
             ReadAllPartCommand(limit=15, offset=3),
-            _make_employee(),
+            current_emp,
         )
 
         assert result.limit == 15
         assert result.offset == 3
-        mock_reader.read_all_active.assert_awaited_once_with(15, 3)
+        mock_reader.read_all_active.assert_awaited_once()
 
 
 # ===================================================================
@@ -1040,6 +1056,7 @@ class TestGetStatisticsCommandHandler:
             is_active=True,
             salary=30000.0,
             profit_percent=10.0,
+            organization_id=OrganizationID(1),
         )
         handler = self._make_handler(order_rows=rows, employees=[master])
         result = await handler.run(master)

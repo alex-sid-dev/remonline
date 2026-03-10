@@ -10,6 +10,7 @@ from src.entities.employees.models import EmployeeID
 from src.entities.order_parts.models import OrderPart
 from src.entities.orders.enum import OrderStatus
 from src.entities.orders.models import Order, OrderUUID
+from src.entities.organizations.models import OrganizationID
 from src.entities.works.models import Work
 
 
@@ -38,6 +39,7 @@ class OrderService:
         client_id: ClientID,
         device_id: DeviceID,
         creator_id: EmployeeID,
+        organization_id: OrganizationID,
         problem_description: str | None = None,
         assigned_employee_id: EmployeeID | None = None,
         status: OrderStatus | str = OrderStatus.NEW,
@@ -51,6 +53,7 @@ class OrderService:
             uuid=OrderUUID(uuid4()),
             client_id=client_id,
             device_id=device_id,
+            organization_id=organization_id,
             creator_id=creator_id,
             assigned_employee_id=assigned_employee_id,
             status=normalized_status,

@@ -38,9 +38,15 @@ class ReadAllPartCommandHandler:
         self._part_reader = part_reader
 
     async def run(
-        self, data: ReadAllPartCommand, current_employee: Employee
+        self,
+        data: ReadAllPartCommand,
+        current_employee: Employee,
     ) -> PaginatedPartResponse:
-        parts, total = await self._part_reader.read_all_active(data.limit, data.offset)
+        parts, total = await self._part_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+            limit=data.limit,
+            offset=data.offset,
+        )
         return PaginatedPartResponse(
             items=[ReadPartResponse.model_validate(p) for p in parts],
             total=total,

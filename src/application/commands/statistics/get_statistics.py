@@ -43,8 +43,14 @@ class GetStatisticsCommandHandler:
         self._employee_reader = employee_reader
 
     async def run(self, current_employee: Employee) -> StatisticsResponse:
-        order_rows = await self._statistics_reader.get_closed_orders_stats()
-        employees, _ = await self._employee_reader.read_all_active(limit=1000, offset=0)
+        order_rows = await self._statistics_reader.get_closed_orders_stats(
+            organization_id=current_employee.organization_id,
+        )
+        employees, _ = await self._employee_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+            limit=1000,
+            offset=0,
+        )
 
         total_revenue = sum(r.works_revenue + r.parts_revenue for r in order_rows)
         total_expenses = sum(r.parts_cost for r in order_rows)

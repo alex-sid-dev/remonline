@@ -19,7 +19,11 @@ class BrandReaderAdapter(BrandReader):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_all_active(self) -> list[Brand]:
-        stmt = select(Brand).where(Brand.is_active.is_(True)).order_by(Brand.name.asc())
+    async def read_all_active(self, organization_id: int) -> list[Brand]:
+        stmt = (
+            select(Brand)
+            .where(Brand.is_active.is_(True), Brand.organization_id == organization_id)
+            .order_by(Brand.name.asc())
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())

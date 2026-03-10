@@ -49,19 +49,28 @@ class EmployeeReaderAdapter(EmployeeReader):
         return employee
 
     async def read_all_active(
-        self, limit: int = 200, offset: int = 0
+        self,
+        organization_id: int,
+        limit: int = 200,
+        offset: int = 0,
     ) -> tuple[list[Employee], int]:
         self._logger.info("Reading all active employees")
         count_stmt = (
             select(func.count())
             .select_from(employees_table)
-            .where(employees_table.c.is_active.is_(True))
+            .where(
+                employees_table.c.is_active.is_(True),
+                employees_table.c.organization_id == organization_id,
+            )
         )
         total = (await self._session.execute(count_stmt)).scalar() or 0
 
         stmt = (
             select(Employee)
-            .where(employees_table.c.is_active.is_(True))
+            .where(
+                employees_table.c.is_active.is_(True),
+                employees_table.c.organization_id == organization_id,
+            )
             .limit(limit)
             .offset(offset)
         )

@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, DateTime, String, Table, UniqueConstraint, func
+from sqlalchemy import BigInteger, Column, DateTime, String, Table, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from src.entities.organizations.models import Organization
@@ -9,7 +9,6 @@ organizations_table = Table(
     mapper_registry.metadata,
     Column("organization_id", BigInteger, primary_key=True, autoincrement=True),
     Column("organization_uuid", UUID(as_uuid=True), nullable=False, unique=True),
-    Column("singleton_key", BigInteger, nullable=False, default=1),
     Column("name", String(512), nullable=False, server_default=""),
     Column("inn", String(32), nullable=False, server_default=""),
     Column("address", String(1024), nullable=True),
@@ -17,6 +16,7 @@ organizations_table = Table(
     Column("bank_account", String(64), nullable=True),  # Р/с
     Column("corr_account", String(64), nullable=True),  # К/с
     Column("bik", String(32), nullable=True),
+    Column("owner_user_uuid", UUID(as_uuid=True), nullable=True),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
         "updated_at",
@@ -26,7 +26,6 @@ organizations_table = Table(
         onupdate=func.now(),
         nullable=True,
     ),
-    UniqueConstraint("singleton_key", name="uq_organizations_singleton_key"),
 )
 
 

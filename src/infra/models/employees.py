@@ -39,6 +39,7 @@ employees_table = Table(
         comment="master | manager | admin | supervisor",
     ),
     Column("is_active", Boolean, nullable=False, server_default="true"),
+    Column("organization_id", BigInteger, nullable=False),
     Column("salary", Float, nullable=True),
     Column("profit_percent", Float, nullable=True),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
