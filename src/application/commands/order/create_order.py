@@ -78,6 +78,7 @@ class CreateOrderCommandHandler:
             client_id=client.id,
             device_id=device.id,
             creator_id=creator_id,
+            organization_id=current_employee.organization_id,
             problem_description=data.problem_description,
             assigned_employee_id=assigned_employee_id,
             status=data.status,

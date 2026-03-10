@@ -15,6 +15,6 @@ class OrderStatRow:
 
 
 class StatisticsReader(Protocol):
-    async def get_closed_orders_stats(self) -> list[OrderStatRow]:
-        """Return per-order revenue/expenses for all closed active orders."""
+    async def get_closed_orders_stats(self, organization_id: int) -> list[OrderStatRow]:
+        """Return per-order revenue/expenses for all closed active orders for a given organization."""
         ...

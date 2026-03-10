@@ -3,6 +3,7 @@ from uuid import UUID
 
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import Employee
+from src.entities.organizations.models import OrganizationID
 from src.entities.users.models import UserID
 
 
@@ -15,6 +16,7 @@ class EmployeeService:
         is_active: bool,
         position: EmployeePosition,
         uuid: UUID,
+        organization_id: OrganizationID,
         salary: float | None = None,
         profit_percent: float | None = None,
     ) -> Employee:
@@ -26,6 +28,7 @@ class EmployeeService:
             phone=phone,
             is_active=is_active,
             position=position,
+            organization_id=organization_id,
             salary=salary,
             profit_percent=profit_percent,
         )

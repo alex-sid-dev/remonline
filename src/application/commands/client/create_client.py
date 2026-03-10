@@ -7,6 +7,7 @@ from src.application.errors._base import ConflictError
 from src.application.ports.client_reader import ClientReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.entities.clients.services import ClientService
+from src.entities.employees.models import Employee
 
 logger = structlog.get_logger("create_client").bind(service="client")
 
@@ -39,7 +40,11 @@ class CreateClientCommandHandler:
         self._client_reader = client_reader
         self._client_service = client_service
 
-    async def run(self, data: CreateClientCommand) -> CreateClientCommandResponse:
+    async def run(
+        self,
+        data: CreateClientCommand,
+        current_employee: Employee,
+    ) -> CreateClientCommandResponse:
         existing_client = await self._client_reader.read_by_phone(data.phone)
         if existing_client:
             raise ConflictError(message=f"Client with phone {data.phone} already exists")
@@ -51,6 +56,7 @@ class CreateClientCommandHandler:
             telegram_nick=data.telegram_nick,
             comment=data.comment,
             address=data.address,
+            organization_id=current_employee.organization_id,
         )
         self._entity_saver.add_one(client)
         await self._transaction.commit()

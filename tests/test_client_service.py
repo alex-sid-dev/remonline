@@ -1,4 +1,5 @@
 from src.entities.clients.services import ClientService
+from src.entities.organizations.models import OrganizationID
 
 
 class TestClientService:
@@ -9,6 +10,7 @@ class TestClientService:
         client = self.service.create_client(
             full_name="John Doe",
             phone="+79001234567",
+            organization_id=OrganizationID(1),
         )
         assert client.full_name == "John Doe"
         assert client.phone == "+79001234567"
@@ -26,6 +28,7 @@ class TestClientService:
             telegram_nick="@jane",
             comment="VIP customer",
             address="ул. Ленина, 1",
+            organization_id=OrganizationID(1),
         )
         assert client.email == "jane@example.com"
         assert client.telegram_nick == "@jane"
@@ -36,6 +39,7 @@ class TestClientService:
         client = self.service.create_client(
             full_name="John Doe",
             phone="+79001234567",
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_client(client, full_name="John Smith")
         assert updated.full_name == "John Smith"
@@ -45,6 +49,7 @@ class TestClientService:
         client = self.service.create_client(
             full_name="John Doe",
             phone="+79001234567",
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_client(client, is_active=False)
         assert updated.is_active is False
@@ -53,6 +58,7 @@ class TestClientService:
         client = self.service.create_client(
             full_name="John Doe",
             phone="+79001234567",
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_client(client, address="пр. Мира, 10")
         assert updated.address == "пр. Мира, 10"
@@ -63,6 +69,7 @@ class TestClientService:
             full_name="John Doe",
             phone="+79001234567",
             email="john@example.com",
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_client(client, full_name="New Name")
         assert updated.email == "john@example.com"

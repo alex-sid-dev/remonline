@@ -4,6 +4,7 @@ from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.models import EmployeeID
 from src.entities.orders.enum import OrderStatus
 from src.entities.orders.services import OrderService
+from src.entities.organizations.models import OrganizationID
 
 
 class TestOrderService:
@@ -15,6 +16,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         assert order.client_id == ClientID(1)
         assert order.device_id == DeviceID(2)
@@ -34,6 +36,7 @@ class TestOrderService:
             status=OrderStatus.IN_REPAIR,
             price=100.0,
             problem_description="Screen broken",
+            organization_id=OrganizationID(1),
         )
         assert order.assigned_employee_id == EmployeeID(4)
         assert order.price == 100.0
@@ -44,6 +47,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
             status="new",
         )
         assert order.status == OrderStatus.NEW
@@ -53,6 +57,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_order(order, price=200.0)
         assert updated.price == 200.0
@@ -63,6 +68,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_order(order, status=OrderStatus.CLOSED)
         assert updated.status == OrderStatus.CLOSED
@@ -72,6 +78,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_order(order, is_active=False)
         assert updated.is_active is False
@@ -81,6 +88,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         original_updated_at = order.updated_at
         updated = self.service.update_order(order, price=50.0)
@@ -91,6 +99,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         assert OrderService.calculate_total_price(order) == 0.0
 
@@ -99,6 +108,7 @@ class TestOrderService:
             client_id=ClientID(1),
             device_id=DeviceID(2),
             creator_id=EmployeeID(3),
+            organization_id=OrganizationID(1),
         )
         work = type("Work", (), {"price": 100.0, "qty": 2})()
         op = type("OrderPart", (), {"qty": 1, "price": 50.0, "part_info": None})()

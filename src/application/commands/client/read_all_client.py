@@ -40,9 +40,15 @@ class ReadAllClientCommandHandler:
         self._client_reader = client_reader
 
     async def run(
-        self, data: ReadAllClientCommand, current_employee: Employee
+        self,
+        data: ReadAllClientCommand,
+        current_employee: Employee,
     ) -> PaginatedClientResponse:
-        clients, total = await self._client_reader.read_all_active(data.limit, data.offset)
+        clients, total = await self._client_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+            limit=data.limit,
+            offset=data.offset,
+        )
         return PaginatedClientResponse(
             items=[ReadClientResponse.model_validate(c) for c in clients],
             total=total,

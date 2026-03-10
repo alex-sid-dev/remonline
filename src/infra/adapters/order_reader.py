@@ -20,13 +20,22 @@ class OrderReaderAdapter(OrderReader):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_all_active(self, limit: int = 200, offset: int = 0) -> tuple[list[Order], int]:
-        count_stmt = select(func.count()).select_from(Order).where(Order.is_active.is_(True))
+    async def read_all_active(
+        self,
+        organization_id: int,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> tuple[list[Order], int]:
+        count_stmt = (
+            select(func.count())
+            .select_from(Order)
+            .where(Order.is_active.is_(True), Order.organization_id == organization_id)
+        )
         total = (await self._session.execute(count_stmt)).scalar() or 0
 
         stmt = (
             select(Order)
-            .where(Order.is_active.is_(True))
+            .where(Order.is_active.is_(True), Order.organization_id == organization_id)
             .order_by(Order.id.asc())
             .limit(limit)
             .offset(offset)

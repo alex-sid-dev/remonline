@@ -10,6 +10,6 @@ class OrganizationReaderAdapter(OrganizationReader):
         self._session = session
 
     async def get_single(self) -> Organization | None:
-        stmt = select(Organization).where(Organization.singleton_key == 1)
+        stmt = select(Organization).order_by(Organization.id).limit(1)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()

@@ -20,8 +20,8 @@ class PaymentReaderAdapter(PaymentReader):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_all(self) -> list[Payment]:
-        stmt = select(Payment)
+    async def read_all(self, organization_id: int) -> list[Payment]:
+        stmt = select(Payment).where(Payment.organization_id == organization_id)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 

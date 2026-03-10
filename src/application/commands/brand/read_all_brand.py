@@ -20,5 +20,7 @@ class ReadAllBrandCommandHandler:
         self._brand_reader = brand_reader
 
     async def run(self, current_employee: Employee) -> list[ReadBrandResponse]:
-        brands = await self._brand_reader.read_all_active()
+        brands = await self._brand_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+        )
         return [ReadBrandResponse.model_validate(b) for b in brands]

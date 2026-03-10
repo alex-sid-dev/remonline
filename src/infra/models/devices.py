@@ -32,6 +32,7 @@ devices_table = Table(
     Column("model", String(100), nullable=False),
     Column("serial_number", String(100), nullable=True),
     Column("description", String(1024), nullable=True),
+    Column("organization_id", BigInteger, nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
@@ -46,6 +47,7 @@ devices_table = Table(
     Index("ix_devices_brand_id", "brand_id"),
     Index("ix_devices_serial_number", "serial_number"),
     Index("ix_devices_device_uuid", "device_uuid", unique=True),
+    Index("ix_devices_organization_id", "organization_id"),
 )
 
 

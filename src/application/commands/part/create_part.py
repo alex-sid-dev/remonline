@@ -5,6 +5,7 @@ import structlog
 
 from src.application.ports.part_reader import PartReader
 from src.application.ports.transaction import EntitySaver, Transaction
+from src.entities.employees.models import Employee
 from src.entities.parts.services import PartService
 
 logger = structlog.get_logger("create_part").bind(service="part")
@@ -36,11 +37,20 @@ class CreatePartCommandHandler:
         self._part_reader = part_reader
         self._part_service = part_service
 
-    async def run(self, data: CreatePartCommand) -> CreatePartCommandResponse:
+    async def run(
+        self,
+        data: CreatePartCommand,
+        current_employee: Employee,
+    ) -> CreatePartCommandResponse:
         part = self._part_service.create_part(
-            name=data.name, sku=data.sku, price=data.price, stock_qty=data.stock_qty
+            name=data.name,
+            sku=data.sku,
+            price=data.price,
+            stock_qty=data.stock_qty,
+            organization_id=current_employee.organization_id,
         )
         self._entity_saver.add_one(part)
         await self._transaction.commit()
         logger.info("Part created successfully", part_uuid=str(part.uuid))
         return CreatePartCommandResponse(uuid=part.uuid)
+

@@ -40,9 +40,15 @@ class ReadAllEmployeeCommandHandler:
         self._employee_reader = employee_reader
 
     async def run(
-        self, data: ReadAllEmployeeCommand, current_employee: Employee
+        self,
+        data: ReadAllEmployeeCommand,
+        current_employee: Employee,
     ) -> PaginatedEmployeeResponse:
-        employees, total = await self._employee_reader.read_all_active(data.limit, data.offset)
+        employees, total = await self._employee_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+            limit=data.limit,
+            offset=data.offset,
+        )
         return PaginatedEmployeeResponse(
             items=[
                 ReadEmployeeResponse.model_validate(emp) for emp in employees if emp is not None

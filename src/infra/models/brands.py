@@ -9,6 +9,7 @@ brands_table = Table(
     Column("brand_id", BigInteger, primary_key=True, autoincrement=True),
     Column("brand_uuid", UUID(as_uuid=True), nullable=False, unique=True),
     Column("name", String(100), nullable=False),
+    Column("organization_id", BigInteger, nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
@@ -21,6 +22,7 @@ brands_table = Table(
     ),
     Index("ix_brands_name", "name"),
     Index("ix_brands_brand_uuid", "brand_uuid", unique=True),
+    Index("ix_brands_organization_id", "organization_id"),
 )
 
 

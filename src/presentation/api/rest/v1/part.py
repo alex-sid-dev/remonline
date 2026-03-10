@@ -79,7 +79,7 @@ async def create_part(
         price=request_data.price,
         stock_qty=request_data.stock_qty,
     )
-    result = await interactor.run(dto)
+    result = await interactor.run(dto, current_employee)
     logger.info("Part created successfully")
     return result
 
@@ -130,3 +130,4 @@ async def delete_part(
     dto = DeletePartCommand(uuid=part_uuid)
     await interactor.run(dto, current_employee)
     logger.info("Part deleted successfully", part_uuid=str(part_uuid))
+

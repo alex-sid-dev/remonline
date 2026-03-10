@@ -46,6 +46,7 @@ orders_table = Table(
     ),
     Column("problem_description", String(1024), nullable=True),
     Column("price", Float, nullable=True),
+    Column("organization_id", BigInteger, nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
@@ -62,6 +63,7 @@ orders_table = Table(
     Index("ix_orders_status", "status"),
     Index("ix_orders_is_active", "is_active"),
     Index("ix_orders_is_active_created_at", "is_active", "created_at"),
+    Index("ix_orders_organization_id", "organization_id"),
 )
 
 

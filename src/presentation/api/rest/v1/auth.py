@@ -12,6 +12,9 @@ from src.application.commands.base.auth import (
     LogoutCommandHandler,
     RegisterCommand,
     RegisterCommandHandler,
+    RegisterSupervisorCommand,
+    RegisterSupervisorCommandHandler,
+    RegisterSupervisorResponse,
     UpdateAccessTokenCommand,
     UpdateAccessTokenCommandHandler,
     UpdateAccessTokenResponse,
@@ -22,6 +25,7 @@ from src.presentation.api.common.schemas.base.auth import (
     LoginSchema,
     LogoutSchema,
     RegisterSchema,
+    RegisterSupervisorSchema,
     UpdateAccessTokenSchema,
 )
 from src.presentation.api.common.schemas.base.exception import ExceptionSchema
@@ -54,6 +58,37 @@ async def register(
     )
     result = await interactor.run(dto)
     logger.info("User registered successfully", email=str(request_data.email))
+    return result
+
+
+@router.post(
+    path="/register-supervisor",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_409_CONFLICT: {"model": ExceptionSchema},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": ExceptionSchema},
+    },
+)
+async def register_supervisor(
+    request_data: RegisterSupervisorSchema,
+    interactor: FromDishka[RegisterSupervisorCommandHandler],
+) -> RegisterSupervisorResponse:
+    logger.info("Supervisor self-registration endpoint called", email=str(request_data.email))
+    dto = RegisterSupervisorCommand(
+        email=str(request_data.email),
+        password=request_data.password,
+        full_name=request_data.full_name,
+        phone=request_data.phone,
+        organization_name=request_data.organization_name,
+        inn=request_data.inn,
+        address=request_data.address,
+        kpp=request_data.kpp,
+        bank_account=request_data.bank_account,
+        corr_account=request_data.corr_account,
+        bik=request_data.bik,
+    )
+    result = await interactor.run(dto)
+    logger.info("Supervisor registered successfully via public endpoint", email=str(request_data.email))
     return result
 
 

@@ -29,6 +29,7 @@ payments_table = Table(
     Column("amount", Float, nullable=False),
     Column("payment_method", String(50), nullable=False),
     Column("comment", String(1024), nullable=True),
+    Column("organization_id", BigInteger, nullable=False),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
         "updated_at",
@@ -41,6 +42,7 @@ payments_table = Table(
     # индекс можно добавить на order_id для быстрого поиска платежей по заказу
     Index("ix_payments_order_id", "order_id"),
     Index("ix_payments_payment_uuid", "payment_uuid", unique=True),
+    Index("ix_payments_organization_id", "organization_id"),
 )
 
 

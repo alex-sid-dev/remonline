@@ -297,6 +297,18 @@ export async function registerUser(email, password) {
   return response.data;
 }
 
+export async function registerSupervisor(payload) {
+  const response = await api.post('/auth/register-supervisor', payload);
+  const data = response.data;
+
+  // После успешной регистрации супервизора сразу считаем его авторизованным.
+  window.localStorage.setItem('access_token', data.access_token);
+  window.localStorage.setItem('refresh_token', data.refresh_token);
+  window.localStorage.setItem('last_login_email', payload.email);
+
+  return data;
+}
+
 export async function getOrderActHtml(uuid) {
   const response = await api.get(`/order/${uuid}/act`, {
     responseType: 'blob',

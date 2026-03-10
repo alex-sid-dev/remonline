@@ -24,10 +24,25 @@ class ClientReaderAdapter(ClientReader):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_all_active(self, limit: int = 200, offset: int = 0) -> tuple[list[Client], int]:
-        count_stmt = select(func.count()).select_from(Client).where(Client.is_active.is_(True))
+    async def read_all_active(
+        self,
+        organization_id: int,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> tuple[list[Client], int]:
+        count_stmt = (
+            select(func.count())
+            .select_from(Client)
+            .where(Client.is_active.is_(True), Client.organization_id == organization_id)
+        )
         total = (await self._session.execute(count_stmt)).scalar() or 0
 
-        stmt = select(Client).where(Client.is_active.is_(True)).limit(limit).offset(offset)
+        stmt = (
+            select(Client)
+            .where(Client.is_active.is_(True), Client.organization_id == organization_id)
+            .order_by(Client.id.asc())
+            .limit(limit)
+            .offset(offset)
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total

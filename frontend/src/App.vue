@@ -11,7 +11,20 @@
           <button class="btn btn-ghost" type="button" @click="onLogout">Выйти</button>
         </template>
         <template v-else>
-          <button class="btn btn-primary" type="button" @click="openLoginModal">Войти</button>
+          <button
+            class="btn btn-secondary"
+            type="button"
+            @click="openSupervisorRegister"
+          >
+            Регистрация
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click="openLoginModal"
+          >
+            Войти
+          </button>
         </template>
       </div>
     </header>
@@ -246,6 +259,10 @@
     </section>
 
     <LoginModal v-model="loginModalOpen" @login-success="loadData" />
+    <SupervisorRegisterModal
+      v-model="supervisorRegisterOpen"
+      @register-success="loadData"
+    />
 
     <PartModal
       :open="partModalOpen"
@@ -296,6 +313,7 @@ import { useAuth } from './composables/useAuth';
 import { extractErrorMessage } from './utils/errorHelpers';
 import { canManageEmployees, canManageParts, ROLES } from './constants/roles';
 import LoginModal from './components/LoginModal.vue';
+import SupervisorRegisterModal from './components/SupervisorRegisterModal.vue';
 import OrganizationModal from './components/OrganizationModal.vue';
 import OrderList from './components/OrderList.vue';
 import OrderDetail from './components/OrderDetail.vue';
@@ -428,6 +446,8 @@ const currentCount = computed(() => {
   }
 });
 
+const supervisorRegisterOpen = ref(false);
+
 async function loadData() {
   if (!isAuthenticated.value) return;
   isLoading.value = true;
@@ -491,6 +511,10 @@ async function onLogout() {
   parts.value = [];
   brands.value = [];
   employees.value = [];
+}
+
+function openSupervisorRegister() {
+  supervisorRegisterOpen.value = true;
 }
 
 function changeTab(tab) {

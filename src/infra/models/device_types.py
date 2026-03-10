@@ -10,6 +10,7 @@ device_types_table = Table(
     Column("device_type_uuid", UUID(as_uuid=True), nullable=False, unique=True),
     Column("name", String(100), nullable=False, unique=True),
     Column("description", String(255), nullable=True),
+    Column("organization_id", BigInteger, nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column(
@@ -22,6 +23,7 @@ device_types_table = Table(
     ),
     Index("ix_device_types_name", "name", unique=True),
     Index("ix_device_types_device_type_uuid", "device_type_uuid", unique=True),
+    Index("ix_device_types_organization_id", "organization_id"),
 )
 
 

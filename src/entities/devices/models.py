@@ -6,6 +6,7 @@ from src.entities.base_entity import BaseEntity
 from src.entities.brands.models import BrandID
 from src.entities.clients.models import ClientID
 from src.entities.device_types.models import DeviceTypeID
+from src.entities.organizations.models import OrganizationID
 
 DeviceID = NewType("DeviceID", int)
 DeviceUUID = NewType("DeviceUUID", UUID)
@@ -16,6 +17,7 @@ class Device(BaseEntity[DeviceID, DeviceUUID]):
     client_id: ClientID
     type_id: DeviceTypeID
     brand_id: BrandID
+    organization_id: OrganizationID
     model: str
     serial_number: str | None = None
     description: str | None = None

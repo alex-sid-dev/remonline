@@ -4,6 +4,7 @@ from src.entities.brands.models import BrandID
 from src.entities.clients.models import ClientID
 from src.entities.device_types.models import DeviceTypeID
 from src.entities.devices.models import Device, DeviceUUID
+from src.entities.organizations.models import OrganizationID
 
 
 class DeviceService:
@@ -15,6 +16,7 @@ class DeviceService:
         model: str,
         serial_number: str | None = None,
         description: str | None = None,
+        organization_id: OrganizationID = OrganizationID(1),
     ) -> Device:
         return Device(
             id=None,  # type: ignore
@@ -22,6 +24,7 @@ class DeviceService:
             client_id=client_id,
             type_id=type_id,
             brand_id=brand_id,
+            organization_id=organization_id,
             model=model,
             serial_number=serial_number,
             description=description,

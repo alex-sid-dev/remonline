@@ -22,8 +22,11 @@ class DeviceReaderAdapter(DeviceReader):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def read_all_active(self) -> list[Device]:
-        stmt = select(Device).where(Device.is_active == True)
+    async def read_all_active(self, organization_id: int) -> list[Device]:
+        stmt = select(Device).where(
+            Device.is_active.is_(True),
+            Device.organization_id == organization_id,
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 

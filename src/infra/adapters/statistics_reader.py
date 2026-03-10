@@ -17,8 +17,8 @@ class StatisticsReaderAdapter(StatisticsReader):
         self._session: Final = session
         self._logger = structlog.get_logger("db").bind(service="db", entity="statistics")
 
-    async def get_closed_orders_stats(self) -> list[OrderStatRow]:
-        self._logger.info("Reading closed orders statistics")
+    async def get_closed_orders_stats(self, organization_id: int) -> list[OrderStatRow]:
+        self._logger.info("Reading closed orders statistics", organization_id=organization_id)
 
         works_sub = (
             select(
@@ -74,6 +74,7 @@ class StatisticsReaderAdapter(StatisticsReader):
             .where(
                 orders_table.c.status == OrderStatus.CLOSED.value,
                 orders_table.c.is_active.is_(True),
+                orders_table.c.organization_id == organization_id,
             )
         )
 

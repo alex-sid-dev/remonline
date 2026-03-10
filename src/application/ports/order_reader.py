@@ -10,7 +10,10 @@ class OrderReader(Protocol):
     async def read_by_uuid(self, order_uuid: OrderUUID) -> Order | None: ...
 
     async def read_all_active(
-        self, limit: int = 200, offset: int = 0
+        self,
+        organization_id: int,
+        limit: int = 200,
+        offset: int = 0,
     ) -> tuple[list[Order], int]: ...
 
     async def read_by_client_id(self, client_id: ClientID) -> list[Order]: ...

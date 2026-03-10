@@ -12,5 +12,8 @@ class EmployeeReader(Protocol):
     async def read_by_user_id(self, user_id: UserID) -> Employee | None: ...
 
     async def read_all_active(
-        self, limit: int = 200, offset: int = 0
+        self,
+        organization_id: int,
+        limit: int = 200,
+        offset: int = 0,
     ) -> tuple[list[Employee], int]: ...

@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from src.entities.organizations.models import OrganizationID
 from src.entities.parts.models import Part, PartUUID
 
 
@@ -10,6 +11,7 @@ class PartService:
         sku: str | None = None,
         price: float | None = None,
         stock_qty: int | None = None,
+        organization_id: OrganizationID = OrganizationID(1),
     ) -> Part:
         return Part(
             id=None,  # type: ignore
@@ -18,6 +20,7 @@ class PartService:
             sku=sku,
             price=price,
             stock_qty=stock_qty,
+            organization_id=organization_id,
             is_active=True,
         )
 
@@ -41,3 +44,4 @@ class PartService:
         if is_active is not None:
             part.is_active = is_active
         return part
+

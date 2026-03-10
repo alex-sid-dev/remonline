@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.services import EmployeeService
+from src.entities.organizations.models import OrganizationID
 from src.entities.users.models import UserID
 
 
@@ -17,6 +18,7 @@ class TestEmployeeService:
             position=EmployeePosition.MASTER,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
         )
         assert emp.full_name == "Test Worker"
         assert emp.position == EmployeePosition.MASTER
@@ -33,6 +35,7 @@ class TestEmployeeService:
             position=EmployeePosition.MASTER,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
             salary=50000.0,
             profit_percent=10.5,
         )
@@ -47,6 +50,7 @@ class TestEmployeeService:
             position=EmployeePosition.SUPERVISOR,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
         )
         assert emp.position == EmployeePosition.SUPERVISOR
 
@@ -58,6 +62,7 @@ class TestEmployeeService:
             position=EmployeePosition.MASTER,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_employee(emp, full_name="New Name")
         assert updated.full_name == "New Name"
@@ -71,6 +76,7 @@ class TestEmployeeService:
             position=EmployeePosition.MASTER,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_employee(emp, position=EmployeePosition.MANAGER)
         assert updated.position == EmployeePosition.MANAGER
@@ -83,6 +89,7 @@ class TestEmployeeService:
             position=EmployeePosition.MASTER,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_employee(emp, salary=75000.0)
         assert updated.salary == 75000.0
@@ -96,6 +103,7 @@ class TestEmployeeService:
             position=EmployeePosition.MASTER,
             is_active=True,
             uuid=uuid4(),
+            organization_id=OrganizationID(1),
             salary=50000.0,
         )
         updated = self.service.update_employee(emp, profit_percent=15.0)
@@ -112,6 +120,7 @@ class TestEmployeeService:
             uuid=uuid4(),
             salary=60000.0,
             profit_percent=5.0,
+            organization_id=OrganizationID(1),
         )
         updated = self.service.update_employee(emp)
         assert updated.full_name == "Worker"

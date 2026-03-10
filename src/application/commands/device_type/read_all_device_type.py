@@ -31,7 +31,11 @@ class ReadAllDeviceTypeCommandHandler:
         self._device_type_reader = device_type_reader
 
     async def run(
-        self, data: ReadAllDeviceTypeCommand, current_employee: Employee
+        self,
+        data: ReadAllDeviceTypeCommand,
+        current_employee: Employee,
     ) -> list[ReadDeviceTypeResponse]:
-        device_types = await self._device_type_reader.read_all_active()
+        device_types = await self._device_type_reader.read_all_active(
+            organization_id=current_employee.organization_id,
+        )
         return [ReadDeviceTypeResponse.model_validate(dt) for dt in device_types]

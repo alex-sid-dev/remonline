@@ -1,5 +1,5 @@
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from src.entities.organizations.models import Organization, OrganizationUUID
 
@@ -9,6 +9,7 @@ class OrganizationService:
         self,
         name: str,
         inn: str,
+        owner_user_uuid: UUID,
         address: str | None = None,
         kpp: str | None = None,
         bank_account: str | None = None,
@@ -19,7 +20,6 @@ class OrganizationService:
         return Organization(
             id=None,  # type: ignore
             uuid=OrganizationUUID(uuid4()),
-            singleton_key=1,
             name=name,
             inn=inn,
             address=address,
@@ -27,6 +27,7 @@ class OrganizationService:
             bank_account=bank_account,
             corr_account=corr_account,
             bik=bik,
+            owner_user_uuid=owner_user_uuid,
             created_at=now,
             updated_at=now,
         )

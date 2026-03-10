@@ -7,10 +7,12 @@ from dishka import AsyncContainer
 
 from src.application.keycloak.auth_managers import AdminManager
 from src.application.ports.employee_reader import EmployeeReader
+from src.application.ports.organization_reader import OrganizationReader
 from src.application.ports.transaction import EntitySaver, Transaction
 from src.application.ports.user_reader import UserReader
 from src.entities.employees.enum import EmployeePosition
 from src.entities.employees.services import EmployeeService
+from src.entities.organizations.services import OrganizationService
 from src.entities.users.services import UserService
 
 logger = structlog.get_logger("make_supervisor").bind(service="bootstrap")
@@ -32,10 +34,15 @@ async def make_supervisor(container: AsyncContainer) -> None:
         admin_manager = await request_scope.get(AdminManager)
         user_reader = await request_scope.get(UserReader)
         employee_reader = await request_scope.get(EmployeeReader)
+        organization_reader = await request_scope.get(OrganizationReader)
+        organization_service = await request_scope.get(OrganizationService)
         entity_saver = await request_scope.get(EntitySaver)
         transaction = await request_scope.get(Transaction)
         user_service = await request_scope.get(UserService)
         employee_service = await request_scope.get(EmployeeService)
+
+        # Ensure there is at least one organization for the default supervisor.
+        organization = await organization_reader.get_single()
 
         user = await user_reader.read_by_email(SUPERVISOR_EMAIL)
         if user:
@@ -44,6 +51,15 @@ async def make_supervisor(container: AsyncContainer) -> None:
                 logger.info("Supervisor account already exists, skipping")
                 return
 
+            if organization is None:
+                organization = organization_service.create(
+                    name="Default Organization",
+                    inn="",
+                    owner_user_uuid=user.uuid,
+                )
+                entity_saver.add_one(organization)
+                await transaction.flush()
+
             new_employee = employee_service.create_employee(
                 user_id=user.id,
                 full_name=SUPERVISOR_FULL_NAME,
@@ -51,6 +67,7 @@ async def make_supervisor(container: AsyncContainer) -> None:
                 position=EmployeePosition.SUPERVISOR,
                 is_active=True,
                 uuid=uuid4(),
+                organization_id=organization.id,  # type: ignore[arg-type]
             )
             entity_saver.add_one(new_employee)
             await transaction.commit()
@@ -77,6 +94,15 @@ async def make_supervisor(container: AsyncContainer) -> None:
         entity_saver.add_one(new_user)
         await transaction.flush()
 
+        if organization is None:
+            organization = organization_service.create(
+                name="Default Organization",
+                inn="",
+                owner_user_uuid=new_user.uuid,
+            )
+            entity_saver.add_one(organization)
+            await transaction.flush()
+
         new_employee = employee_service.create_employee(
             user_id=new_user.id,
             full_name=SUPERVISOR_FULL_NAME,
@@ -84,6 +110,7 @@ async def make_supervisor(container: AsyncContainer) -> None:
             position=EmployeePosition.SUPERVISOR,
             is_active=True,
             uuid=uuid4(),
+            organization_id=organization.id,  # type: ignore[arg-type]
         )
         entity_saver.add_one(new_employee)
         await transaction.commit()

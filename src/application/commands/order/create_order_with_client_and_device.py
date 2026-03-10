@@ -91,7 +91,11 @@ class CreateOrderWithClientAndDeviceCommandHandler:
         self._brand_reader = brand_reader
         self._employee_reader = employee_reader
 
-    async def _resolve_client(self, data: CreateOrderWithClientAndDeviceCommand) -> Client:
+    async def _resolve_client(
+        self,
+        data: CreateOrderWithClientAndDeviceCommand,
+        organization_id: int,
+    ) -> Client:
         if data.existing_client_uuid:
             return await ensure_exists(
                 self._client_reader.read_by_uuid,
@@ -113,6 +117,7 @@ class CreateOrderWithClientAndDeviceCommandHandler:
             telegram_nick=data.client_telegram_nick,
             comment=data.client_comment,
             address=data.client_address,
+            organization_id=organization_id,
         )
         self._entity_saver.add_one(client)
         await self._transaction.flush()
@@ -146,6 +151,7 @@ class CreateOrderWithClientAndDeviceCommandHandler:
             model=data.device_model,
             serial_number=data.device_serial_number,
             description=data.device_description,
+            organization_id=client.organization_id,
         )
         self._entity_saver.add_one(device)
         return device
@@ -155,7 +161,10 @@ class CreateOrderWithClientAndDeviceCommandHandler:
         data: CreateOrderWithClientAndDeviceCommand,
         current_employee: Employee,
     ) -> CreateOrderWithClientAndDeviceCommandResponse:
-        client = await self._resolve_client(data)
+        client = await self._resolve_client(
+            data,
+            organization_id=current_employee.organization_id,
+        )
         device = await self._resolve_device(data, client)
         await self._transaction.flush()
 

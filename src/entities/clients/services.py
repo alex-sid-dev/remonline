@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from src.entities.clients.models import Client, ClientUUID
+from src.entities.organizations.models import OrganizationID
 
 
 class ClientService:
@@ -12,12 +13,14 @@ class ClientService:
         telegram_nick: str | None = None,
         comment: str | None = None,
         address: str | None = None,
+        organization_id: OrganizationID = OrganizationID(1),
     ) -> Client:
         return Client(
             id=None,  # type: ignore
             uuid=ClientUUID(uuid4()),
             full_name=full_name,
             phone=phone,
+            organization_id=organization_id,
             email=email,
             telegram_nick=telegram_nick,
             comment=comment,
