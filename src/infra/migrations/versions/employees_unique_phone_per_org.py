@@ -70,4 +70,3 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index("uq_employees_organization_id_phone", table_name="employees")
-
