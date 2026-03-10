@@ -175,7 +175,8 @@ def downgrade() -> None:
 
     # Вернём organizations к одиночной записи
     with op.batch_alter_table("organizations") as batch:
-        batch.add_column(sa.Column("singleton_key", sa.BigInteger(), nullable=False, server_default="1"))
+        batch.add_column(
+            sa.Column("singleton_key", sa.BigInteger(), nullable=False, server_default="1")
+        )
         batch.create_index("uq_organizations_singleton_key", ["singleton_key"], unique=True)
         batch.drop_column("owner_user_uuid")
-

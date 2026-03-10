@@ -88,7 +88,9 @@ async def register_supervisor(
         bik=request_data.bik,
     )
     result = await interactor.run(dto)
-    logger.info("Supervisor registered successfully via public endpoint", email=str(request_data.email))
+    logger.info(
+        "Supervisor registered successfully via public endpoint", email=str(request_data.email)
+    )
     return result
 
 

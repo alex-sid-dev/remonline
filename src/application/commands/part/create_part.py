@@ -53,4 +53,3 @@ class CreatePartCommandHandler:
         await self._transaction.commit()
         logger.info("Part created successfully", part_uuid=str(part.uuid))
         return CreatePartCommandResponse(uuid=part.uuid)
-
