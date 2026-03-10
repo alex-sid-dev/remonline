@@ -30,7 +30,10 @@
     </header>
 
     <section class="shell-body">
-      <aside class="side-panel">
+      <aside
+        v-if="isAuthenticated"
+        class="side-panel"
+      >
         <div class="divider" />
         <nav class="side-nav">
           <button
